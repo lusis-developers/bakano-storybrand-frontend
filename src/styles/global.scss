@@ -1,4 +1,5 @@
-@use './index.scss' as *;
+@use './colorVariables.module.scss' as *;
+@use './fonts.modules.scss' as *;
 
 html,
 body {
