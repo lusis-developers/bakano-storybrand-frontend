@@ -49,7 +49,7 @@ const footerLinks = {
         <div class="footer__brand">
           <RouterLink to="/" class="footer__logo">
             <img 
-              src="@/assets/logos/bakano-dark.png" 
+              src="@/assets/logos/bakano-light.png" 
               alt="Bakano" 
               class="footer__logo-img"
             />

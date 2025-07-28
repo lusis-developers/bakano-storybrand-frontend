@@ -1,7 +1,10 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useAuthStore } from '@/stores/auth.store'
 
+const authStore = useAuthStore()
 const isMenuOpen = ref(false)
+const isUserMenuOpen = ref(false)
 
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value
@@ -9,6 +12,16 @@ const toggleMenu = () => {
 
 const closeMenu = () => {
   isMenuOpen.value = false
+  isUserMenuOpen.value = false
+}
+
+const toggleUserMenu = () => {
+  isUserMenuOpen.value = !isUserMenuOpen.value
+}
+
+const handleLogout = () => {
+  authStore.logout()
+  closeMenu()
 }
 </script>
 
@@ -30,6 +43,64 @@ const closeMenu = () => {
           <RouterLink to="/" class="nav__link" @click="closeMenu">
             Inicio
           </RouterLink>
+          <RouterLink to="/about" class="nav__link" @click="closeMenu">
+            Acerca de
+          </RouterLink>
+          <RouterLink to="/services" class="nav__link" @click="closeMenu">
+            Servicios
+          </RouterLink>
+          <RouterLink to="/contact" class="nav__link" @click="closeMenu">
+            Contacto
+          </RouterLink>
+        </div>
+
+        <!-- Auth Section -->
+        <div class="nav__auth">
+          <!-- Guest Links -->
+          <div v-if="!authStore.isAuthenticated" class="nav__auth-guest">
+            <RouterLink to="/login" class="nav__auth-link" @click="closeMenu">
+              Iniciar sesión
+            </RouterLink>
+            <RouterLink to="/register" class="nav__auth-button" @click="closeMenu">
+              Registrarse
+            </RouterLink>
+          </div>
+
+          <!-- User Menu -->
+          <div v-else class="nav__auth-user">
+            <div class="nav__user-menu">
+              <button 
+                @click="toggleUserMenu" 
+                class="nav__user-button"
+                :class="{ 'nav__user-button--active': isUserMenuOpen }"
+              >
+                <div class="nav__user-avatar">
+                  {{ authStore.userName.charAt(0).toUpperCase() }}
+                </div>
+                <span class="nav__user-name">{{ authStore.userName }}</span>
+                <svg class="nav__user-chevron" :class="{ 'nav__user-chevron--open': isUserMenuOpen }" width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M6 9l6 6 6-6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+              </button>
+              
+              <!-- User Dropdown -->
+              <div class="nav__user-dropdown" :class="{ 'nav__user-dropdown--open': isUserMenuOpen }">
+                <div class="nav__user-info">
+                  <p class="nav__user-email">{{ authStore.userEmail }}</p>
+                  <span v-if="!authStore.isVerified" class="nav__user-status">No verificado</span>
+                </div>
+                <hr class="nav__user-divider" />
+                <button @click="handleLogout" class="nav__user-logout">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <polyline points="16,17 21,12 16,7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  </svg>
+                  Cerrar sesión
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
 
         <!-- Mobile Menu Button -->
@@ -60,6 +131,38 @@ const closeMenu = () => {
           <RouterLink to="/contact" class="nav__mobile-link" @click="closeMenu">
             Contacto
           </RouterLink>
+          
+          <!-- Mobile Auth Section -->
+          <div class="nav__mobile-auth">
+            <div v-if="!authStore.isAuthenticated" class="nav__mobile-auth-guest">
+              <RouterLink to="/login" class="nav__mobile-auth-link" @click="closeMenu">
+                Iniciar sesión
+              </RouterLink>
+              <RouterLink to="/register" class="nav__mobile-auth-button" @click="closeMenu">
+                Registrarse
+              </RouterLink>
+            </div>
+            
+            <div v-else class="nav__mobile-auth-user">
+              <div class="nav__mobile-user-info">
+                <div class="nav__mobile-user-avatar">
+                  {{ authStore.userName.charAt(0).toUpperCase() }}
+                </div>
+                <div class="nav__mobile-user-details">
+                  <p class="nav__mobile-user-name">{{ authStore.userName }}</p>
+                  <p class="nav__mobile-user-email">{{ authStore.userEmail }}</p>
+                </div>
+              </div>
+              <button @click="handleLogout" class="nav__mobile-logout">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+                  <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <polyline points="16,17 21,12 16,7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                  <line x1="21" y1="12" x2="9" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Cerrar sesión
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     </nav>
@@ -121,6 +224,182 @@ const closeMenu = () => {
 
     @media (min-width: 768px) {
       display: flex;
+    }
+  }
+
+  &__auth {
+    display: none;
+    align-items: center;
+
+    @media (min-width: 768px) {
+      display: flex;
+    }
+
+    &-guest {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+    }
+
+    &-link {
+      color: $BAKANO-DARK;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 0.95rem;
+      padding: 0.5rem 1rem;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+
+      &:hover {
+        color: $BAKANO-PINK;
+        background: rgba($BAKANO-PINK, 0.1);
+      }
+    }
+
+    &-button {
+      background: linear-gradient(135deg, $BAKANO-PINK 0%, darken($BAKANO-PINK, 10%) 100%);
+      color: white;
+      text-decoration: none;
+      font-weight: 600;
+      font-size: 0.95rem;
+      padding: 0.5rem 1.25rem;
+      border-radius: 6px;
+      transition: all 0.2s ease;
+
+      &:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba($BAKANO-PINK, 0.3);
+      }
+    }
+
+    &-user {
+      position: relative;
+    }
+  }
+
+  &__user-menu {
+    position: relative;
+  }
+
+  &__user-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    color: $BAKANO-DARK;
+
+    &:hover {
+      background: rgba($BAKANO-PINK, 0.1);
+    }
+
+    &--active {
+      background: rgba($BAKANO-PINK, 0.1);
+    }
+  }
+
+  &__user-avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, $BAKANO-PINK 0%, darken($BAKANO-PINK, 10%) 100%);
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 600;
+    font-size: 0.875rem;
+  }
+
+  &__user-name {
+    font-weight: 500;
+    font-size: 0.95rem;
+    max-width: 120px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  &__user-chevron {
+    transition: transform 0.2s ease;
+    color: $BAKANO-DARK;
+
+    &--open {
+      transform: rotate(180deg);
+    }
+  }
+
+  &__user-dropdown {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+    padding: 1rem;
+    min-width: 200px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.2s ease;
+    z-index: 1000;
+    border: 1px solid rgba($BAKANO-PURPLE, 0.1);
+
+    &--open {
+      opacity: 1;
+      visibility: visible;
+      transform: translateY(0);
+    }
+  }
+
+  &__user-info {
+    margin-bottom: 0.75rem;
+  }
+
+  &__user-email {
+    font-size: 0.875rem;
+    color: $BAKANO-DARK;
+    margin: 0 0 0.25rem 0;
+    font-weight: 500;
+  }
+
+  &__user-status {
+    font-size: 0.75rem;
+    color: #f59e0b;
+    background: rgba(#f59e0b, 0.1);
+    padding: 0.125rem 0.5rem;
+    border-radius: 12px;
+    font-weight: 500;
+  }
+
+  &__user-divider {
+    border: none;
+    height: 1px;
+    background: rgba($BAKANO-PURPLE, 0.1);
+    margin: 0.75rem 0;
+  }
+
+  &__user-logout {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    width: 100%;
+    background: none;
+    border: none;
+    color: #dc2626;
+    font-size: 0.875rem;
+    font-weight: 500;
+    padding: 0.5rem;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+
+    &:hover {
+      background: rgba(#dc2626, 0.1);
     }
   }
 
@@ -246,6 +525,126 @@ const closeMenu = () => {
       &.router-link-active {
         background: $overlay-purple;
         color: $BAKANO-PINK;
+      }
+    }
+
+    &-auth {
+      margin-top: 1rem;
+      padding-top: 1rem;
+      border-top: 1px solid rgba($BAKANO-PURPLE, 0.1);
+
+      &-guest {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+      }
+
+      &-link {
+        color: $BAKANO-DARK;
+        text-decoration: none;
+        font-weight: 500;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        text-align: center;
+        transition: all 0.2s ease;
+        border: 1px solid rgba($BAKANO-PURPLE, 0.2);
+
+        &:hover {
+          background: rgba($BAKANO-PINK, 0.1);
+          color: $BAKANO-PINK;
+          border-color: $BAKANO-PINK;
+        }
+      }
+
+      &-button {
+        background: linear-gradient(135deg, $BAKANO-PINK 0%, darken($BAKANO-PINK, 10%) 100%);
+        color: white;
+        text-decoration: none;
+        font-weight: 600;
+        padding: 0.75rem 1rem;
+        border-radius: 8px;
+        text-align: center;
+        transition: all 0.2s ease;
+
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 4px 12px rgba($BAKANO-PINK, 0.3);
+        }
+      }
+
+      &-user {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+      }
+    }
+
+    &-user-info {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+      padding: 0.75rem 1rem;
+      background: rgba($BAKANO-PINK, 0.05);
+      border-radius: 8px;
+    }
+
+    &-user-avatar {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, $BAKANO-PINK 0%, darken($BAKANO-PINK, 10%) 100%);
+      color: white;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 600;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+
+    &-user-details {
+      flex: 1;
+      min-width: 0;
+    }
+
+    &-user-name {
+      font-weight: 600;
+      color: $BAKANO-DARK;
+      margin: 0 0 0.25rem 0;
+      font-size: 0.95rem;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &-user-email {
+      font-size: 0.875rem;
+      color: rgba($BAKANO-DARK, 0.7);
+      margin: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    &-logout {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.5rem;
+      width: 100%;
+      background: none;
+      border: 1px solid #dc2626;
+      color: #dc2626;
+      font-size: 0.875rem;
+      font-weight: 500;
+      padding: 0.75rem 1rem;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+
+      &:hover {
+        background: #dc2626;
+        color: white;
       }
     }
   }
