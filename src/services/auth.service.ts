@@ -8,32 +8,55 @@ export interface RegisterRequest {
   firstName: string
   lastName: string
   confirmPassword?: string
+  birthDate?: string
+  role?: 'admin' | 'client'
 }
 
 export interface LoginRequest {
   email: string
   password: string
+  rememberMe?: boolean
+}
+
+export interface User {
+  _id: string
+  firstName: string
+  lastName: string
+  email: string
+  birthDate?: string
+  businesses: string[]
+  role: 'admin' | 'client'
+  isVerified: boolean
+  verificationToken?: string
+  verificationTokenExpires?: string
+  createdAt: string
+  updatedAt: string
+  fullName?: string
+  age?: number
 }
 
 export interface AuthResponse {
-  user: {
-    id: string
-    email: string
-    name: string
-    isVerified: boolean
-  }
+  user: User
   token: string
   refreshToken?: string
+  expiresIn?: number
 }
 
 export interface VerifyResponse {
   message: string
-  user: {
-    id: string
-    email: string
-    name: string
-    isVerified: boolean
-  }
+  user: User
+}
+
+export interface ResetPasswordRequest {
+  token: string
+  password: string
+  confirmPassword: string
+}
+
+export interface ChangePasswordRequest {
+  currentPassword: string
+  newPassword: string
+  confirmPassword: string
 }
 
 export interface ApiError {
@@ -79,6 +102,81 @@ class AuthService extends APIBase {
     try {
       const response: AxiosResponse<VerifyResponse> = await this.get<VerifyResponse>(
         `auth/verify/${token}`
+      )
+      return response.data
+    } catch (error) {
+      throw error as ApiError
+    }
+  }
+
+  /**
+   * Solicita recuperación de contraseña
+   */
+  async forgotPassword(email: string): Promise<{ message: string }> {
+    try {
+      const response: AxiosResponse<{ message: string }> = await this.post<{ message: string }>(
+        'auth/forgot-password',
+        { email }
+      )
+      return response.data
+    } catch (error) {
+      throw error as ApiError
+    }
+  }
+
+  /**
+   * Restablece la contraseña
+   */
+  async resetPassword(resetData: ResetPasswordRequest): Promise<{ message: string }> {
+    try {
+      const response: AxiosResponse<{ message: string }> = await this.post<{ message: string }>(
+        'auth/reset-password',
+        resetData
+      )
+      return response.data
+    } catch (error) {
+      throw error as ApiError
+    }
+  }
+
+  /**
+   * Cambia la contraseña del usuario autenticado
+   */
+  async changePassword(passwordData: ChangePasswordRequest): Promise<{ message: string }> {
+    try {
+      const response: AxiosResponse<{ message: string }> = await this.post<{ message: string }>(
+        'auth/change-password',
+        passwordData
+      )
+      return response.data
+    } catch (error) {
+      throw error as ApiError
+    }
+  }
+
+  /**
+   * Refresca el token de acceso
+   */
+  async refreshToken(refreshToken: string): Promise<AuthResponse> {
+    try {
+      const response: AxiosResponse<AuthResponse> = await this.post<AuthResponse>(
+        'auth/refresh-token',
+        { refreshToken }
+      )
+      return response.data
+    } catch (error) {
+      throw error as ApiError
+    }
+  }
+
+  /**
+   * Reenvía el email de verificación
+   */
+  async resendVerification(email: string): Promise<{ message: string }> {
+    try {
+      const response: AxiosResponse<{ message: string }> = await this.post<{ message: string }>(
+        'auth/resend-verification',
+        { email }
       )
       return response.data
     } catch (error) {

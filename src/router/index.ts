@@ -23,6 +23,11 @@ const router = createRouter({
       meta: { requiresGuest: true }
     },
     {
+      path: '/verify/:token',
+      name: 'verify',
+      component: () => import('../views/VerifyView.vue')
+    },
+    {
       path: '/about',
       name: 'about',
       component: HomeView, // Temporalmente usando HomeView

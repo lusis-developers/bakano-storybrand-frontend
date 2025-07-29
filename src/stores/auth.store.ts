@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import authService, { type AuthResponse, type LoginRequest, type RegisterRequest } from '@/services/auth.service'
+import { authService, type AuthResponse, type LoginRequest, type RegisterRequest, type User } from '@/services/auth.service'
 import { useToast } from '@/composables/useToast'
 
 export const useAuthStore = defineStore('auth', () => {
   // Estado
-  const user = ref<AuthResponse['user'] | null>(null)
+  const user = ref<User | null>(null)
   const token = ref<string | null>(null)
   const loading = ref(false)
   const error = ref<string | null>(null)
@@ -18,8 +18,13 @@ export const useAuthStore = defineStore('auth', () => {
   // Getters
   const isAuthenticated = computed(() => !!token.value && !!user.value)
   const isVerified = computed(() => user.value?.isVerified ?? false)
-  const userName = computed(() => user.value?.name ?? '')
+  const userName = computed(() => {
+    if (!user.value) return ''
+    return `${user.value.firstName} ${user.value.lastName}`.trim()
+  })
   const userEmail = computed(() => user.value?.email ?? '')
+  const userFirstName = computed(() => user.value?.firstName ?? '')
+  const userLastName = computed(() => user.value?.lastName ?? '')
 
   // Inicializar estado desde localStorage
   function initializeFromStorage() {
@@ -74,7 +79,7 @@ export const useAuthStore = defineStore('auth', () => {
       user.value = response.user
       authService.saveAuthData(response)
       
-      toast.triggerToast(`Bienvenido, ${response.user.name}`, 'success')
+      toast.triggerToast(`Bienvenido, ${response.user.firstName} ${response.user.lastName}`, 'success')
       router.push('/')
       return response
     } catch (err: any) {
@@ -94,7 +99,7 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await authService.verifyUser(verificationToken)
       
       // Si el usuario actual es el mismo que se está verificando, actualizar su estado
-      if (user.value && user.value.id === response.user.id) {
+      if (user.value && user.value._id === response.user._id) {
         user.value = response.user
         // Actualizar en localStorage
         localStorage.setItem('user_data', JSON.stringify(response.user))
@@ -104,6 +109,23 @@ export const useAuthStore = defineStore('auth', () => {
       return response
     } catch (err: any) {
       error.value = err.message || 'Error al verificar usuario'
+      toast.triggerToast(error.value ?? 'Error desconocido', 'error')
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
+  async function resendVerification(email: string) {
+    loading.value = true
+    error.value = null
+    
+    try {
+      const response = await authService.resendVerification(email)
+      toast.triggerToast(response.message || 'Email de verificación reenviado', 'success')
+      return response
+    } catch (err: any) {
+      error.value = err.message || 'Error al reenviar verificación'
       toast.triggerToast(error.value ?? 'Error desconocido', 'error')
       throw err
     } finally {
@@ -138,12 +160,15 @@ export const useAuthStore = defineStore('auth', () => {
     isVerified,
     userName,
     userEmail,
+    userFirstName,
+    userLastName,
     
     // Actions
     register,
     login,
     logout,
     verifyUser,
+    resendVerification,
     initializeFromStorage
   }
 })
