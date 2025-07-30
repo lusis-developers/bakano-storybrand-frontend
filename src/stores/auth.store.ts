@@ -80,7 +80,14 @@ export const useAuthStore = defineStore('auth', () => {
       authService.saveAuthData(response)
       
       toast.triggerToast(`Bienvenido, ${response.user.firstName} ${response.user.lastName}`, 'success')
-      router.push('/')
+      
+      // Redirigir al onboarding si el usuario está verificado y es su primer login
+      if (response.user.isVerified) {
+        router.push('/onboarding')
+      } else {
+        router.push('/')
+      }
+      
       return response
     } catch (err: any) {
       error.value = err.message || 'Error al iniciar sesión'
@@ -106,6 +113,10 @@ export const useAuthStore = defineStore('auth', () => {
       }
       
       toast.triggerToast('Cuenta verificada correctamente', 'success')
+      
+      // Redirigir al onboarding después de la verificación exitosa
+      router.push('/onboarding')
+      
       return response
     } catch (err: any) {
       error.value = err.message || 'Error al verificar usuario'
