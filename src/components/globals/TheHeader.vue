@@ -38,25 +38,13 @@ const handleLogout = () => {
           />
         </RouterLink>
 
-        <!-- Desktop Navigation -->
         <div class="nav__menu">
           <RouterLink to="/" class="nav__link" @click="closeMenu">
             Inicio
           </RouterLink>
-          <RouterLink to="/about" class="nav__link" @click="closeMenu">
-            Acerca de
-          </RouterLink>
-          <RouterLink to="/services" class="nav__link" @click="closeMenu">
-            Servicios
-          </RouterLink>
-          <RouterLink to="/contact" class="nav__link" @click="closeMenu">
-            Contacto
-          </RouterLink>
         </div>
 
-        <!-- Auth Section -->
         <div class="nav__auth">
-          <!-- Guest Links -->
           <div v-if="!authStore.isAuthenticated" class="nav__auth-guest">
             <RouterLink to="/login" class="nav__auth-link" @click="closeMenu">
               Iniciar sesión
