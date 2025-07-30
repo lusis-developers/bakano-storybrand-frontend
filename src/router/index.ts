@@ -14,33 +14,18 @@ const router = createRouter({
       path: '/login',
       name: 'login',
       component: () => import('../views/LoginView.vue'),
-      meta: { requiresGuest: true }
+      meta: { requiresGuest: true },
     },
     {
       path: '/register',
       name: 'register',
       component: () => import('../views/RegisterView.vue'),
-      meta: { requiresGuest: true }
+      meta: { requiresGuest: true },
     },
     {
       path: '/verify/:token',
       name: 'verify',
-      component: () => import('../views/VerifyView.vue')
-    },
-    {
-      path: '/about',
-      name: 'about',
-      component: HomeView, // Temporalmente usando HomeView
-    },
-    {
-      path: '/services',
-      name: 'services',
-      component: HomeView, // Temporalmente usando HomeView
-    },
-    {
-      path: '/contact',
-      name: 'contact',
-      component: HomeView, // Temporalmente usando HomeView
+      component: () => import('../views/VerifyView.vue'),
     },
   ],
 })
@@ -48,19 +33,19 @@ const router = createRouter({
 // Navigation Guards
 router.beforeEach((to, from, next) => {
   const authStore = useAuthStore()
-  
+
   // Rutas que requieren estar deslogueado (guest)
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
     next('/')
     return
   }
-  
+
   // Rutas que requieren autenticación
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
     return
   }
-  
+
   next()
 })
 
