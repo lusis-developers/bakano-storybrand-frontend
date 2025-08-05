@@ -13,7 +13,7 @@ import {
   STEP_TITLES,
   TOTAL_STEPS
 } from '@/components/onboarding/steps'
-import type { IUserProfile, IBusinessContext, IOnboardingPreferences, CreateOnboardingRequest } from '@/types/onboarding.types'
+import type { IUserProfile, IBusinessContext, IOnboardingPreferences, CreateOnboardingRequest, UpdateOnboardingRequest } from '@/types/onboarding.types'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -107,31 +107,23 @@ function prevStep() {
 }
 
 async function submitOnboarding() {
-  if (!canProceed.value) return
-
   isSubmitting.value = true
-
   try {
-    // Validar que los datos requeridos estén completos
-    if (!formData.value.userProfile.jobTitle || !formData.value.businessContext.primaryIndustry || !formData.value.businessContext.competitiveAdvantage) {
-      throw new Error('Por favor completa todos los campos requeridos')
-    }
-
-    const onboardingData: CreateOnboardingRequest = {
+    const finalPayload = {
       userProfile: formData.value.userProfile,
       businessContext: formData.value.businessContext,
       preferences: {
         ...formData.value.preferences,
-        onboardingCompleted: true
-      }
+        onboardingCompleted: true,
+      },
     }
 
-    const hasExisting = await onboardingStore.checkOnboardingExists()
+    const hasExisting = onboardingStore.currentOnboarding?._id
 
     if (hasExisting) {
-      await onboardingStore.updateOnboarding(onboardingData)
+      await onboardingStore.updateOnboarding(finalPayload)
     } else {
-      await onboardingStore.createOnboarding(onboardingData)
+      await onboardingStore.createOnboarding(finalPayload)
     }
 
     toast.triggerToast('¡Onboarding completado exitosamente!', 'success')
@@ -143,7 +135,6 @@ async function submitOnboarding() {
   }
 }
 
-// Verificar autenticación al montar
 onMounted(() => {
   if (!authStore.isAuthenticated) {
     router.push('/login')
