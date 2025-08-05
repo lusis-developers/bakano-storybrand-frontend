@@ -201,7 +201,7 @@ const canProceed = computed(() => {
     case 1:
       return formData.value.userProfile?.jobTitle && formData.value.userProfile?.experienceLevel
     case 2:
-      return formData.value.businessContext?.primaryIndustry && formData.value.businessContext?.companySize
+      return formData.value.businessContext?.primaryIndustry && formData.value.businessContext?.companySize && formData.value.businessContext?.competitiveAdvantage
     case 3:
       return formData.value.businessContext?.targetMarket && formData.value.preferences?.communicationFrequency
     case 4:
@@ -243,7 +243,7 @@ async function submitOnboarding() {
 
   try {
     // Validar que los datos requeridos estén completos
-    if (!formData.value.userProfile.jobTitle || !formData.value.businessContext.primaryIndustry) {
+    if (!formData.value.userProfile.jobTitle || !formData.value.businessContext.primaryIndustry || !formData.value.businessContext.competitiveAdvantage) {
       throw new Error('Por favor completa todos los campos requeridos')
     }
 
@@ -400,6 +400,18 @@ onMounted(() => {
                   value-field="value"
                   placeholder="Selecciona tu mercado objetivo"
                 />
+              </div>
+              
+              <div class="form-group full-width">
+                <label for="competitiveAdvantage">¿Cuál es tu ventaja competitiva? *</label>
+                <textarea
+                  id="competitiveAdvantage"
+                  v-model="formData.businessContext!.competitiveAdvantage"
+                  class="form-textarea"
+                  placeholder="Describe qué te diferencia de tu competencia..."
+                  rows="3"
+                  required
+                ></textarea>
               </div>
             </div>
           </OnboardingStep>
