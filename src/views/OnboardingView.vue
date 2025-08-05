@@ -5,35 +5,29 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useOnboardingStore } from '@/stores/onboarding.store'
 import { useToast } from '@/composables/useToast'
 import ProgressBar from '@/components/onboarding/ProgressBar.vue'
-import OnboardingStep from '@/components/onboarding/OnboardingStep.vue'
 import {
   Step1PersonalProfile,
   Step2BusinessInfo,
   Step3Preferences,
   Step4Confirmation,
-  STEP_CONFIGS,
   STEP_TITLES,
   TOTAL_STEPS
 } from '@/components/onboarding/steps'
 import type { IUserProfile, IBusinessContext, IOnboardingPreferences, CreateOnboardingRequest } from '@/types/onboarding.types'
 
-// Composables
 const router = useRouter()
 const authStore = useAuthStore()
 const onboardingStore = useOnboardingStore()
 const toast = useToast()
 
-// Estado local
 const currentStep = ref(1)
 const isSubmitting = ref(false)
 
-// Datos del formulario
 const formData = ref<{
   userProfile: IUserProfile
   businessContext: IBusinessContext
   preferences: Partial<IOnboardingPreferences>
 }>({
-  // businessId removido: ya no es necesario con la nueva API
   userProfile: {
     jobTitle: '',
     department: 'marketing' as const,
@@ -123,17 +117,25 @@ async function submitOnboarding() {
       throw new Error('Por favor completa todos los campos requeridos')
     }
 
-    // Crear onboarding con los datos del formulario
     const onboardingData: CreateOnboardingRequest = {
       userProfile: formData.value.userProfile,
       businessContext: formData.value.businessContext,
-      preferences: formData.value.preferences
+      preferences: {
+        ...formData.value.preferences,
+        onboardingCompleted: true
+      }
     }
 
-    await onboardingStore.createOnboarding(onboardingData)
+    const hasExisting = await onboardingStore.checkOnboardingExists()
+
+    if (hasExisting) {
+      await onboardingStore.updateOnboarding(onboardingData)
+    } else {
+      await onboardingStore.createOnboarding(onboardingData)
+    }
 
     toast.triggerToast('¡Onboarding completado exitosamente!', 'success')
-    router.push('/dashboard') // Redirigir al dashboard
+    router.push('/dashboard')
   } catch (error: any) {
     toast.triggerToast(error.message || 'Error al completar el onboarding', 'error')
   } finally {
@@ -147,23 +149,17 @@ onMounted(() => {
     router.push('/login')
     return
   }
-
-  // La verificación de isVerified se maneja en el router guard
-  // No necesitamos verificarla aquí para evitar redirecciones innecesarias
 })
 </script>
 
 <template>
   <div class="onboarding-container">
-    <!-- Header -->
     <header class="onboarding-header">
       <div class="container">
         <div class="header-content">
           <h1 class="title">Configuración Inicial</h1>
           <p class="subtitle">Personaliza tu experiencia en unos simples pasos</p>
         </div>
-        
-        <!-- Progress Bar -->
         <ProgressBar 
           :current-step="currentStep"
           :total-steps="TOTAL_STEPS"
@@ -171,37 +167,30 @@ onMounted(() => {
         />
       </div>
     </header>
-
-    <!-- Main Content -->
     <main class="onboarding-main">
       <div class="container">
         <div class="form-container">
-          
-          <!-- Step Components -->
           <Step1PersonalProfile
             v-if="currentStep === 1"
             v-model="formData.userProfile"
           />
-          
           <Step2BusinessInfo
             v-if="currentStep === 2"
             v-model="formData.businessContext"
           />
-          
           <Step3Preferences
             v-if="currentStep === 3"
             v-model:preferences="formData.preferences"
             v-model:business-context="formData.businessContext"
           />
-          
           <Step4Confirmation
             v-if="currentStep === 4"
             :user-profile="formData.userProfile"
             :business-context="formData.businessContext"
             :preferences="formData.preferences"
+            :is-submitting="isSubmitting"
+            @submit="submitOnboarding"
           />
-
-          <!-- Navigation -->
           <div class="step-navigation">
             <button 
               v-if="currentStep > 1"
@@ -211,9 +200,7 @@ onMounted(() => {
             >
               Anterior
             </button>
-            
             <div class="nav-spacer"></div>
-            
             <button 
               v-if="currentStep < TOTAL_STEPS"
               @click="nextStep"
@@ -222,17 +209,6 @@ onMounted(() => {
               type="button"
             >
               Siguiente
-            </button>
-            
-            <button 
-              v-if="currentStep === TOTAL_STEPS"
-              @click="submitOnboarding"
-              :disabled="!canProceed || isSubmitting"
-              class="btn btn-primary"
-              type="button"
-            >
-              <span v-if="isSubmitting">Completando...</span>
-              <span v-else>Completar Configuración</span>
             </button>
           </div>
         </div>
