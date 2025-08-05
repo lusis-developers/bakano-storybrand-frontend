@@ -6,6 +6,7 @@ import { useOnboardingStore } from '@/stores/onboarding.store'
 import { useToast } from '@/composables/useToast'
 import ProgressBar from '@/components/onboarding/ProgressBar.vue'
 import OnboardingStep from '@/components/onboarding/OnboardingStep.vue'
+import SearchableSelect from '@/components/shared/SearchableSelect.vue'
 import type { IUserProfile, IBusinessContext, IOnboardingPreferences, CreateOnboardingRequest } from '@/types/onboarding.types'
 
 // Composables
@@ -13,6 +14,25 @@ const router = useRouter()
 const authStore = useAuthStore()
 const onboardingStore = useOnboardingStore()
 const toast = useToast()
+
+// Lista de puestos de trabajo comunes
+const commonJobTitles = [
+  { id: 'ceo', title: 'CEO / Director Ejecutivo' },
+  { id: 'cmo', title: 'CMO / Director de Marketing' },
+  { id: 'marketing-manager', title: 'Gerente de Marketing' },
+  { id: 'marketing-coordinator', title: 'Coordinador de Marketing' },
+  { id: 'digital-marketing-manager', title: 'Gerente de Marketing Digital' },
+  { id: 'content-manager', title: 'Gerente de Contenido' },
+  { id: 'social-media-manager', title: 'Community Manager' },
+  { id: 'brand-manager', title: 'Gerente de Marca' },
+  { id: 'product-manager', title: 'Gerente de Producto' },
+  { id: 'sales-manager', title: 'Gerente de Ventas' },
+  { id: 'business-owner', title: 'Propietario del Negocio' },
+  { id: 'entrepreneur', title: 'Emprendedor' },
+  { id: 'consultant', title: 'Consultor' },
+  { id: 'freelancer', title: 'Freelancer' },
+  { id: 'other', title: 'Otro' }
+]
 
 // Estado local
 const currentStep = ref(1)
@@ -51,8 +71,12 @@ const stepConfig = [
 ]
 
 // Datos del formulario
-const formData = ref<Partial<CreateOnboardingRequest>>({
-  businessId: '', // Se asignará dinámicamente
+const formData = ref<{
+  userProfile: IUserProfile
+  businessContext: IBusinessContext
+  preferences: Partial<IOnboardingPreferences>
+}>({
+  // businessId removido: ya no es necesario con la nueva API
   userProfile: {
     jobTitle: '',
     department: 'marketing' as const,
@@ -125,6 +149,20 @@ const industryOptions = [
   { value: 'real_estate', label: 'Bienes Raíces' },
   { value: 'food_beverage', label: 'Alimentos y Bebidas' },
   { value: 'other', label: 'Otro' }
+]
+
+const companySizeOptions = [
+  { value: '1-10', label: '1-10 empleados' },
+  { value: '11-50', label: '11-50 empleados' },
+  { value: '51-200', label: '51-200 empleados' },
+  { value: '201-1000', label: '201-1000 empleados' },
+  { value: '1000+', label: 'Más de 1000 empleados' }
+]
+
+const targetMarketOptions = [
+  { value: 'b2b', label: 'B2B (Empresas)' },
+  { value: 'b2c', label: 'B2C (Consumidores)' },
+  { value: 'both', label: 'Ambos' }
 ]
 
 const businessSizeOptions = [
@@ -204,10 +242,19 @@ async function submitOnboarding() {
   isSubmitting.value = true
 
   try {
-    // Asignar businessId temporal (en una app real, esto vendría del contexto del negocio)
-    formData.value.businessId = `business_${Date.now()}`
+    // Validar que los datos requeridos estén completos
+    if (!formData.value.userProfile.jobTitle || !formData.value.businessContext.primaryIndustry) {
+      throw new Error('Por favor completa todos los campos requeridos')
+    }
 
-    await onboardingStore.createOnboarding(formData.value as CreateOnboardingRequest)
+    // Crear onboarding con los datos del formulario
+    const onboardingData: CreateOnboardingRequest = {
+      userProfile: formData.value.userProfile,
+      businessContext: formData.value.businessContext,
+      preferences: formData.value.preferences
+    }
+
+    await onboardingStore.createOnboarding(onboardingData)
 
     toast.triggerToast('¡Onboarding completado exitosamente!', 'success')
     router.push('/dashboard') // Redirigir al dashboard
@@ -224,7 +271,7 @@ onMounted(() => {
     router.push('/login')
     return
   }
-  
+
   // La verificación de isVerified se maneja en el router guard
   // No necesitamos verificarla aquí para evitar redirecciones innecesarias
 })
@@ -264,12 +311,13 @@ onMounted(() => {
             <div class="form-grid">
               <div class="form-group">
                 <label for="jobTitle">¿Cuál es tu puesto de trabajo?</label>
-                <input 
-                  id="jobTitle" 
+                <SearchableSelect
                   v-model="formData.userProfile!.jobTitle"
-                  type="text"
-                  class="form-input"
-                  placeholder="Ej: Director de Marketing"
+                  :items="commonJobTitles"
+                  label-field="title"
+                  value-field="title"
+                  placeholder="Busca tu puesto de trabajo..."
+                  @select="(item) => formData.userProfile!.jobTitle = item?.title || ''"
                 />
               </div>
               
@@ -323,48 +371,35 @@ onMounted(() => {
             <div class="form-grid">
               <div class="form-group">
                 <label for="primaryIndustry">¿En qué industria trabajas?</label>
-                <select 
-                  id="primaryIndustry" 
+                <SearchableSelect
                   v-model="formData.businessContext!.primaryIndustry"
-                  class="form-select"
-                >
-                  <option value="">Selecciona tu industria</option>
-                  <option 
-                    v-for="option in industryOptions" 
-                    :key="option.value" 
-                    :value="option.value"
-                  >
-                    {{ option.label }}
-                  </option>
-                </select>
+                  :items="industryOptions"
+                  label-field="label"
+                  value-field="value"
+                  placeholder="Selecciona tu industria"
+                />
               </div>
               
               <div class="form-group">
                 <label for="companySize">¿Cuál es el tamaño de tu empresa?</label>
-                <select 
-                  id="companySize" 
+                <SearchableSelect
                   v-model="formData.businessContext!.companySize"
-                  class="form-select"
-                >
-                  <option value="1-10">1-10 empleados</option>
-                  <option value="11-50">11-50 empleados</option>
-                  <option value="51-200">51-200 empleados</option>
-                  <option value="201-1000">201-1000 empleados</option>
-                  <option value="1000+">Más de 1000 empleados</option>
-                </select>
+                  :items="companySizeOptions"
+                  label-field="label"
+                  value-field="value"
+                  placeholder="Selecciona el tamaño de tu empresa"
+                />
               </div>
               
               <div class="form-group full-width">
                 <label for="targetMarket">¿Cuál es tu mercado objetivo?</label>
-                <select 
-                  id="targetMarket" 
+                <SearchableSelect
                   v-model="formData.businessContext!.targetMarket"
-                  class="form-select"
-                >
-                  <option value="b2b">B2B (Empresas)</option>
-                  <option value="b2c">B2C (Consumidores)</option>
-                  <option value="both">Ambos</option>
-                </select>
+                  :items="targetMarketOptions"
+                  label-field="label"
+                  value-field="value"
+                  placeholder="Selecciona tu mercado objetivo"
+                />
               </div>
             </div>
           </OnboardingStep>
