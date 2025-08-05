@@ -3,41 +3,21 @@ const currentYear = new Date().getFullYear()
 
 const socialLinks = [
   {
-    name: 'LinkedIn',
-    url: 'https://linkedin.com/company/bakano',
-    icon: 'linkedin'
-  },
-  {
-    name: 'Twitter',
-    url: 'https://twitter.com/bakano',
-    icon: 'twitter'
-  },
-  {
     name: 'Instagram',
-    url: 'https://instagram.com/bakano',
+    url: 'https://www.instagram.com/bakano.ec/',
     icon: 'instagram'
+  },
+  {
+    name: 'Facebook',
+    url: 'https://www.facebook.com/bakano.ec',
+    icon: 'facebook-f'
+  },
+  {
+    name: 'WhatsApp',
+    url: 'https://wa.me/593984934039',
+    icon: 'whatsapp'
   }
 ]
-
-const footerLinks = {
-  company: [
-    { name: 'Acerca de', to: '/about' },
-    { name: 'Servicios', to: '/services' },
-    { name: 'Equipo', to: '/team' },
-    { name: 'Carreras', to: '/careers' }
-  ],
-  support: [
-    { name: 'Contacto', to: '/contact' },
-    { name: 'FAQ', to: '/faq' },
-    { name: 'Soporte', to: '/support' },
-    { name: 'Documentación', to: '/docs' }
-  ],
-  legal: [
-    { name: 'Privacidad', to: '/privacy' },
-    { name: 'Términos', to: '/terms' },
-    { name: 'Cookies', to: '/cookies' }
-  ]
-}
 </script>
 
 <template>
@@ -55,84 +35,23 @@ const footerLinks = {
             />
           </RouterLink>
           <p class="footer__description">
-            Transformamos ideas en experiencias digitales excepcionales. 
-            Creamos soluciones innovadoras que impulsan el crecimiento de tu negocio.
+            Transformamos ideas en experiencias digitales excepcionales.
           </p>
-          <div class="footer__social">
-            <a 
-              v-for="social in socialLinks" 
-              :key="social.name"
-              :href="social.url"
-              :aria-label="social.name"
-              class="footer__social-link"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              <i :class="`icon-${social.icon}`" class="footer__social-icon"></i>
-            </a>
-          </div>
         </div>
 
-        <!-- Links Sections -->
-        <div class="footer__links">
-          <!-- Company Links -->
-          <div class="footer__section">
-            <h3 class="footer__section-title">Empresa</h3>
-            <ul class="footer__section-list">
-              <li v-for="link in footerLinks.company" :key="link.name">
-                <RouterLink :to="link.to" class="footer__section-link">
-                  {{ link.name }}
-                </RouterLink>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Support Links -->
-          <div class="footer__section">
-            <h3 class="footer__section-title">Soporte</h3>
-            <ul class="footer__section-list">
-              <li v-for="link in footerLinks.support" :key="link.name">
-                <RouterLink :to="link.to" class="footer__section-link">
-                  {{ link.name }}
-                </RouterLink>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Legal Links -->
-          <div class="footer__section">
-            <h3 class="footer__section-title">Legal</h3>
-            <ul class="footer__section-list">
-              <li v-for="link in footerLinks.legal" :key="link.name">
-                <RouterLink :to="link.to" class="footer__section-link">
-                  {{ link.name }}
-                </RouterLink>
-              </li>
-            </ul>
-          </div>
-
-          <!-- Contact Info -->
-          <div class="footer__section">
-            <h3 class="footer__section-title">Contacto</h3>
-            <div class="footer__contact">
-              <p class="footer__contact-item">
-                <i class="icon-mail"></i>
-                <a href="mailto:hello@bakano.com" class="footer__contact-link">
-                  hello@bakano.com
-                </a>
-              </p>
-              <p class="footer__contact-item">
-                <i class="icon-phone"></i>
-                <a href="tel:+1234567890" class="footer__contact-link">
-                  +1 (234) 567-890
-                </a>
-              </p>
-              <p class="footer__contact-item">
-                <i class="icon-location"></i>
-                <span>Ciudad, País</span>
-              </p>
-            </div>
-          </div>
+        <!-- Social Links -->
+        <div class="footer__social">
+          <a 
+            v-for="social in socialLinks" 
+            :key="social.name"
+            :href="social.url"
+            :aria-label="social.name"
+            class="footer__social-link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            <i :class="`fab fa-${social.icon}`" class="footer__social-icon"></i>
+          </a>
         </div>
       </div>
 
@@ -142,14 +61,14 @@ const footerLinks = {
           <p class="footer__copyright">
             © {{ currentYear }} Bakano. Todos los derechos reservados.
           </p>
-          <div class="footer__bottom-links">
-            <RouterLink to="/privacy" class="footer__bottom-link">
-              Privacidad
-            </RouterLink>
-            <RouterLink to="/terms" class="footer__bottom-link">
-              Términos
-            </RouterLink>
-          </div>
+          <a 
+            href="https://mkt.bakano.ec/politicas" 
+            class="footer__policies-link"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Políticas de Privacidad
+          </a>
         </div>
       </div>
     </div>
@@ -173,26 +92,32 @@ const footerLinks = {
   }
 
   &__content {
-    padding: 3rem 0 2rem;
-    display: grid;
-    gap: 2rem;
-    grid-template-columns: 1fr;
+    padding: 2rem 0 1.5rem;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    gap: 1.5rem;
 
     @media (min-width: 768px) {
-      grid-template-columns: 1fr 2fr;
-      gap: 3rem;
-      padding: 4rem 0 3rem;
-    }
-
-    @media (min-width: 1024px) {
-      gap: 4rem;
+      flex-direction: row;
+      justify-content: space-between;
+      align-items: center;
+      text-align: left;
+      padding: 3rem 0 2rem;
     }
   }
 
   &__brand {
     display: flex;
     flex-direction: column;
-    gap: 1.5rem;
+    align-items: center;
+    gap: 1rem;
+
+    @media (min-width: 768px) {
+      align-items: flex-start;
+      flex: 1;
+    }
   }
 
   &__logo {
@@ -204,32 +129,43 @@ const footerLinks = {
     }
 
     &-img {
-      height: 40px;
+      height: 36px;
       width: auto;
 
       @media (min-width: 768px) {
-        height: 48px;
+        height: 42px;
       }
     }
   }
 
   &__description {
     color: rgba($text-light, 0.8);
-    line-height: 1.6;
-    max-width: 300px;
+    line-height: 1.5;
+    font-size: 0.9rem;
     margin: 0;
+    max-width: 280px;
+
+    @media (min-width: 768px) {
+      max-width: 320px;
+      font-size: 1rem;
+    }
   }
 
   &__social {
     display: flex;
     gap: 1rem;
+    justify-content: center;
+
+    @media (min-width: 768px) {
+      justify-content: flex-end;
+    }
 
     &-link {
       display: flex;
       align-items: center;
       justify-content: center;
-      width: 40px;
-      height: 40px;
+      width: 44px;
+      height: 44px;
       background: rgba($white, 0.1);
       border-radius: 50%;
       color: $text-light;
@@ -237,166 +173,74 @@ const footerLinks = {
       transition: all 0.3s ease;
       backdrop-filter: blur(10px);
 
+      @media (min-width: 768px) {
+        width: 48px;
+        height: 48px;
+      }
+
       &:hover {
         background: $BAKANO-PINK;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba($BAKANO-PINK, 0.3);
+        transform: translateY(-3px);
+        box-shadow: 0 6px 20px rgba($BAKANO-PINK, 0.4);
       }
     }
 
     &-icon {
-      font-size: 1.2rem;
-    }
-  }
+      font-size: 1.3rem;
 
-  &__links {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 2rem;
-
-    @media (min-width: 768px) {
-      grid-template-columns: repeat(4, 1fr);
-    }
-  }
-
-  &__section {
-    &-title {
-      color: $white;
-      font-size: 1.1rem;
-      font-weight: 600;
-      margin: 0 0 1rem 0;
-      position: relative;
-
-      &::after {
-        content: '';
-        position: absolute;
-        bottom: -4px;
-        left: 0;
-        width: 30px;
-        height: 2px;
-        background: $BAKANO-PINK;
-        border-radius: 1px;
-      }
-    }
-
-    &-list {
-      list-style: none;
-      padding: 0;
-      margin: 0;
-      display: flex;
-      flex-direction: column;
-      gap: 0.5rem;
-    }
-
-    &-link {
-      color: rgba($text-light, 0.8);
-      text-decoration: none;
-      font-size: 0.9rem;
-      transition: all 0.2s ease;
-      display: inline-block;
-
-      &:hover {
-        color: $BAKANO-PINK;
-        transform: translateX(4px);
-      }
-    }
-  }
-
-  &__contact {
-    display: flex;
-    flex-direction: column;
-    gap: 0.75rem;
-
-    &-item {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      margin: 0;
-      font-size: 0.9rem;
-      color: rgba($text-light, 0.8);
-
-      i {
-        color: $BAKANO-PINK;
-        font-size: 1rem;
-        width: 16px;
-      }
-    }
-
-    &-link {
-      color: inherit;
-      text-decoration: none;
-      transition: color 0.2s ease;
-
-      &:hover {
-        color: $BAKANO-PINK;
+      @media (min-width: 768px) {
+        font-size: 1.4rem;
       }
     }
   }
 
   &__bottom {
     border-top: 1px solid rgba($white, 0.1);
-    padding: 1.5rem 0;
+    padding: 1.25rem 0;
 
     &-content {
       display: flex;
       flex-direction: column;
       align-items: center;
-      gap: 1rem;
+      gap: 0.75rem;
       text-align: center;
 
       @media (min-width: 768px) {
         flex-direction: row;
         justify-content: space-between;
         text-align: left;
-      }
-    }
-
-    &-links {
-      display: flex;
-      gap: 1.5rem;
-    }
-
-    &-link {
-      color: rgba($text-light, 0.6);
-      text-decoration: none;
-      font-size: 0.85rem;
-      transition: color 0.2s ease;
-
-      &:hover {
-        color: $BAKANO-PINK;
+        gap: 1rem;
       }
     }
   }
 
   &__copyright {
     color: rgba($text-light, 0.6);
-    font-size: 0.85rem;
+    font-size: 0.8rem;
     margin: 0;
+
+    @media (min-width: 768px) {
+      font-size: 0.85rem;
+    }
+  }
+
+  &__policies-link {
+    color: rgba($text-light, 0.7);
+    text-decoration: none;
+    font-size: 0.8rem;
+    transition: color 0.2s ease;
+    border-bottom: 1px solid transparent;
+
+    @media (min-width: 768px) {
+      font-size: 0.85rem;
+    }
+
+    &:hover {
+      color: $BAKANO-PINK;
+      border-bottom-color: $BAKANO-PINK;
+    }
   }
 }
 
-// Icon placeholders (replace with your preferred icon system)
-.icon-linkedin::before {
-  content: '💼';
-}
-
-.icon-twitter::before {
-  content: '🐦';
-}
-
-.icon-instagram::before {
-  content: '📷';
-}
-
-.icon-mail::before {
-  content: '✉️';
-}
-
-.icon-phone::before {
-  content: '📞';
-}
-
-.icon-location::before {
-  content: '📍';
-}
+// Font Awesome icons are used directly with fab fa-* classes
 </style>
