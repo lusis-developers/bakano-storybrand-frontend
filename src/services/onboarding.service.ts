@@ -89,11 +89,12 @@ class OnboardingService extends httpBase {
    * @returns Promise con la respuesta actualizada
    */
   async updateOnboarding(
+    onboardingId: string,
     data: UpdateOnboardingRequest,
   ): Promise<OnboardingResponse> {
     try {
       const response: AxiosResponse<OnboardingResponse> = await this.put(
-        this.onboardingEndpoint,
+        `${this.onboardingEndpoint}/${onboardingId}`,
         data,
       )
       return response.data
@@ -139,38 +140,7 @@ class OnboardingService extends httpBase {
     }
   }
 
-  /**
-   * Actualizar solo el perfil de usuario
-   * @param userProfile - Datos del perfil de usuario
-   * @returns Promise con la respuesta actualizada
-   */
-  async updateUserProfile(
-    userProfile: Partial<IUserProfile>,
-  ): Promise<OnboardingResponse> {
-    return this.updateOnboarding({ userProfile })
-  }
 
-  /**
-   * Actualizar solo el contexto del negocio
-   * @param businessContext - Datos del contexto del negocio
-   * @returns Promise con la respuesta actualizada
-   */
-  async updateBusinessContext(
-    businessContext: Partial<IBusinessContext>,
-  ): Promise<OnboardingResponse> {
-    return this.updateOnboarding({ businessContext })
-  }
-
-  /**
-   * Actualizar solo las preferencias
-   * @param preferences - Datos de las preferencias
-   * @returns Promise con la respuesta actualizada
-   */
-  async updatePreferences(
-    preferences: Partial<IOnboardingPreferences>,
-  ): Promise<OnboardingResponse> {
-    return this.updateOnboarding({ preferences })
-  }
 
   /**
    * Verificar si un onboarding existe para el usuario autenticado
