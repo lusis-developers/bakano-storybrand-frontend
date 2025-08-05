@@ -197,9 +197,22 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   ): Promise<void> => {
     loading.value.updating = true
     clearError()
-    
+
+    if (!currentOnboarding.value?._id) {
+      const error = new Error('No hay un ID de onboarding para actualizar.')
+      setError({
+        message: error.message,
+        code: 'NO_ONBOARDING_ID',
+      })
+      loading.value.updating = false
+      throw error
+    }
+
     try {
-      const response = await onboardingService.updateOnboarding(data)
+      const response = await onboardingService.updateOnboarding(
+        currentOnboarding.value._id,
+        data
+      )
       currentOnboarding.value = response.onboarding
       currentStep.value = (response.nextStep as OnboardingStep) || currentStep.value
     } catch (err: any) {
@@ -241,9 +254,12 @@ export const useOnboardingStore = defineStore('onboarding', () => {
               weeklyReports: true,
               systemUpdates: false,
             },
-            onboardingCompleted: false,
+            onboardingCompleted: response.isComplete || false,
             completedSteps: [],
           }
+        } else {
+          // Actualizar el estado de completado basado en la respuesta del backend
+          currentOnboarding.value.preferences.onboardingCompleted = response.isComplete || currentOnboarding.value.preferences.onboardingCompleted
         }
         
         // Agregar el paso a los completados si no está ya
