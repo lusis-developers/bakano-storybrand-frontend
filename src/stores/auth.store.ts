@@ -160,8 +160,22 @@ export const useAuthStore = defineStore('auth', () => {
     router.push('/login')
   }
 
+  // Listener para manejar token expirado
+  function setupTokenExpirationListener() {
+    window.addEventListener('auth:token-expired', () => {
+      // Limpiar estado sin mostrar toast (ya que es automático)
+      user.value = null
+      token.value = null
+      error.value = 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.'
+      
+      // Redirigir al login
+      router.push('/login')
+    })
+  }
+
   // Inicializar al crear el store
   initializeFromStorage()
+  setupTokenExpirationListener()
 
   return {
     // Estado
