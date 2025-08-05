@@ -94,10 +94,9 @@ export interface IOnboardingPreferences {
 export interface IOnboarding {
   _id?: string
   user: string // ObjectId como string
-  business: string // ObjectId como string
-  userProfile: IUserProfile
-  businessContext: IBusinessContext
-  preferences: IOnboardingPreferences
+  userProfile?: IUserProfile
+  businessContext?: IBusinessContext
+  preferences?: IOnboardingPreferences
   completionPercentage: number
   startedAt: string // ISO date string
   completedAt?: string // ISO date string
@@ -108,7 +107,6 @@ export interface IOnboarding {
 
 // DTOs para las requests del API
 export interface CreateOnboardingRequest {
-  businessId: string
   userProfile: IUserProfile
   businessContext: IBusinessContext
   preferences?: Partial<IOnboardingPreferences>
