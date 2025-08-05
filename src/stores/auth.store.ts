@@ -81,10 +81,14 @@ export const useAuthStore = defineStore('auth', () => {
       
       toast.triggerToast(`Bienvenido, ${response.user.firstName} ${response.user.lastName}`, 'success')
       
-      // Redirigir al onboarding si el usuario está verificado y es su primer login
+      // Lógica de redirección inteligente
       if (response.user.isVerified) {
+        // TODO: Verificar si el usuario ya completó el onboarding
+        // Por ahora, redirigir a onboarding para nuevos usuarios
+        // En el futuro, verificar onboarding_completed y redirigir a dashboard si ya está completo
         router.push('/onboarding')
       } else {
+        toast.triggerToast('Por favor verifica tu cuenta para acceder a todas las funcionalidades', 'info')
         router.push('/')
       }
       
