@@ -28,8 +28,14 @@ export const useAuthStore = defineStore('auth', () => {
 
   // Inicializar estado desde localStorage
   function initializeFromStorage() {
+    // Primero limpiar tokens corruptos
+    authService.clearCorruptedTokens()
+    
     const storedToken = authService.getAccessToken()
     const storedUser = authService.getUserData()
+    
+    console.log('🔍 AUTH STORE DEBUG - Stored token:', storedToken)
+    console.log('🔍 AUTH STORE DEBUG - Stored user:', storedUser)
     
     if (storedToken && storedUser) {
       token.value = storedToken
