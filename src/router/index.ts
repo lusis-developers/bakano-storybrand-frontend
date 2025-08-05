@@ -28,17 +28,17 @@ const router = createRouter({
       component: () => import('../views/VerifyView.vue'),
     },
     {
-    path: '/onboarding',
-    name: 'onboarding',
-    component: () => import('../views/OnboardingView.vue'),
-    meta: { requiresAuth: true, requiresVerified: true }
-  },
-  {
-     path: '/dashboard',
-     name: 'dashboard',
-     component: () => import('../views/DashboardView.vue'),
-     meta: { requiresAuth: true, requiresVerified: true }
-   }
+      path: '/onboarding',
+      name: 'onboarding',
+      component: () => import('../views/OnboardingView.vue'),
+      meta: { requiresAuth: true, requiresVerified: true },
+    },
+    {
+      path: '/dashboard',
+      name: 'dashboard',
+      component: () => import('../views/DashboardView.vue'),
+      meta: { requiresAuth: true, requiresVerified: true },
+    },
   ],
 })
 
