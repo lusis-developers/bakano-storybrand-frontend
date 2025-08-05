@@ -49,13 +49,20 @@ class OnboardingService extends httpBase {
     preferences?: Partial<IOnboardingPreferences>
   }): Promise<OnboardingResponse> {
     try {
+      // Debug: verificar token antes de hacer la petición
+      const token = localStorage.getItem('access_token')
+      console.log('🔍 ONBOARDING DEBUG - Token from localStorage:', token)
+      console.log('🔍 ONBOARDING DEBUG - Token length:', token?.length)
+      console.log('🔍 ONBOARDING DEBUG - Token starts with Bearer:', token?.startsWith('Bearer'))
+      
       const response: AxiosResponse<OnboardingResponse> = await this.post(
         this.onboardingEndpoint,
         data,
       )
       return response.data
     } catch (error) {
-      console.error('Error creating onboarding:', error)
+      console.error('❌ Error creating onboarding:', error)
+      console.error('❌ Error details:', JSON.stringify(error, null, 2))
       throw this.handleError(error)
     }
   }
