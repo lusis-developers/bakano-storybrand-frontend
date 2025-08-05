@@ -6,6 +6,9 @@ import type {
   OnboardingListResponse,
   CompleteStepResponse,
   OnboardingStep,
+  IUserProfile,
+  IBusinessContext,
+  IOnboardingPreferences,
 } from '../types/onboarding.types'
 import httpBase from './httpBase'
 import type { AxiosResponse } from 'axios'
@@ -13,16 +16,38 @@ import type { AxiosResponse } from 'axios'
 /**
  * Servicio para manejar todas las operaciones relacionadas con el onboarding
  * Implementa el patrón Repository para abstraer las llamadas HTTP
+ * Refactorizado para trabajar con la API basada en userId del backend
  */
 class OnboardingService extends httpBase {
-  private readonly onboardingEndpoint = '/onboarding'
+  private readonly onboardingEndpoint = 'onboarding'
+
+  /**
+   * Inicializar el proceso de onboarding para el usuario autenticado
+   * @returns Promise con la respuesta del onboarding inicializado
+   */
+  async initializeOnboarding(): Promise<OnboardingResponse> {
+    try {
+      const response: AxiosResponse<OnboardingResponse> = await this.post(
+        `${this.onboardingEndpoint}/initialize`,
+        {},
+      )
+      return response.data
+    } catch (error) {
+      console.error('Error initializing onboarding:', error)
+      throw this.handleError(error)
+    }
+  }
 
   /**
    * Crear un nuevo proceso de onboarding
-   * @param data - Datos para crear el onboarding
+   * @param data - Datos para crear el onboarding (sin businessId)
    * @returns Promise con la respuesta del onboarding creado
    */
-  async createOnboarding(data: CreateOnboardingRequest): Promise<OnboardingResponse> {
+  async createOnboarding(data: {
+    userProfile: IUserProfile
+    businessContext: IBusinessContext
+    preferences?: Partial<IOnboardingPreferences>
+  }): Promise<OnboardingResponse> {
     try {
       const response: AxiosResponse<OnboardingResponse> = await this.post(
         this.onboardingEndpoint,
@@ -36,14 +61,13 @@ class OnboardingService extends httpBase {
   }
 
   /**
-   * Obtener información del onboarding para un negocio específico
-   * @param businessId - ID del negocio
+   * Obtener información del onboarding del usuario autenticado
    * @returns Promise con los datos del onboarding
    */
-  async getOnboarding(businessId: string): Promise<OnboardingResponse> {
+  async getOnboarding(): Promise<OnboardingResponse> {
     try {
       const response: AxiosResponse<OnboardingResponse> = await this.get(
-        `${this.onboardingEndpoint}/${businessId}`,
+        this.onboardingEndpoint,
       )
       return response.data
     } catch (error) {
@@ -53,18 +77,16 @@ class OnboardingService extends httpBase {
   }
 
   /**
-   * Actualizar información del onboarding
-   * @param businessId - ID del negocio
+   * Actualizar información del onboarding del usuario autenticado
    * @param data - Datos a actualizar
    * @returns Promise con la respuesta actualizada
    */
   async updateOnboarding(
-    businessId: string,
     data: UpdateOnboardingRequest,
   ): Promise<OnboardingResponse> {
     try {
       const response: AxiosResponse<OnboardingResponse> = await this.put(
-        `${this.onboardingEndpoint}/${businessId}`,
+        this.onboardingEndpoint,
         data,
       )
       return response.data
@@ -74,32 +96,17 @@ class OnboardingService extends httpBase {
     }
   }
 
-  /**
-   * Obtener todos los onboardings del usuario autenticado
-   * @returns Promise con la lista de onboardings
-   */
-  async getUserOnboardings(): Promise<OnboardingListResponse> {
-    try {
-      const response: AxiosResponse<OnboardingListResponse> = await this.get(
-        `${this.onboardingEndpoint}/user/all`,
-      )
-      return response.data
-    } catch (error) {
-      console.error('Error fetching user onboardings:', error)
-      throw this.handleError(error)
-    }
-  }
+  // Método removido: getUserOnboardings ya que el backend maneja un onboarding por usuario
 
   /**
    * Marcar un paso del onboarding como completado
-   * @param businessId - ID del negocio
    * @param data - Datos del paso a completar
    * @returns Promise con la respuesta de completación
    */
-  async completeStep(businessId: string, data: CompleteStepRequest): Promise<CompleteStepResponse> {
+  async completeStep(data: CompleteStepRequest): Promise<CompleteStepResponse> {
     try {
       const response: AxiosResponse<CompleteStepResponse> = await this.post(
-        `${this.onboardingEndpoint}/${businessId}/complete-step`,
+        `${this.onboardingEndpoint}/complete-step`,
         data,
       )
       return response.data
@@ -110,14 +117,13 @@ class OnboardingService extends httpBase {
   }
 
   /**
-   * Eliminar un onboarding (reiniciar proceso)
-   * @param businessId - ID del negocio
+   * Eliminar un onboarding (reiniciar proceso) del usuario autenticado
    * @returns Promise con confirmación de eliminación
    */
-  async deleteOnboarding(businessId: string): Promise<{ message: string }> {
+  async deleteOnboarding(): Promise<{ message: string }> {
     try {
       const response: AxiosResponse<{ message: string }> = await this.delete(
-        `${this.onboardingEndpoint}/${businessId}`,
+        this.onboardingEndpoint,
       )
       return response.data
     } catch (error) {
@@ -128,51 +134,44 @@ class OnboardingService extends httpBase {
 
   /**
    * Actualizar solo el perfil de usuario
-   * @param businessId - ID del negocio
    * @param userProfile - Datos del perfil de usuario
    * @returns Promise con la respuesta actualizada
    */
   async updateUserProfile(
-    businessId: string,
-    userProfile: Partial<CreateOnboardingRequest['userProfile']>,
+    userProfile: Partial<IUserProfile>,
   ): Promise<OnboardingResponse> {
-    return this.updateOnboarding(businessId, { userProfile })
+    return this.updateOnboarding({ userProfile })
   }
 
   /**
    * Actualizar solo el contexto del negocio
-   * @param businessId - ID del negocio
    * @param businessContext - Datos del contexto del negocio
    * @returns Promise con la respuesta actualizada
    */
   async updateBusinessContext(
-    businessId: string,
-    businessContext: Partial<CreateOnboardingRequest['businessContext']>,
+    businessContext: Partial<IBusinessContext>,
   ): Promise<OnboardingResponse> {
-    return this.updateOnboarding(businessId, { businessContext })
+    return this.updateOnboarding({ businessContext })
   }
 
   /**
    * Actualizar solo las preferencias
-   * @param businessId - ID del negocio
    * @param preferences - Datos de las preferencias
    * @returns Promise con la respuesta actualizada
    */
   async updatePreferences(
-    businessId: string,
-    preferences: Partial<CreateOnboardingRequest['preferences']>,
+    preferences: Partial<IOnboardingPreferences>,
   ): Promise<OnboardingResponse> {
-    return this.updateOnboarding(businessId, { preferences })
+    return this.updateOnboarding({ preferences })
   }
 
   /**
-   * Verificar si un onboarding existe para un negocio
-   * @param businessId - ID del negocio
+   * Verificar si un onboarding existe para el usuario autenticado
    * @returns Promise con boolean indicando si existe
    */
-  async checkOnboardingExists(businessId: string): Promise<boolean> {
+  async checkOnboardingExists(): Promise<boolean> {
     try {
-      await this.getOnboarding(businessId)
+      await this.getOnboarding()
       return true
     } catch (error: any) {
       if (error.status === 404) {
@@ -184,12 +183,11 @@ class OnboardingService extends httpBase {
 
   /**
    * Obtener el siguiente paso del onboarding
-   * @param businessId - ID del negocio
    * @returns Promise con el siguiente paso o null si está completo
    */
-  async getNextStep(businessId: string): Promise<OnboardingStep | null> {
+  async getNextStep(): Promise<OnboardingStep | null> {
     try {
-      const response = await this.getOnboarding(businessId)
+      const response = await this.getOnboarding()
       return response.nextStep as OnboardingStep | null
     } catch (error) {
       console.error('Error getting next step:', error)
@@ -199,12 +197,11 @@ class OnboardingService extends httpBase {
 
   /**
    * Verificar si el onboarding está completo
-   * @param businessId - ID del negocio
    * @returns Promise con boolean indicando si está completo
    */
-  async isOnboardingComplete(businessId: string): Promise<boolean> {
+  async isOnboardingComplete(): Promise<boolean> {
     try {
-      const response = await this.getOnboarding(businessId)
+      const response = await this.getOnboarding()
       return response.isComplete ?? false
     } catch (error) {
       console.error('Error checking completion status:', error)
@@ -214,12 +211,11 @@ class OnboardingService extends httpBase {
 
   /**
    * Obtener el porcentaje de completación
-   * @param businessId - ID del negocio
    * @returns Promise con el porcentaje de completación
    */
-  async getCompletionPercentage(businessId: string): Promise<number> {
+  async getCompletionPercentage(): Promise<number> {
     try {
-      const response = await this.getOnboarding(businessId)
+      const response = await this.getOnboarding()
       return response.onboarding.completionPercentage
     } catch (error) {
       console.error('Error getting completion percentage:', error)
@@ -256,9 +252,13 @@ class OnboardingService extends httpBase {
    * @param data - Datos a validar
    * @returns boolean indicando si los datos son válidos
    */
-  private validateOnboardingData(data: CreateOnboardingRequest): boolean {
+  private validateOnboardingData(data: {
+    userProfile: IUserProfile
+    businessContext: IBusinessContext
+    preferences?: Partial<IOnboardingPreferences>
+  }): boolean {
     // Validaciones básicas
-    if (!data.businessId || !data.userProfile || !data.businessContext) {
+    if (!data.userProfile || !data.businessContext) {
       return false
     }
 
@@ -279,7 +279,11 @@ class OnboardingService extends httpBase {
    * @param data - Datos del onboarding
    * @returns Promise con la respuesta del onboarding creado
    */
-  async createOnboardingWithValidation(data: CreateOnboardingRequest): Promise<OnboardingResponse> {
+  async createOnboardingWithValidation(data: {
+    userProfile: IUserProfile
+    businessContext: IBusinessContext
+    preferences?: Partial<IOnboardingPreferences>
+  }): Promise<OnboardingResponse> {
     if (!this.validateOnboardingData(data)) {
       throw new Error('Datos de onboarding inválidos')
     }
