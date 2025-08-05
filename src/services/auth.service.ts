@@ -188,16 +188,38 @@ class AuthService extends APIBase {
    * Cierra sesión del usuario (limpia tokens locales)
    */
   logout(): void {
+    console.log('🔍 DEBUG - Clearing localStorage tokens')
     localStorage.removeItem('access_token')
     localStorage.removeItem('refresh_token')
     localStorage.removeItem('user_data')
   }
 
   /**
+   * Limpia tokens corruptos del localStorage
+   */
+  clearCorruptedTokens(): void {
+    const token = localStorage.getItem('access_token')
+    console.log('🔍 DEBUG - Checking for corrupted tokens:', token)
+    
+    if (token && (token.includes('undefined') || token.includes('null') || token.length < 10)) {
+      console.log('❌ DEBUG - Found corrupted token, clearing localStorage')
+      this.logout()
+    }
+  }
+
+  /**
    * Guarda los datos de autenticación en localStorage
    */
   saveAuthData(authResponse: AuthResponse): void {
-    localStorage.setItem('access_token', authResponse.token)
+    // El backend devuelve el token con 'Bearer ' incluido, necesitamos extraer solo el token
+    const cleanToken = authResponse.token.startsWith('Bearer ') 
+      ? authResponse.token.substring(7) 
+      : authResponse.token
+    
+    console.log('🔍 DEBUG - Token received from backend:', authResponse.token)
+    console.log('🔍 DEBUG - Clean token to save:', cleanToken)
+    
+    localStorage.setItem('access_token', cleanToken)
     if (authResponse.refreshToken) {
       localStorage.setItem('refresh_token', authResponse.refreshToken)
     }
