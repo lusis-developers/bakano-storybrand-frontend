@@ -23,8 +23,7 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   // Onboarding actual
   const currentOnboarding = ref<IOnboarding | null>(null)
   
-  // Lista de todos los onboardings del usuario
-  const userOnboardings = ref<IOnboarding[]>([])
+  // Removido: userOnboardings ya que el backend maneja un onboarding por usuario
   
   // Estados de carga
   const loading = ref<OnboardingLoadingState>({
@@ -67,14 +66,14 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   // Verificar si el onboarding está completo
   const isComplete = computed(() => {
     if (!currentOnboarding.value) return false
-    return currentOnboarding.value.preferences.onboardingCompleted
+    return currentOnboarding.value.preferences?.onboardingCompleted ?? false
   })
   
   // Obtener el siguiente paso
   const nextStep = computed((): OnboardingStep | null => {
     if (!currentOnboarding.value) return 'user_profile'
     
-    const completedSteps = currentOnboarding.value.preferences.completedSteps || []
+    const completedSteps = currentOnboarding.value.preferences?.completedSteps || []
     const allSteps: OnboardingStep[] = ['user_profile', 'business_context', 'preferences', 'first_content']
     
     for (const step of allSteps) {
@@ -90,13 +89,13 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   const isStepCompleted = computed(() => {
     return (step: OnboardingStep): boolean => {
       if (!currentOnboarding.value) return false
-      return currentOnboarding.value.preferences.completedSteps?.includes(step) ?? false
+      return currentOnboarding.value.preferences?.completedSteps?.includes(step) ?? false
     }
   })
   
   // Obtener pasos completados
   const completedSteps = computed(() => {
-    return currentOnboarding.value?.preferences.completedSteps ?? []
+    return currentOnboarding.value?.preferences?.completedSteps ?? []
   })
   
   // Verificar si existe un onboarding
@@ -144,14 +143,36 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   }
   
   /**
-   * Obtener onboarding por ID de negocio
+   * Inicializar onboarding para el usuario autenticado
    */
-  const fetchOnboarding = async (businessId: string): Promise<void> => {
+  const initializeOnboarding = async (): Promise<void> => {
+    loading.value.creating = true
+    clearError()
+    
+    try {
+      const response = await onboardingService.initializeOnboarding()
+      currentOnboarding.value = response.onboarding
+      currentStep.value = (response.nextStep as OnboardingStep) || 'user_profile'
+    } catch (err: any) {
+      setError({
+        message: err.message || 'Error al inicializar el onboarding',
+        code: err.code,
+      })
+      throw err
+    } finally {
+      loading.value.creating = false
+    }
+  }
+
+  /**
+   * Obtener onboarding del usuario autenticado
+   */
+  const fetchOnboarding = async (): Promise<void> => {
     loading.value.fetching = true
     clearError()
     
     try {
-      const response = await onboardingService.getOnboarding(businessId)
+      const response = await onboardingService.getOnboarding()
       currentOnboarding.value = response.onboarding
       currentStep.value = (response.nextStep as OnboardingStep) || 'user_profile'
     } catch (err: any) {
@@ -169,17 +190,16 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   }
   
   /**
-   * Actualizar onboarding
+   * Actualizar onboarding del usuario autenticado
    */
   const updateOnboarding = async (
-    businessId: string,
     data: UpdateOnboardingRequest
   ): Promise<void> => {
     loading.value.updating = true
     clearError()
     
     try {
-      const response = await onboardingService.updateOnboarding(businessId, data)
+      const response = await onboardingService.updateOnboarding(data)
       currentOnboarding.value = response.onboarding
       currentStep.value = (response.nextStep as OnboardingStep) || currentStep.value
     } catch (err: any) {
@@ -197,16 +217,34 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   /**
    * Completar un paso específico
    */
-  const completeStep = async (businessId: string, step: OnboardingStep): Promise<void> => {
+  const completeStep = async (step: OnboardingStep): Promise<void> => {
     loading.value.completing = true
     clearError()
     
     try {
-      const response = await onboardingService.completeStep(businessId, { step })
+      const response = await onboardingService.completeStep({ step })
       
       // Actualizar el onboarding actual
       if (currentOnboarding.value) {
         currentOnboarding.value.completionPercentage = response.completionPercentage
+        
+        // Inicializar preferences si no existe
+        if (!currentOnboarding.value.preferences) {
+          currentOnboarding.value.preferences = {
+            communicationFrequency: 'weekly',
+            preferredContentTypes: [],
+            aiProviderPreference: 'no_preference',
+            notificationSettings: {
+              email: true,
+              inApp: true,
+              contentGenerated: true,
+              weeklyReports: true,
+              systemUpdates: false,
+            },
+            onboardingCompleted: false,
+            completedSteps: [],
+          }
+        }
         
         // Agregar el paso a los completados si no está ya
         const completedSteps = currentOnboarding.value.preferences.completedSteps || []
@@ -234,47 +272,21 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     }
   }
   
-  /**
-   * Obtener todos los onboardings del usuario
-   */
-  const fetchUserOnboardings = async (): Promise<void> => {
-    loading.value.fetching = true
-    clearError()
-    
-    try {
-      const response = await onboardingService.getUserOnboardings()
-      userOnboardings.value = response.onboardings
-    } catch (err: any) {
-      setError({
-        message: err.message || 'Error al obtener los onboardings',
-        code: err.code,
-      })
-      throw err
-    } finally {
-      loading.value.fetching = false
-    }
-  }
+  // Método removido: fetchUserOnboardings ya que el backend maneja un onboarding por usuario
   
   /**
-   * Eliminar onboarding
+   * Eliminar onboarding del usuario autenticado
    */
-  const deleteOnboarding = async (businessId: string): Promise<void> => {
+  const deleteOnboarding = async (): Promise<void> => {
     loading.value.deleting = true
     clearError()
     
     try {
-      await onboardingService.deleteOnboarding(businessId)
+      await onboardingService.deleteOnboarding()
       
       // Limpiar el estado local
-      if (currentOnboarding.value?.business === businessId) {
-        currentOnboarding.value = null
-        currentStep.value = 'user_profile'
-      }
-      
-      // Remover de la lista de onboardings del usuario
-      userOnboardings.value = userOnboardings.value.filter(
-        onboarding => onboarding.business !== businessId
-      )
+      currentOnboarding.value = null
+      currentStep.value = 'user_profile'
     } catch (err: any) {
       setError({
         message: err.message || 'Error al eliminar el onboarding',
@@ -290,39 +302,36 @@ export const useOnboardingStore = defineStore('onboarding', () => {
    * Actualizar solo el perfil de usuario
    */
   const updateUserProfile = async (
-    businessId: string,
     userProfile: Partial<IUserProfile>
   ): Promise<void> => {
     // Guardar en datos temporales
     formData.value.userProfile = { ...formData.value.userProfile, ...userProfile }
     
-    return updateOnboarding(businessId, { userProfile })
+    return updateOnboarding({ userProfile })
   }
-  
+
   /**
    * Actualizar solo el contexto del negocio
    */
   const updateBusinessContext = async (
-    businessId: string,
     businessContext: Partial<IBusinessContext>
   ): Promise<void> => {
     // Guardar en datos temporales
     formData.value.businessContext = { ...formData.value.businessContext, ...businessContext }
     
-    return updateOnboarding(businessId, { businessContext })
+    return updateOnboarding({ businessContext })
   }
-  
+
   /**
    * Actualizar solo las preferencias
    */
   const updatePreferences = async (
-    businessId: string,
     preferences: Partial<IOnboardingPreferences>
   ): Promise<void> => {
     // Guardar en datos temporales
     formData.value.preferences = { ...formData.value.preferences, ...preferences }
     
-    return updateOnboarding(businessId, { preferences })
+    return updateOnboarding({ preferences })
   }
   
   /**
@@ -373,7 +382,6 @@ export const useOnboardingStore = defineStore('onboarding', () => {
    */
   const resetStore = (): void => {
     currentOnboarding.value = null
-    userOnboardings.value = []
     currentStep.value = 'user_profile'
     formData.value = {
       userProfile: {},
@@ -391,11 +399,11 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   }
   
   /**
-   * Verificar si existe un onboarding para un negocio
+   * Verificar si existe un onboarding para el usuario autenticado
    */
-  const checkOnboardingExists = async (businessId: string): Promise<boolean> => {
+  const checkOnboardingExists = async (): Promise<boolean> => {
     try {
-      return await onboardingService.checkOnboardingExists(businessId)
+      return await onboardingService.checkOnboardingExists()
     } catch (err) {
       return false
     }
@@ -405,7 +413,6 @@ export const useOnboardingStore = defineStore('onboarding', () => {
   return {
     // Estado
     currentOnboarding,
-    userOnboardings,
     loading,
     error,
     currentStep,
@@ -424,10 +431,10 @@ export const useOnboardingStore = defineStore('onboarding', () => {
     clearError,
     setError,
     createOnboarding,
+    initializeOnboarding,
     fetchOnboarding,
     updateOnboarding,
     completeStep,
-    fetchUserOnboardings,
     deleteOnboarding,
     updateUserProfile,
     updateBusinessContext,
