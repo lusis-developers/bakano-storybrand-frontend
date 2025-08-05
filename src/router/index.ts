@@ -27,6 +27,18 @@ const router = createRouter({
       name: 'verify',
       component: () => import('../views/VerifyView.vue'),
     },
+    {
+    path: '/onboarding',
+    name: 'onboarding',
+    component: () => import('../views/OnboardingView.vue'),
+    meta: { requiresAuth: true, requiresVerified: true }
+  },
+  {
+     path: '/dashboard',
+     name: 'dashboard',
+     component: () => import('../views/DashboardView.vue'),
+     meta: { requiresAuth: true, requiresVerified: true }
+   }
   ],
 })
 
@@ -44,6 +56,16 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth && !authStore.isAuthenticated) {
     next('/login')
     return
+  }
+
+  // Rutas que requieren verificación
+  if (to.meta.requiresVerified && authStore.isAuthenticated && !authStore.isVerified) {
+    // Si el usuario está intentando acceder al onboarding o dashboard sin verificar,
+    // redirigir al home solo si no está en una ruta de verificación
+    if (to.name !== 'verify') {
+      next('/')
+      return
+    }
   }
 
   next()
