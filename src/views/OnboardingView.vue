@@ -13,7 +13,7 @@ import {
   STEP_TITLES,
   TOTAL_STEPS
 } from '@/components/onboarding/steps'
-import type { IUserProfile, IBusinessContext, IOnboardingPreferences, CreateOnboardingRequest, UpdateOnboardingRequest } from '@/types/onboarding.types'
+import type { IUserProfile, IBusinessContext, IOnboardingPreferences, CreateOnboardingRequest, UpdateOnboardingRequest, OnboardingStep } from '@/types/onboarding.types'
 
 const router = useRouter()
 const authStore = useAuthStore()
@@ -109,12 +109,14 @@ function prevStep() {
 async function submitOnboarding() {
   isSubmitting.value = true
   try {
+    const allSteps: OnboardingStep[] = ['user_profile', 'business_context', 'preferences', 'first_content'];
     const finalPayload = {
       userProfile: formData.value.userProfile,
       businessContext: formData.value.businessContext,
       preferences: {
         ...formData.value.preferences,
         onboardingCompleted: true,
+        completedSteps: allSteps,
       },
     }
 
