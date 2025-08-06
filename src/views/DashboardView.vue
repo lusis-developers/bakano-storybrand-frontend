@@ -18,12 +18,12 @@ onMounted(async () => {
     router.push('/login')
     return
   }
-  
+
   if (!authStore.isVerified) {
     router.push('/')
     return
   }
-  
+
   // Simular carga de datos del dashboard
   setTimeout(() => {
     isLoading.value = false
@@ -38,26 +38,6 @@ function logout() {
 
 <template>
   <div class="dashboard-container">
-    <!-- Header -->
-    <header class="dashboard-header">
-      <div class="container">
-        <div class="header-content">
-          <div class="brand">
-            <h1>StoryBrand Dashboard</h1>
-          </div>
-          
-          <div class="user-menu">
-            <div class="user-info">
-              <span class="user-name">{{ authStore.userName }}</span>
-              <span class="user-email">{{ authStore.userEmail }}</span>
-            </div>
-            <button @click="logout" class="btn btn-outline">
-              Cerrar Sesión
-            </button>
-          </div>
-        </div>
-      </div>
-    </header>
 
     <!-- Main Content -->
     <main class="dashboard-main">
@@ -80,6 +60,14 @@ function logout() {
                   <div class="action-content">
                     <h3>Crear Contenido</h3>
                     <p>Genera contenido para tu marca</p>
+                  </div>
+                </button>
+                
+                <button @click="router.push('/business')" class="action-btn">
+                  <div class="action-icon">🏢</div>
+                  <div class="action-content">
+                    <h3>Gestionar Negocios</h3>
+                    <p>Administra tus negocios</p>
                   </div>
                 </button>
                 
@@ -165,34 +153,16 @@ function logout() {
 <style lang="scss" scoped>
 .dashboard-container {
   min-height: 100vh;
-  background: #f8fafc;
+  background: $BAKANO-LIGHT;
 }
 
 .container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 1rem;
-  
+
   @media (max-width: 768px) {
     padding: 0 0.75rem;
-  }
-}
-
-// Header
-.dashboard-header {
-  background: white;
-  border-bottom: 1px solid #e2e8f0;
-  padding: 1rem 0;
-}
-
-.header-content {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  
-  @media (max-width: 768px) {
-    flex-direction: column;
-    gap: 1rem;
   }
 }
 
@@ -201,7 +171,7 @@ function logout() {
   font-weight: 700;
   color: #1e293b;
   margin: 0;
-  
+
   @media (max-width: 768px) {
     font-size: 1.25rem;
   }
@@ -211,7 +181,7 @@ function logout() {
   display: flex;
   align-items: center;
   gap: 1rem;
-  
+
   @media (max-width: 768px) {
     flex-direction: column;
     gap: 0.5rem;
@@ -222,7 +192,7 @@ function logout() {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
-  
+
   @media (max-width: 768px) {
     align-items: center;
     text-align: center;
@@ -243,7 +213,7 @@ function logout() {
 // Main Content
 .dashboard-main {
   padding: 2rem 0;
-  
+
   @media (max-width: 768px) {
     padding: 1.5rem 0;
   }
@@ -256,7 +226,7 @@ function logout() {
   align-items: center;
   justify-content: center;
   min-height: 400px;
-  
+
   p {
     margin-top: 1rem;
     color: #64748b;
@@ -274,8 +244,13 @@ function logout() {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 // Dashboard Content
@@ -292,27 +267,27 @@ function logout() {
     color: white;
     padding: 2rem;
     border-radius: 16px;
-    
+
     @media (max-width: 768px) {
       padding: 1.5rem;
       border-radius: 12px;
     }
-    
+
     h2 {
       font-size: 2rem;
       font-weight: 700;
       margin-bottom: 0.5rem;
-      
+
       @media (max-width: 768px) {
         font-size: 1.5rem;
       }
     }
-    
+
     p {
       font-size: 1.125rem;
       opacity: 0.9;
       margin-bottom: 2rem;
-      
+
       @media (max-width: 768px) {
         font-size: 1rem;
         margin-bottom: 1.5rem;
@@ -325,7 +300,7 @@ function logout() {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
-  
+
   @media (max-width: 768px) {
     grid-template-columns: 1fr;
   }
@@ -343,17 +318,17 @@ function logout() {
   text-align: left;
   cursor: pointer;
   transition: all 0.2s ease;
-  
+
   &:hover {
     background: rgba(255, 255, 255, 0.2);
     transform: translateY(-2px);
   }
-  
+
   &.primary {
     background: rgba(255, 255, 255, 0.2);
     border-color: rgba(255, 255, 255, 0.3);
   }
-  
+
   @media (max-width: 768px) {
     padding: 0.75rem;
   }
@@ -361,7 +336,7 @@ function logout() {
 
 .action-icon {
   font-size: 1.5rem;
-  
+
   @media (max-width: 768px) {
     font-size: 1.25rem;
   }
@@ -372,17 +347,17 @@ function logout() {
     font-size: 1rem;
     font-weight: 600;
     margin-bottom: 0.25rem;
-    
+
     @media (max-width: 768px) {
       font-size: 0.875rem;
     }
   }
-  
+
   p {
     font-size: 0.875rem;
     opacity: 0.8;
     margin: 0;
-    
+
     @media (max-width: 768px) {
       font-size: 0.75rem;
     }
@@ -396,7 +371,7 @@ function logout() {
     font-weight: 700;
     color: #1e293b;
     margin-bottom: 1rem;
-    
+
     @media (max-width: 768px) {
       font-size: 1.25rem;
     }
@@ -407,11 +382,11 @@ function logout() {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
   gap: 1rem;
-  
+
   @media (max-width: 768px) {
     grid-template-columns: repeat(2, 1fr);
   }
-  
+
   @media (max-width: 480px) {
     grid-template-columns: 1fr;
   }
@@ -425,7 +400,7 @@ function logout() {
   display: flex;
   align-items: center;
   gap: 1rem;
-  
+
   @media (max-width: 768px) {
     padding: 1rem;
   }
@@ -433,7 +408,7 @@ function logout() {
 
 .stat-icon {
   font-size: 2rem;
-  
+
   @media (max-width: 768px) {
     font-size: 1.5rem;
   }
@@ -445,12 +420,12 @@ function logout() {
     font-weight: 700;
     color: #1e293b;
     margin-bottom: 0.25rem;
-    
+
     @media (max-width: 768px) {
       font-size: 1.25rem;
     }
   }
-  
+
   p {
     font-size: 0.875rem;
     color: #64748b;
@@ -465,7 +440,7 @@ function logout() {
     font-weight: 700;
     color: #1e293b;
     margin-bottom: 1rem;
-    
+
     @media (max-width: 768px) {
       font-size: 1.25rem;
     }
@@ -477,7 +452,7 @@ function logout() {
   border-radius: 12px;
   border: 1px solid #e2e8f0;
   padding: 2rem;
-  
+
   @media (max-width: 768px) {
     padding: 1.5rem;
   }
@@ -485,31 +460,31 @@ function logout() {
 
 .empty-state {
   text-align: center;
-  
+
   .empty-icon {
     font-size: 3rem;
     margin-bottom: 1rem;
-    
+
     @media (max-width: 768px) {
       font-size: 2.5rem;
     }
   }
-  
+
   h3 {
     font-size: 1.25rem;
     font-weight: 600;
     color: #1e293b;
     margin-bottom: 0.5rem;
-    
+
     @media (max-width: 768px) {
       font-size: 1.125rem;
     }
   }
-  
+
   p {
     color: #64748b;
     margin-bottom: 1.5rem;
-    
+
     @media (max-width: 768px) {
       font-size: 0.875rem;
     }
@@ -525,7 +500,7 @@ function logout() {
   border: none;
   cursor: pointer;
   transition: all 0.2s ease;
-  
+
   @media (max-width: 480px) {
     padding: 0.625rem 1.25rem;
     font-size: 0.75rem;
@@ -535,7 +510,7 @@ function logout() {
 .btn-primary {
   background: linear-gradient(135deg, #667eea, #764ba2);
   color: white;
-  
+
   &:hover {
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
@@ -546,7 +521,7 @@ function logout() {
   background: transparent;
   color: #667eea;
   border: 1px solid #667eea;
-  
+
   &:hover {
     background: #667eea;
     color: white;
