@@ -39,6 +39,12 @@ const router = createRouter({
       component: () => import('../views/DashboardView.vue'),
       meta: { requiresAuth: true, requiresVerified: true },
     },
+    {
+      path: '/business',
+      name: 'business-management',
+      component: () => import('../views/BusinessManagementView.vue'),
+      meta: { requiresAuth: true, requiresVerified: true },
+    },
   ],
 })
 
