@@ -54,11 +54,23 @@ export interface IBusinessResponse {
   data?: IBusiness
 }
 
+// Interface para los datos de la respuesta de lista de negocios
+export interface IBusinessListData {
+  businesses: IBusiness[]
+  pagination: {
+    currentPage: number
+    totalPages: number
+    totalBusinesses: number
+    hasNextPage: boolean
+    hasPrevPage: boolean
+  }
+}
+
 // Interface para la respuesta de lista de negocios
 export interface IBusinessListResponse {
   success: boolean
   message: string
-  data?: IBusiness[]
+  data?: IBusinessListData
 }
 
 // Interface para el estado de loading específico por operación
