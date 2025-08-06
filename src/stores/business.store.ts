@@ -6,7 +6,7 @@ import type {
   ICreateBusinessRequest,
   IUpdateBusinessRequest,
   IBusinessLoadingState,
-  IBusinessErrorState
+  IBusinessErrorState,
 } from '@/types/business.types'
 
 export const useBusinessStore = defineStore('business', () => {
@@ -17,22 +17,19 @@ export const useBusinessStore = defineStore('business', () => {
     fetching: false,
     creating: false,
     updating: false,
-    deleting: false
+    deleting: false,
   })
   const errors = ref<IBusinessErrorState>({
     fetch: null,
     create: null,
     update: null,
-    delete: null
+    delete: null,
   })
 
+  const activeBusinesses = computed(() => businesses.value.filter((business) => business.isActive))
 
-  const activeBusinesses = computed(() => 
-    businesses.value.filter(business => business.isActive)
-  )
-
-  const inactiveBusinesses = computed(() => 
-    businesses.value.filter(business => !business.isActive)
+  const inactiveBusinesses = computed(() =>
+    businesses.value.filter((business) => !business.isActive),
   )
 
   const businessCount = computed(() => businesses.value.length)
@@ -41,13 +38,9 @@ export const useBusinessStore = defineStore('business', () => {
 
   const hasBusinesses = computed(() => businesses.value.length > 0)
 
-  const isLoading = computed(() => 
-    Object.values(loading.value).some(state => state)
-  )
+  const isLoading = computed(() => Object.values(loading.value).some((state) => state))
 
-  const hasErrors = computed(() => 
-    Object.values(errors.value).some(error => error !== null)
-  )
+  const hasErrors = computed(() => Object.values(errors.value).some((error) => error !== null))
 
   // Función para limpiar errores
   const clearErrors = () => {
@@ -55,7 +48,7 @@ export const useBusinessStore = defineStore('business', () => {
       fetch: null,
       create: null,
       update: null,
-      delete: null
+      delete: null,
     }
   }
 
@@ -71,8 +64,8 @@ export const useBusinessStore = defineStore('business', () => {
 
     try {
       const response = await businessService.getBusinesses()
-      if (response.success && response.data) {
-        businesses.value = response.data
+      if (response.success && response.data && response.data.businesses) {
+        businesses.value.splice(0, businesses.value.length, ...response.data.businesses)
       } else {
         throw new Error(response.message || 'Error al obtener los negocios')
       }
@@ -94,13 +87,13 @@ export const useBusinessStore = defineStore('business', () => {
       const response = await businessService.getBusinessById(businessId)
       if (response.success && response.data) {
         currentBusiness.value = response.data
-        
+
         // Actualizar en la lista si ya existe
-        const index = businesses.value.findIndex(b => b.id === businessId)
+        const index = businesses.value.findIndex((b) => b.id === businessId)
         if (index !== -1) {
           businesses.value[index] = response.data
         }
-        
+
         return response.data
       } else {
         throw new Error(response.message || 'Error al obtener el negocio')
@@ -116,7 +109,9 @@ export const useBusinessStore = defineStore('business', () => {
   }
 
   // Función para crear un nuevo negocio
-  const createBusiness = async (businessData: ICreateBusinessRequest): Promise<IBusiness | null> => {
+  const createBusiness = async (
+    businessData: ICreateBusinessRequest,
+  ): Promise<IBusiness | null> => {
     loading.value.creating = true
     errors.value.create = null
 
@@ -143,7 +138,7 @@ export const useBusinessStore = defineStore('business', () => {
   // Función para actualizar un negocio
   const updateBusiness = async (
     businessId: string,
-    updateData: IUpdateBusinessRequest
+    updateData: IUpdateBusinessRequest,
   ): Promise<IBusiness | null> => {
     loading.value.updating = true
     errors.value.update = null
@@ -152,16 +147,16 @@ export const useBusinessStore = defineStore('business', () => {
       const response = await businessService.updateBusiness(businessId, updateData)
       if (response.success && response.data) {
         // Actualizar en la lista
-        const index = businesses.value.findIndex(b => b.id === businessId)
+        const index = businesses.value.findIndex((b) => b.id === businessId)
         if (index !== -1) {
           businesses.value[index] = response.data
         }
-        
+
         // Actualizar el negocio actual si es el mismo
         if (currentBusiness.value?.id === businessId) {
           currentBusiness.value = response.data
         }
-        
+
         return response.data
       } else {
         throw new Error(response.message || 'Error al actualizar el negocio')
@@ -184,14 +179,17 @@ export const useBusinessStore = defineStore('business', () => {
     try {
       const response = await businessService.deleteBusiness(businessId)
       if (response.success) {
-        // Remover de la lista
-        businesses.value = businesses.value.filter(b => b.id !== businessId)
-        
+        // Remover de la lista local manteniendo la reactividad
+        const index = businesses.value.findIndex((b) => b.id === businessId)
+        if (index !== -1) {
+          businesses.value.splice(index, 1)
+        }
+
         // Limpiar el negocio actual si es el mismo
         if (currentBusiness.value?.id === businessId) {
           currentBusiness.value = null
         }
-        
+
         return true
       } else {
         throw new Error(response.message || 'Error al eliminar el negocio')
@@ -215,16 +213,16 @@ export const useBusinessStore = defineStore('business', () => {
       const response = await businessService.toggleBusinessStatus(businessId, isActive)
       if (response.success && response.data) {
         // Actualizar en la lista
-        const index = businesses.value.findIndex(b => b.id === businessId)
+        const index = businesses.value.findIndex((b) => b.id === businessId)
         if (index !== -1) {
           businesses.value[index] = response.data
         }
-        
+
         // Actualizar el negocio actual si es el mismo
         if (currentBusiness.value?.id === businessId) {
           currentBusiness.value = response.data
         }
-        
+
         return true
       } else {
         throw new Error(response.message || 'Error al cambiar el estado del negocio')
@@ -244,15 +242,16 @@ export const useBusinessStore = defineStore('business', () => {
     currentBusiness.value = business
   }
 
-  // Función para limpiar el estado
+  // Función para resetear el estado
   const resetState = () => {
-    businesses.value = []
+    // Limpiar el array manteniendo la reactividad
+    businesses.value.splice(0, businesses.value.length)
     currentBusiness.value = null
     loading.value = {
       fetching: false,
       creating: false,
       updating: false,
-      deleting: false
+      deleting: false,
     }
     clearErrors()
   }
@@ -260,11 +259,9 @@ export const useBusinessStore = defineStore('business', () => {
   // Función para buscar negocios por nombre
   const searchBusinessesByName = (searchTerm: string): IBusiness[] => {
     if (!searchTerm.trim()) return businesses.value
-    
+
     const term = searchTerm.toLowerCase().trim()
-    return businesses.value.filter(business => 
-      business.name.toLowerCase().includes(term)
-    )
+    return businesses.value.filter((business) => business.name.toLowerCase().includes(term))
   }
 
   return {
@@ -273,7 +270,7 @@ export const useBusinessStore = defineStore('business', () => {
     currentBusiness,
     loading,
     errors,
-    
+
     // Getters
     activeBusinesses,
     inactiveBusinesses,
@@ -282,7 +279,7 @@ export const useBusinessStore = defineStore('business', () => {
     hasBusinesses,
     isLoading,
     hasErrors,
-    
+
     // Acciones
     fetchBusinesses,
     fetchBusinessById,
@@ -294,6 +291,6 @@ export const useBusinessStore = defineStore('business', () => {
     resetState,
     searchBusinessesByName,
     clearErrors,
-    clearError
+    clearError,
   }
 })
