@@ -16,10 +16,10 @@ import ToastNotification from './components/shared/ToastNotification.vue';
 </template>
 
 <style lang="scss">
-
 .main-content {
   margin-top: 56px;
   min-height: 100vh;
+  background: $BAKANO-LIGHT;
 }
 </style>
 
