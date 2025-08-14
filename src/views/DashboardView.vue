@@ -1,16 +1,24 @@
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import { useOnboardingStore } from '@/stores/onboarding.store'
-import { useRouter } from 'vue-router'
+import { useBusinessStore } from '@/stores/business.store'
+import { useContentStore } from '@/stores/content.store'
+import { useToast } from '@/composables/useToast'
 
 // Composables
 const authStore = useAuthStore()
 const onboardingStore = useOnboardingStore()
+const businessStore = useBusinessStore()
+const contentStore = useContentStore()
+const { triggerToast } = useToast()
 const router = useRouter()
 
 // Estado local
 const isLoading = ref(true)
+const hasExistingContent = ref(false)
+const existingContentId = ref<string | null>(null)
 
 // Verificar autenticación al montar
 onMounted(async () => {
@@ -24,11 +32,57 @@ onMounted(async () => {
     return
   }
 
+  // Cargar negocios del usuario
+  try {
+    await businessStore.fetchBusinesses()
+    
+    // Verificar si ya existe contenido generado
+     if (businessStore.businesses && businessStore.businesses.length > 0) {
+       const businessId = businessStore.businesses[0].id
+       await contentStore.fetchContentByBusiness(businessId)
+       
+       if (contentStore.currentContent && contentStore.currentContent._id) {
+         hasExistingContent.value = true
+         existingContentId.value = contentStore.currentContent._id
+       }
+     }
+  } catch (error) {
+    console.error('Error al cargar datos:', error)
+  }
+
   // Simular carga de datos del dashboard
   setTimeout(() => {
     isLoading.value = false
   }, 1000)
 })
+
+/**
+ * Maneja la navegación al wizard de creación de contenido o a los resultados existentes
+ */
+function handleCreateContent() {
+  try {
+    // Verificar que el usuario tenga al menos un negocio
+    if (!businessStore.businesses || businessStore.businesses.length === 0) {
+      triggerToast('Primero debes crear un negocio antes de generar contenido', 'error')
+      router.push('/business')
+      return
+    }
+
+    const selectedBusiness = businessStore.businesses[0]
+     
+     // Si ya existe contenido, redirigir a los resultados
+     if (hasExistingContent.value && existingContentId.value) {
+       router.push(`/content/results/${existingContentId.value}`)
+     } else {
+       // Si no existe contenido, ir al wizard
+       router.push(`/content/wizard/${selectedBusiness.id}`)
+     }
+    
+  } catch (error: any) {
+    console.error('Error al navegar:', error)
+    triggerToast('Error al acceder al contenido', 'error')
+  }
+}
 
 function logout() {
   authStore.logout()
@@ -55,11 +109,16 @@ function logout() {
               <p>Tu configuración inicial ha sido completada exitosamente. Ahora puedes comenzar a crear contenido increíble para tu marca.</p>
               
               <div class="quick-actions">
-                <button class="action-btn primary">
-                  <div class="action-icon">📝</div>
+                <button 
+                  @click="handleCreateContent" 
+                  class="action-btn primary"
+                >
+                  <div class="action-icon">
+                    <span>{{ hasExistingContent ? '👁️' : '📝' }}</span>
+                  </div>
                   <div class="action-content">
-                    <h3>Crear Contenido</h3>
-                    <p>Genera contenido para tu marca</p>
+                    <h3>{{ hasExistingContent ? 'Ver Contenido' : 'Crear Contenido' }}</h3>
+                    <p>{{ hasExistingContent ? 'Revisa tu contenido generado' : 'Genera contenido para tu marca' }}</p>
                   </div>
                 </button>
                 
@@ -98,7 +157,7 @@ function logout() {
               <div class="stat-card">
                 <div class="stat-icon">📄</div>
                 <div class="stat-content">
-                  <h3>0</h3>
+                  <h3>{{ contentStore.contentProjects?.length || 0 }}</h3>
                   <p>Contenidos Creados</p>
                 </div>
               </div>
@@ -134,13 +193,36 @@ function logout() {
             <h2>Actividad Reciente</h2>
             
             <div class="activity-card">
-              <div class="empty-state">
+              <div v-if="!hasExistingContent" class="empty-state">
                 <div class="empty-icon">🎉</div>
                 <h3>¡Todo listo para comenzar!</h3>
                 <p>Has completado tu configuración inicial. Comienza creando tu primer contenido.</p>
-                <button class="btn btn-primary">
+                <button 
+                  @click="handleCreateContent" 
+                  class="btn btn-primary"
+                >
                   Crear Primer Contenido
                 </button>
+              </div>
+              
+              <div v-else class="existing-content-state">
+                <div class="content-icon">✅</div>
+                <h3>¡Contenido generado!</h3>
+                <p>Ya tienes contenido creado para tu marca. Puedes revisarlo o generar nuevo contenido.</p>
+                <div class="content-actions">
+                  <button 
+                    @click="handleCreateContent" 
+                    class="btn btn-primary"
+                  >
+                    Ver Contenido Actual
+                  </button>
+                  <button 
+                     @click="router.push(`/content/wizard/${businessStore.businesses[0]?.id}`)"
+                     class="btn btn-outline"
+                   >
+                     Generar Nuevo Contenido
+                   </button>
+                </div>
               </div>
             </div>
           </section>
@@ -487,6 +569,51 @@ function logout() {
 
     @media (max-width: 768px) {
       font-size: 0.875rem;
+    }
+  }
+}
+
+.existing-content-state {
+  text-align: center;
+
+  .content-icon {
+    font-size: 3rem;
+    margin-bottom: 1rem;
+
+    @media (max-width: 768px) {
+      font-size: 2.5rem;
+    }
+  }
+
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin-bottom: 0.5rem;
+
+    @media (max-width: 768px) {
+      font-size: 1.125rem;
+    }
+  }
+
+  p {
+    color: #64748b;
+    margin-bottom: 1.5rem;
+
+    @media (max-width: 768px) {
+      font-size: 0.875rem;
+    }
+  }
+
+  .content-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+
+    @media (max-width: 480px) {
+      flex-direction: column;
+      align-items: center;
     }
   }
 }
