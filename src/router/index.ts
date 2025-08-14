@@ -1,14 +1,22 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
-import HomeView from '../views/HomeView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
+  scrollBehavior(to, from, savedPosition) {
+    // Si hay una posición guardada (navegación con botones del navegador), usarla
+    if (savedPosition) {
+      return savedPosition
+    }
+    // Para todas las demás navegaciones, ir al top
+    return { top: 0 }
+  },
   routes: [
     {
       path: '/',
       name: 'home',
-      component: HomeView,
+      component: () => import('../views/DashboardView.vue'),
+      meta: { requiresAuth: true, requiresVerified: true },
     },
     {
       path: '/login',
@@ -72,7 +80,7 @@ router.beforeEach(async (to, from, next) => {
 
   // Rutas que requieren estar deslogueado (guest)
   if (to.meta.requiresGuest && authStore.isAuthenticated) {
-    next('/')
+    next('/dashboard')
     return
   }
 
@@ -85,9 +93,9 @@ router.beforeEach(async (to, from, next) => {
   // Rutas que requieren verificación
   if (to.meta.requiresVerified && authStore.isAuthenticated && !authStore.isVerified) {
     // Si el usuario está intentando acceder al onboarding o dashboard sin verificar,
-    // redirigir al home solo si no está en una ruta de verificación
+    // redirigir al login solo si no está en una ruta de verificación
     if (to.name !== 'verify') {
-      next('/')
+      next('/login')
       return
     }
   }
