@@ -328,8 +328,8 @@ const goToScripts = () => {
               <div class="step-icon">📝</div>
               <h3>Generar Scripts</h3>
               <p>Crea scripts para contenido y anuncios usando tus soundbites y taglines</p>
-              <button class="btn btn-outline" disabled>
-                Próximamente
+              <button @click="goToScripts" class="btn btn-primary">
+                Ir a Scripts
               </button>
             </div>
             
