@@ -8,6 +8,7 @@ export interface IBusinessAddress {
 
 // Interface principal del negocio (frontend)
 export interface IBusiness {
+  _id: string
   id: string
   name: string
   description?: string
@@ -52,6 +53,12 @@ export interface IBusinessResponse {
   success: boolean
   message: string
   data?: IBusiness
+}
+
+// Interface para la respuesta específica de getBusinessByContentId
+export interface IBusinessByContentIdResponse {
+  message: string
+  business: IBusiness
 }
 
 // Interface para los datos de la respuesta de lista de negocios
