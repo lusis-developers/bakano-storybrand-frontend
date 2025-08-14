@@ -179,6 +179,51 @@ export class ContentService extends APIBase {
     const response = await instance.delete<{ message: string }>(`${this.BASE_URL}/${contentId}`)
     return response.data
   }
+
+  /**
+   * Obtener estadísticas de scripts del usuario
+   */
+  static async getUserScriptStatistics(): Promise<{
+    message: string
+    statistics: {
+      totalBusinesses: number
+      totalScripts: number
+      scriptsByType: {
+        content: number
+        ad: number
+      }
+      scriptsByPlatform: Record<string, number>
+      businesses: Array<{
+        businessId: string
+        businessName: string
+        totalScripts: number
+        contentScripts: number
+        adScripts: number
+      }>
+    }
+  }> {
+    const instance = new ContentService()
+    const response = await instance.get<{
+      message: string
+      statistics: {
+        totalBusinesses: number
+        totalScripts: number
+        scriptsByType: {
+          content: number
+          ad: number
+        }
+        scriptsByPlatform: Record<string, number>
+        businesses: Array<{
+          businessId: string
+          businessName: string
+          totalScripts: number
+          contentScripts: number
+          adScripts: number
+        }>
+      }
+    }>(`${this.BASE_URL}/user/statistics`)
+    return response.data
+  }
 }
 
 export default ContentService
