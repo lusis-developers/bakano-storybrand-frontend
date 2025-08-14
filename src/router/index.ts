@@ -38,18 +38,24 @@ const router = createRouter({
       name: 'dashboard',
       component: () => import('../views/DashboardView.vue'),
       meta: { requiresAuth: true, requiresVerified: true },
-    },
+    },  
     {
       path: '/business',
       name: 'business-management',
       component: () => import('../views/BusinessManagementView.vue'),
       meta: { requiresAuth: true, requiresVerified: true },
     },
+    {
+      path: '/content/wizard/:businessId',
+      name: 'content-wizard',
+      component: () => import('../views/ContentWizardView.vue'),
+      meta: { requiresAuth: true, requiresVerified: true },
+    },
   ],
 })
 
 // Navigation Guards
-router.beforeEach((to, from, next) => {
+router.beforeEach(async (to, from, next) => {
   const authStore = useAuthStore()
 
   // Rutas que requieren estar deslogueado (guest)
@@ -71,6 +77,34 @@ router.beforeEach((to, from, next) => {
     if (to.name !== 'verify') {
       next('/')
       return
+    }
+  }
+
+  // Verificar onboarding completado para rutas específicas
+  if (authStore.isAuthenticated && authStore.isVerified) {
+    try {
+      const { onboardingService } = await import('@/services/onboarding.service')
+      const onboardingResponse = await onboardingService.getOnboarding()
+      const isOnboardingCompleted = onboardingResponse.onboarding.preferences?.onboardingCompleted
+      
+      // Si el usuario intenta acceder al onboarding pero ya lo completó, redirigir al dashboard
+      if (to.name === 'onboarding' && isOnboardingCompleted) {
+        next('/dashboard')
+        return
+      }
+      
+      // Si el usuario intenta acceder al dashboard pero no ha completado el onboarding, redirigir al onboarding
+      if (to.name === 'dashboard' && !isOnboardingCompleted) {
+        next('/onboarding')
+        return
+      }
+    } catch (onboardingError: any) {
+      // Si no existe onboarding (404) y está intentando acceder al dashboard, redirigir al onboarding
+      if (onboardingError.status === 404 && to.name === 'dashboard') {
+        next('/onboarding')
+        return
+      }
+      // Para otros errores o si está accediendo al onboarding, continuar normalmente
     }
   }
 
