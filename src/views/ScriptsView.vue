@@ -1,0 +1,1367 @@
+<script setup lang="ts">
+import { ref, onMounted, computed, watch } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { useScripts } from '../composables/useScripts'
+import { useContent } from '../composables/useContent'
+import { useToast } from '../composables/useToast'
+import { useConfirmationDialog } from '../composables/useConfirmationDialog'
+import type {
+  IScript,
+  IScriptFilters,
+  IGenerateScriptRequest
+} from '../types/content.types'
+
+// Composables
+const route = useRoute()
+const router = useRouter()
+const {
+  scripts,
+  filteredScripts,
+  isLoading,
+  isGenerating,
+  error,
+  scriptStats,
+  hasScripts,
+  loadScripts,
+  generateScript,
+  toggleScriptCompletion,
+  deleteScript,
+  setFilters,
+  clearFilters,
+  clearError
+} = useScripts()
+
+const { currentContent, fetchContentByBusiness, setCurrentContent } = useContent()
+const { triggerToast } = useToast()
+const { reveal } = useConfirmationDialog()
+
+// Estado local
+const contentId = ref<string>('')
+const showGenerateModal = ref(false)
+const showFiltersPanel = ref(false)
+const selectedScript = ref<IScript | null>(null)
+const showScriptModal = ref(false)
+
+// Filtros
+const activeFilters = ref<IScriptFilters>({})
+const filterType = ref<'all' | 'content' | 'ad'>('all')
+const filterPlatform = ref<'all' | 'youtube' | 'social' | 'email' | 'website'>('all')
+const filterCompleted = ref<'all' | 'completed' | 'pending'>('all')
+const filterDateFrom = ref('')
+const filterDateTo = ref('')
+
+// Datos para generar script
+const newScript = ref<IGenerateScriptRequest>({
+  scriptType: 'content',
+  platform: undefined,
+  selectedSoundbite: undefined,
+  selectedTagline: undefined
+})
+
+// Computadas
+const pageTitle = computed(() => {
+  if (currentContent && currentContent.questions) {
+    return `Scripts - ${currentContent.questions.companyName}`
+  }
+  return 'Scripts'
+})
+
+const hasActiveFilters = computed(() => {
+  return filterType.value !== 'all' ||
+    filterPlatform.value !== 'all' ||
+    filterCompleted.value !== 'all' ||
+    filterDateFrom.value !== '' ||
+    filterDateTo.value !== ''
+})
+
+const canGenerateNewScript = computed(() => {
+  return currentContent &&
+    currentContent.soundbites &&
+    currentContent.soundbites.length > 0 &&
+    currentContent.taglines &&
+    currentContent.taglines.length > 0 &&
+    !isGenerating.value
+})
+
+const soundbiteOptions = computed(() => {
+  return currentContent?.soundbites?.map(sb => ({
+    value: sb.text,
+    label: `${sb.text} (${sb.category})`
+  })) || []
+})
+
+const taglineOptions = computed(() => {
+  return currentContent?.taglines?.map(tl => ({
+    value: tl.text,
+    label: `${tl.text} (${tl.style})`
+  })) || []
+})
+
+// Métodos
+const initializeView = async () => {
+  console.log('Inicializando vista de scripts con ID:', route.params.contentId)
+  
+  const routeContentId = route.params.contentId as string
+  if (!routeContentId) {
+    router.push('/dashboard')
+    return
+  }
+
+  contentId.value = routeContentId
+
+  try {
+    // Cargar contenido y scripts en paralelo
+    const content = await fetchContentByBusiness(routeContentId)
+    if (content) {
+      setCurrentContent(content)
+    }
+    await loadScripts(routeContentId)
+  } catch (err) {
+    triggerToast('Error al cargar los datos', 'error')
+    console.error('Error initializing scripts view:', err)
+  }
+}
+
+const applyFilters = async () => {
+  const filters: IScriptFilters = {}
+
+  if (filterType.value !== 'all') {
+    filters.type = filterType.value as 'content' | 'ad'
+  }
+
+  if (filterPlatform.value !== 'all') {
+    filters.platform = filterPlatform.value as 'youtube' | 'social' | 'email' | 'website'
+  }
+
+  if (filterCompleted.value !== 'all') {
+    filters.completed = filterCompleted.value === 'completed'
+  }
+
+  if (filterDateFrom.value) {
+    filters.startDate = filterDateFrom.value
+  }
+
+  if (filterDateTo.value) {
+    filters.endDate = filterDateTo.value
+  }
+
+  activeFilters.value = filters
+  setFilters(filters)
+  await loadScripts(contentId.value, filters)
+}
+
+const clearAllFilters = async () => {
+  filterType.value = 'all'
+  filterPlatform.value = 'all'
+  filterCompleted.value = 'all'
+  filterDateFrom.value = ''
+  filterDateTo.value = ''
+  activeFilters.value = {}
+  clearFilters()
+  await loadScripts(contentId.value)
+}
+
+const openGenerateModal = () => {
+  if (!canGenerateNewScript.value) {
+    triggerToast('Necesitas generar soundbites y taglines primero', 'info')
+    return
+  }
+
+  // Resetear formulario
+  newScript.value = {
+    scriptType: 'content',
+    platform: undefined,
+    selectedSoundbite: undefined,
+    selectedTagline: undefined
+  }
+
+  showGenerateModal.value = true
+}
+
+const handleGenerateScript = async () => {
+  if (!contentId.value) return
+
+  try {
+    const generatedScript = await generateScript(contentId.value, newScript.value)
+
+    if (generatedScript) {
+      triggerToast('Script generado exitosamente', 'success')
+      showGenerateModal.value = false
+    }
+  } catch (err) {
+    triggerToast('Error al generar script', 'error')
+  }
+}
+
+const handleToggleCompletion = async (script: IScript, index: number) => {
+  const newStatus = !script.completed
+  const success = await toggleScriptCompletion(contentId.value, index, newStatus)
+
+  if (success) {
+    const statusText = newStatus ? 'completado' : 'pendiente'
+    triggerToast(`Script marcado como ${statusText}`, 'success')
+  }
+}
+
+const handleDeleteScript = async (script: IScript, index: number) => {
+  const confirmed = await reveal({
+    title: '¿Eliminar Script?',
+    message: `¿Estás seguro de que quieres eliminar el script "${script.title}"? Esta acción no se puede deshacer.`
+  })
+
+  if (confirmed) {
+    const success = await deleteScript(contentId.value, index)
+
+    if (success) {
+      triggerToast('Script eliminado exitosamente', 'success')
+    }
+  }
+}
+
+const viewScript = (script: IScript) => {
+  selectedScript.value = script
+  showScriptModal.value = true
+}
+
+const copyScriptContent = async (content: string) => {
+  try {
+    await navigator.clipboard.writeText(content)
+    triggerToast('Contenido copiado al portapapeles', 'success')
+  } catch (err) {
+    triggerToast('Error al copiar contenido', 'error')
+  }
+}
+
+const getScriptTypeLabel = (type: string) => {
+  return type === 'content' ? 'Contenido' : 'Anuncio'
+}
+
+const getPlatformLabel = (platform?: string) => {
+  const labels: Record<string, string> = {
+    youtube: 'YouTube',
+    social: 'Redes Sociales',
+    email: 'Email',
+    website: 'Sitio Web'
+  }
+  return platform ? labels[platform] || platform : 'General'
+}
+
+const formatDate = (date: Date) => {
+  return new Date(date).toLocaleDateString('es-ES', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  })
+}
+
+// Watchers
+watch(error, (newError) => {
+  if (newError) {
+    triggerToast(newError, 'error')
+    clearError()
+  }
+})
+
+// Lifecycle
+onMounted(() => {
+  initializeView()
+})
+</script>
+
+<template>
+  <div class="scripts-view">
+    <!-- Header -->
+    <div class="scripts-header">
+      <div class="header-content">
+        <div class="header-info">
+          <button 
+            @click="router.back()" 
+            class="back-button"
+            aria-label="Volver"
+          >
+            <i class="fas fa-arrow-left"></i>
+          </button>
+          <div class="title-section">
+            <h1 class="page-title">{{ pageTitle }}</h1>
+            <p class="page-subtitle" v-if="currentContent">
+              Gestiona todos los scripts generados para tu proyecto
+            </p>
+          </div>
+        </div>
+        
+        <div class="header-actions">
+          <button 
+            @click="showFiltersPanel = !showFiltersPanel"
+            class="filter-button"
+            :class="{ active: hasActiveFilters }"
+          >
+            <i class="fas fa-filter"></i>
+            Filtros
+            <span v-if="hasActiveFilters" class="filter-count">{{ Object.keys(activeFilters).length }}</span>
+          </button>
+          
+          <button 
+            @click="openGenerateModal"
+            class="generate-button"
+            :disabled="!canGenerateNewScript"
+          >
+            <i class="fas fa-plus"></i>
+            Generar Script
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats Cards -->
+    <div class="stats-section" v-if="hasScripts">
+      <div class="stats-grid">
+        <div class="stat-card">
+          <div class="stat-icon">
+            <i class="fas fa-file-alt"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-number">{{ scriptStats.total }}</div>
+            <div class="stat-label">Total Scripts</div>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon completed">
+            <i class="fas fa-check-circle"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-number">{{ scriptStats.completed }}</div>
+            <div class="stat-label">Completados</div>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon pending">
+            <i class="fas fa-clock"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-number">{{ scriptStats.pending }}</div>
+            <div class="stat-label">Pendientes</div>
+          </div>
+        </div>
+        
+        <div class="stat-card">
+          <div class="stat-icon content">
+            <i class="fas fa-video"></i>
+          </div>
+          <div class="stat-content">
+            <div class="stat-number">{{ scriptStats.byType.content }}</div>
+            <div class="stat-label">Contenido</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Filters Panel -->
+    <div class="filters-panel" v-if="showFiltersPanel">
+      <div class="filters-content">
+        <div class="filters-grid">
+          <div class="filter-group">
+            <label>Tipo</label>
+            <select v-model="filterType">
+              <option value="all">Todos</option>
+              <option value="content">Contenido</option>
+              <option value="ad">Anuncio</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label>Plataforma</label>
+            <select v-model="filterPlatform">
+              <option value="all">Todas</option>
+              <option value="youtube">YouTube</option>
+              <option value="social">Redes Sociales</option>
+              <option value="email">Email</option>
+              <option value="website">Sitio Web</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label>Estado</label>
+            <select v-model="filterCompleted">
+              <option value="all">Todos</option>
+              <option value="completed">Completados</option>
+              <option value="pending">Pendientes</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label>Desde</label>
+            <input 
+              type="date" 
+              v-model="filterDateFrom"
+              class="date-input"
+            >
+          </div>
+          
+          <div class="filter-group">
+            <label>Hasta</label>
+            <input 
+              type="date" 
+              v-model="filterDateTo"
+              class="date-input"
+            >
+          </div>
+        </div>
+        
+        <div class="filters-actions">
+          <button @click="applyFilters" class="apply-filters-button">
+            <i class="fas fa-search"></i>
+            Aplicar Filtros
+          </button>
+          
+          <button 
+            @click="clearAllFilters" 
+            class="clear-filters-button"
+            v-if="hasActiveFilters"
+          >
+            <i class="fas fa-times"></i>
+            Limpiar
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Loading State -->
+    <div class="loading-section" v-if="isLoading">
+      <div class="loading-spinner"></div>
+      <p>Cargando scripts...</p>
+    </div>
+
+    <!-- Scripts List -->
+    <div class="scripts-section" v-else-if="hasScripts">
+      <div class="scripts-grid">
+        <div 
+          v-for="(script, index) in filteredScripts" 
+          :key="index"
+          class="script-card"
+          :class="{ completed: script.completed }"
+        >
+          <div class="script-header">
+            <div class="script-meta">
+              <span class="script-type" :class="script.type">
+                {{ getScriptTypeLabel(script.type) }}
+              </span>
+              <span class="script-platform" v-if="script.platform">
+                {{ getPlatformLabel(script.platform) }}
+              </span>
+            </div>
+            
+            <div class="script-actions">
+              <button 
+                @click="handleToggleCompletion(script, index)"
+                class="completion-button"
+                :class="{ completed: script.completed }"
+                :title="script.completed ? 'Marcar como pendiente' : 'Marcar como completado'"
+              >
+                <i :class="script.completed ? 'fas fa-check-circle' : 'far fa-circle'"></i>
+              </button>
+              
+              <button 
+                @click="viewScript(script)"
+                class="view-button"
+                title="Ver script completo"
+              >
+                <i class="fas fa-eye"></i>
+              </button>
+              
+              <button 
+                @click="copyScriptContent(script.content)"
+                class="copy-button"
+                title="Copiar contenido"
+              >
+                <i class="fas fa-copy"></i>
+              </button>
+              
+              <button 
+                @click="handleDeleteScript(script, index)"
+                class="delete-button"
+                title="Eliminar script"
+              >
+                <i class="fas fa-trash"></i>
+              </button>
+            </div>
+          </div>
+          
+          <div class="script-content">
+            <h3 class="script-title">{{ script.title }}</h3>
+            <p class="script-preview">{{ script.content.substring(0, 150) }}...</p>
+            
+            <div class="script-details">
+              <span class="script-duration" v-if="script.duration">
+                <i class="fas fa-clock"></i>
+                {{ script.duration }}
+              </span>
+              <span class="script-date">
+                <i class="fas fa-calendar"></i>
+                {{ formatDate(script.generatedAt) }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Empty State -->
+    <div class="empty-state" v-else>
+      <div class="empty-icon">
+        <i class="fas fa-file-alt"></i>
+      </div>
+      <h3>No hay scripts generados</h3>
+      <p>Comienza generando tu primer script para este proyecto.</p>
+      <button 
+        @click="openGenerateModal"
+        class="generate-first-button"
+        :disabled="!canGenerateNewScript"
+      >
+        <i class="fas fa-plus"></i>
+        Generar Primer Script
+      </button>
+      <p class="empty-note" v-if="!canGenerateNewScript">
+        Necesitas generar soundbites y taglines primero
+      </p>
+    </div>
+
+    <!-- Generate Script Modal -->
+    <div class="modal-overlay" v-if="showGenerateModal" @click="showGenerateModal = false">
+      <div class="modal-content" @click.stop>
+        <div class="modal-header">
+          <h3>Generar Nuevo Script</h3>
+          <button @click="showGenerateModal = false" class="close-button">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Tipo de Script</label>
+            <select v-model="newScript.scriptType" class="form-select">
+              <option value="content">Contenido</option>
+              <option value="ad">Anuncio</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Plataforma (Opcional)</label>
+            <select v-model="newScript.platform" class="form-select">
+              <option value="">General</option>
+              <option value="youtube">YouTube</option>
+              <option value="social">Redes Sociales</option>
+              <option value="email">Email</option>
+              <option value="website">Sitio Web</option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Soundbite (Opcional)</label>
+            <select v-model="newScript.selectedSoundbite" class="form-select">
+              <option value="">Seleccionar automáticamente</option>
+              <option 
+                v-for="option in soundbiteOptions" 
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Tagline (Opcional)</label>
+            <select v-model="newScript.selectedTagline" class="form-select">
+              <option value="">Seleccionar automáticamente</option>
+              <option 
+                v-for="option in taglineOptions" 
+                :key="option.value"
+                :value="option.value"
+              >
+                {{ option.label }}
+              </option>
+            </select>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button @click="showGenerateModal = false" class="cancel-button">
+            Cancelar
+          </button>
+          <button 
+            @click="handleGenerateScript"
+            class="generate-button"
+            :disabled="isGenerating"
+          >
+            <i v-if="isGenerating" class="fas fa-spinner fa-spin"></i>
+            <i v-else class="fas fa-magic"></i>
+            {{ isGenerating ? 'Generando...' : 'Generar Script' }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Script View Modal -->
+    <div class="modal-overlay" v-if="showScriptModal" @click="showScriptModal = false">
+      <div class="modal-content large" @click.stop>
+        <div class="modal-header">
+          <h3>{{ selectedScript?.title }}</h3>
+          <button @click="showScriptModal = false" class="close-button">
+            <i class="fas fa-times"></i>
+          </button>
+        </div>
+        
+        <div class="modal-body" v-if="selectedScript">
+          <div class="script-meta-info">
+            <div class="meta-item">
+              <span class="meta-label">Tipo:</span>
+              <span class="meta-value">{{ getScriptTypeLabel(selectedScript.type) }}</span>
+            </div>
+            <div class="meta-item" v-if="selectedScript.platform">
+              <span class="meta-label">Plataforma:</span>
+              <span class="meta-value">{{ getPlatformLabel(selectedScript.platform) }}</span>
+            </div>
+            <div class="meta-item" v-if="selectedScript.duration">
+              <span class="meta-label">Duración:</span>
+              <span class="meta-value">{{ selectedScript.duration }}</span>
+            </div>
+            <div class="meta-item">
+              <span class="meta-label">Generado:</span>
+              <span class="meta-value">{{ formatDate(selectedScript.generatedAt) }}</span>
+            </div>
+          </div>
+          
+          <div class="script-full-content">
+            <pre>{{ selectedScript.content }}</pre>
+          </div>
+        </div>
+        
+        <div class="modal-footer">
+          <button 
+            @click="copyScriptContent(selectedScript?.content || '')"
+            class="copy-button"
+          >
+            <i class="fas fa-copy"></i>
+            Copiar Contenido
+          </button>
+          <button @click="showScriptModal = false" class="close-modal-button">
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style lang="scss" scoped>
+.scripts-view {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  padding: 2rem;
+
+  @media (max-width: 768px) {
+    padding: 1rem;
+  }
+}
+
+.scripts-header {
+  margin-bottom: 2rem;
+
+  .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 2rem;
+
+    @media (max-width: 768px) {
+      flex-direction: column;
+      gap: 1rem;
+    }
+  }
+
+  .header-info {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+
+    .back-button {
+      background: rgba(255, 255, 255, 0.2);
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      color: white;
+      cursor: pointer;
+      transition: all 0.3s ease;
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.3);
+        transform: translateX(-2px);
+      }
+    }
+
+    .title-section {
+      .page-title {
+        color: white;
+        font-size: 2.5rem;
+        font-weight: 700;
+        margin: 0;
+        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
+
+        @media (max-width: 768px) {
+          font-size: 2rem;
+        }
+      }
+
+      .page-subtitle {
+        color: rgba(255, 255, 255, 0.9);
+        margin: 0.5rem 0 0 0;
+        font-size: 1.1rem;
+      }
+    }
+  }
+
+  .header-actions {
+    display: flex;
+    gap: 1rem;
+
+    @media (max-width: 768px) {
+      width: 100%;
+      justify-content: stretch;
+    }
+
+    .filter-button,
+    .generate-button {
+      padding: 0.75rem 1.5rem;
+      border: none;
+      border-radius: 8px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+
+      @media (max-width: 768px) {
+        flex: 1;
+        justify-content: center;
+      }
+    }
+
+    .filter-button {
+      background: rgba(255, 255, 255, 0.2);
+      color: white;
+      position: relative;
+
+      &.active {
+        background: rgba(255, 255, 255, 0.3);
+      }
+
+      .filter-count {
+        background: #ff6b6b;
+        color: white;
+        border-radius: 50%;
+        width: 20px;
+        height: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 0.75rem;
+        font-weight: 700;
+      }
+
+      &:hover {
+        background: rgba(255, 255, 255, 0.3);
+      }
+    }
+
+    .generate-button {
+      background: #4ecdc4;
+      color: white;
+
+      &:hover:not(:disabled) {
+        background: #45b7aa;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(78, 205, 196, 0.3);
+      }
+
+      &:disabled {
+        background: rgba(255, 255, 255, 0.3);
+        cursor: not-allowed;
+        opacity: 0.6;
+      }
+    }
+  }
+}
+
+.stats-section {
+  margin-bottom: 2rem;
+
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1rem;
+
+    .stat-card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: transform 0.3s ease;
+
+      &:hover {
+        transform: translateY(-2px);
+      }
+
+      .stat-icon {
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 1.5rem;
+        background: #667eea;
+        color: white;
+
+        &.completed {
+          background: #4ecdc4;
+        }
+
+        &.pending {
+          background: #ffa726;
+        }
+
+        &.content {
+          background: #ab47bc;
+        }
+      }
+
+      .stat-content {
+        .stat-number {
+          font-size: 2rem;
+          font-weight: 700;
+          color: #2d3748;
+          line-height: 1;
+        }
+
+        .stat-label {
+          color: #718096;
+          font-size: 0.9rem;
+          margin-top: 0.25rem;
+        }
+      }
+    }
+  }
+}
+
+.filters-panel {
+  background: white;
+  border-radius: 12px;
+  padding: 1.5rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+
+  .filters-content {
+    .filters-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 1rem;
+      margin-bottom: 1.5rem;
+
+      .filter-group {
+        label {
+          display: block;
+          margin-bottom: 0.5rem;
+          font-weight: 600;
+          color: #2d3748;
+        }
+
+        select,
+        .date-input {
+          width: 100%;
+          padding: 0.75rem;
+          border: 2px solid #e2e8f0;
+          border-radius: 8px;
+          font-size: 1rem;
+          transition: border-color 0.3s ease;
+
+          &:focus {
+            outline: none;
+            border-color: #667eea;
+          }
+        }
+      }
+    }
+
+    .filters-actions {
+      display: flex;
+      gap: 1rem;
+
+      .apply-filters-button,
+      .clear-filters-button {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+
+      .apply-filters-button {
+        background: #667eea;
+        color: white;
+
+        &:hover {
+          background: #5a67d8;
+        }
+      }
+
+      .clear-filters-button {
+        background: #e2e8f0;
+        color: #4a5568;
+
+        &:hover {
+          background: #cbd5e0;
+        }
+      }
+    }
+  }
+}
+
+.loading-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem 2rem;
+  color: white;
+
+  .loading-spinner {
+    width: 50px;
+    height: 50px;
+    border: 4px solid rgba(255, 255, 255, 0.3);
+    border-top: 4px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
+  }
+
+  p {
+    font-size: 1.1rem;
+    margin: 0;
+  }
+}
+
+.scripts-section {
+  .scripts-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+    gap: 1.5rem;
+
+    @media (max-width: 768px) {
+      grid-template-columns: 1fr;
+    }
+
+    .script-card {
+      background: white;
+      border-radius: 12px;
+      padding: 1.5rem;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+      transition: all 0.3s ease;
+      border-left: 4px solid #667eea;
+
+      &.completed {
+        border-left-color: #4ecdc4;
+        background: #f0fdfa;
+      }
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+      }
+
+      .script-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 1rem;
+
+        .script-meta {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 0.5rem;
+
+          .script-type {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+
+            &.content {
+              background: #e3f2fd;
+              color: #1976d2;
+            }
+
+            &.ad {
+              background: #fce4ec;
+              color: #c2185b;
+            }
+          }
+
+          .script-platform {
+            padding: 0.25rem 0.75rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            background: #f5f5f5;
+            color: #666;
+          }
+        }
+
+        .script-actions {
+          display: flex;
+          gap: 0.5rem;
+
+          button {
+            width: 32px;
+            height: 32px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+
+            &.completion-button {
+              background: #f7fafc;
+              color: #a0aec0;
+
+              &.completed {
+                background: #4ecdc4;
+                color: white;
+              }
+
+              &:hover {
+                background: #4ecdc4;
+                color: white;
+              }
+            }
+
+            &.view-button {
+              background: #667eea;
+              color: white;
+
+              &:hover {
+                background: #5a67d8;
+              }
+            }
+
+            &.copy-button {
+              background: #4ecdc4;
+              color: white;
+
+              &:hover {
+                background: #45b7aa;
+              }
+            }
+
+            &.delete-button {
+              background: #fed7d7;
+              color: #e53e3e;
+
+              &:hover {
+                background: #e53e3e;
+                color: white;
+              }
+            }
+          }
+        }
+      }
+
+      .script-content {
+        .script-title {
+          font-size: 1.25rem;
+          font-weight: 600;
+          color: #2d3748;
+          margin: 0 0 0.75rem 0;
+          line-height: 1.3;
+        }
+
+        .script-preview {
+          color: #4a5568;
+          line-height: 1.5;
+          margin: 0 0 1rem 0;
+        }
+
+        .script-details {
+          display: flex;
+          gap: 1rem;
+          font-size: 0.875rem;
+          color: #718096;
+
+          span {
+            display: flex;
+            align-items: center;
+            gap: 0.25rem;
+          }
+        }
+      }
+    }
+  }
+}
+
+.empty-state {
+  text-align: center;
+  padding: 4rem 2rem;
+  color: white;
+
+  .empty-icon {
+    font-size: 4rem;
+    margin-bottom: 1.5rem;
+    opacity: 0.7;
+  }
+
+  h3 {
+    font-size: 1.5rem;
+    margin: 0 0 1rem 0;
+  }
+
+  p {
+    font-size: 1.1rem;
+    margin: 0 0 2rem 0;
+    opacity: 0.9;
+  }
+
+  .generate-first-button {
+    background: #4ecdc4;
+    color: white;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 8px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    &:hover:not(:disabled) {
+      background: #45b7aa;
+      transform: translateY(-2px);
+    }
+
+    &:disabled {
+      background: rgba(255, 255, 255, 0.3);
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+  }
+
+  .empty-note {
+    margin-top: 1rem;
+    font-size: 0.9rem;
+    opacity: 0.7;
+  }
+}
+
+// Modal Styles
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+
+  .modal-content {
+    background: white;
+    border-radius: 12px;
+    width: 100%;
+    max-width: 500px;
+    max-height: 90vh;
+    overflow-y: auto;
+
+    &.large {
+      max-width: 800px;
+    }
+
+    .modal-header {
+      padding: 1.5rem;
+      border-bottom: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+
+      h3 {
+        margin: 0;
+        color: #2d3748;
+      }
+
+      .close-button {
+        background: none;
+        border: none;
+        font-size: 1.5rem;
+        color: #a0aec0;
+        cursor: pointer;
+        transition: color 0.3s ease;
+
+        &:hover {
+          color: #4a5568;
+        }
+      }
+    }
+
+    .modal-body {
+      padding: 1.5rem;
+
+      .form-group {
+        margin-bottom: 1.5rem;
+
+        label {
+          display: block;
+          margin-bottom: 0.5rem;
+          font-weight: 600;
+          color: #2d3748;
+        }
+
+        .form-select {
+          width: 100%;
+          padding: 0.75rem;
+          border: 2px solid #e2e8f0;
+          border-radius: 8px;
+          font-size: 1rem;
+          transition: border-color 0.3s ease;
+
+          &:focus {
+            outline: none;
+            border-color: #667eea;
+          }
+        }
+      }
+
+      .script-meta-info {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1rem;
+        margin-bottom: 1.5rem;
+        padding: 1rem;
+        background: #f7fafc;
+        border-radius: 8px;
+
+        .meta-item {
+          display: flex;
+          flex-direction: column;
+          gap: 0.25rem;
+
+          .meta-label {
+            font-size: 0.875rem;
+            color: #718096;
+            font-weight: 600;
+          }
+
+          .meta-value {
+            color: #2d3748;
+            font-weight: 500;
+          }
+        }
+      }
+
+      .script-full-content {
+        background: #f7fafc;
+        border-radius: 8px;
+        padding: 1.5rem;
+        border: 1px solid #e2e8f0;
+
+        pre {
+          margin: 0;
+          white-space: pre-wrap;
+          word-wrap: break-word;
+          line-height: 1.6;
+          color: #2d3748;
+        }
+      }
+    }
+
+    .modal-footer {
+      padding: 1.5rem;
+      border-top: 1px solid #e2e8f0;
+      display: flex;
+      justify-content: flex-end;
+      gap: 1rem;
+
+      button {
+        padding: 0.75rem 1.5rem;
+        border: none;
+        border-radius: 8px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s ease;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+
+        &.cancel-button,
+        &.close-modal-button {
+          background: #e2e8f0;
+          color: #4a5568;
+
+          &:hover {
+            background: #cbd5e0;
+          }
+        }
+
+        &.generate-button {
+          background: #667eea;
+          color: white;
+
+          &:hover:not(:disabled) {
+            background: #5a67d8;
+          }
+
+          &:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+          }
+        }
+
+        &.copy-button {
+          background: #4ecdc4;
+          color: white;
+
+          &:hover {
+            background: #45b7aa;
+          }
+        }
+      }
+    }
+  }
+}
+
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+</style>
