@@ -38,7 +38,7 @@ const router = createRouter({
       name: 'dashboard',
       component: () => import('../views/DashboardView.vue'),
       meta: { requiresAuth: true, requiresVerified: true },
-    },  
+    },
     {
       path: '/business',
       name: 'business-management',
@@ -49,6 +49,12 @@ const router = createRouter({
       path: '/content/wizard/:businessId',
       name: 'content-wizard',
       component: () => import('../views/ContentWizardView.vue'),
+      meta: { requiresAuth: true, requiresVerified: true },
+    },
+    {
+      path: '/content/results/:contentId',
+      name: 'content-results',
+      component: () => import('../views/ContentResultsView.vue'),
       meta: { requiresAuth: true, requiresVerified: true },
     },
   ],
@@ -86,13 +92,13 @@ router.beforeEach(async (to, from, next) => {
       const { onboardingService } = await import('@/services/onboarding.service')
       const onboardingResponse = await onboardingService.getOnboarding()
       const isOnboardingCompleted = onboardingResponse.onboarding.preferences?.onboardingCompleted
-      
+
       // Si el usuario intenta acceder al onboarding pero ya lo completó, redirigir al dashboard
       if (to.name === 'onboarding' && isOnboardingCompleted) {
         next('/dashboard')
         return
       }
-      
+
       // Si el usuario intenta acceder al dashboard pero no ha completado el onboarding, redirigir al onboarding
       if (to.name === 'dashboard' && !isOnboardingCompleted) {
         next('/onboarding')
