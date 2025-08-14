@@ -35,7 +35,7 @@ export interface IScript {
   title: string
   content: string
   duration?: string
-  platform?: 'youtube' | 'social' | 'email' | 'website'
+  platform?: 'youtube' | 'instagram' | 'tiktok' | 'social' | 'email' | 'website'
   selectedSoundbite?: string
   selectedTagline?: string
   completed: boolean
@@ -75,7 +75,7 @@ export interface IGenerateSoundbitesTaglinesRequest {
 
 export interface IGenerateScriptRequest {
   scriptType: 'content' | 'ad'
-  platform?: 'youtube' | 'social' | 'email' | 'website'
+  platform?: 'youtube' | 'instagram' | 'tiktok' | 'social' | 'email' | 'website'
   selectedSoundbite?: string
   selectedTagline?: string
 }
@@ -115,7 +115,7 @@ export interface IGenerateScriptResponse {
 // Tipos para manejo de scripts
 export interface IScriptFilters {
   type?: 'content' | 'ad'
-  platform?: 'youtube' | 'social' | 'email' | 'website'
+  platform?: 'youtube' | 'instagram' | 'tiktok' | 'social' | 'email' | 'website'
   completed?: boolean
   startDate?: string
   endDate?: string
@@ -142,6 +142,8 @@ export interface IScriptStats {
   }
   byPlatform: {
     youtube: number
+    instagram: number
+    tiktok: number
     social: number
     email: number
     website: number
