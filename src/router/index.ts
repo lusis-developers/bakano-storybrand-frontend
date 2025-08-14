@@ -57,6 +57,12 @@ const router = createRouter({
       component: () => import('../views/ContentResultsView.vue'),
       meta: { requiresAuth: true, requiresVerified: true },
     },
+    {
+      path: '/content/scripts/:contentId',
+      name: 'content-scripts',
+      component: () => import('../views/ScriptsView.vue'),
+      meta: { requiresAuth: true, requiresVerified: true },
+    },
   ],
 })
 
