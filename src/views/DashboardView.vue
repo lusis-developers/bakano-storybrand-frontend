@@ -5,13 +5,16 @@ import { useAuthStore } from '@/stores/auth.store'
 import { useOnboardingStore } from '@/stores/onboarding.store'
 import { useBusinessStore } from '@/stores/business.store'
 import { useContentStore } from '@/stores/content.store'
+import { useScriptsStore } from '@/stores/scripts.store'
 import { useToast } from '@/composables/useToast'
+import ContentService from '@/services/content.service'
 
 // Composables
 const authStore = useAuthStore()
 const onboardingStore = useOnboardingStore()
 const businessStore = useBusinessStore()
 const contentStore = useContentStore()
+const scriptsStore = useScriptsStore()
 const { triggerToast } = useToast()
 const router = useRouter()
 
@@ -19,6 +22,22 @@ const router = useRouter()
 const isLoading = ref(true)
 const hasExistingContent = ref(false)
 const existingContentId = ref<string | null>(null)
+const userStatistics = ref<{
+  totalBusinesses: number
+  totalScripts: number
+  scriptsByType: {
+    content: number
+    ad: number
+  }
+  scriptsByPlatform: Record<string, number>
+  businesses: Array<{
+    businessId: string
+    businessName: string
+    totalScripts: number
+    contentScripts: number
+    adScripts: number
+  }>
+} | null>(null)
 
 // Verificar autenticación al montar
 onMounted(async () => {
@@ -32,29 +51,53 @@ onMounted(async () => {
     return
   }
 
-  // Cargar negocios del usuario
+  await initializeDashboard()
+})
+
+const initializeDashboard = async () => {
   try {
-    await businessStore.fetchBusinesses()
+    isLoading.value = true
     
+    // Cargar datos necesarios
+    await Promise.all([
+      businessStore.fetchBusinesses(),
+      loadUserStatistics()
+    ])
+
     // Verificar si ya existe contenido generado
-     if (businessStore.businesses && businessStore.businesses.length > 0) {
-       const businessId = businessStore.businesses[0].id
-       await contentStore.fetchContentByBusiness(businessId)
-       
-       if (contentStore.currentContent && contentStore.currentContent._id) {
-         hasExistingContent.value = true
-         existingContentId.value = contentStore.currentContent._id
-       }
-     }
+    if (businessStore.businesses && businessStore.businesses.length > 0) {
+      const businessId = businessStore.businesses[0].id
+      await contentStore.fetchContentByBusiness(businessId)
+
+      if (contentStore.currentContent && contentStore.currentContent._id) {
+        hasExistingContent.value = true
+        existingContentId.value = contentStore.currentContent._id
+      }
+    }
   } catch (error) {
     console.error('Error al cargar datos:', error)
-  }
-
-  // Simular carga de datos del dashboard
-  setTimeout(() => {
+    triggerToast('Error al cargar el dashboard', 'error')
+  } finally {
     isLoading.value = false
-  }, 1000)
-})
+  }
+}
+
+// Funciones
+const loadUserStatistics = async () => {
+  try {
+    const response = await ContentService.getUserScriptStatistics()
+    userStatistics.value = response.statistics
+  } catch (error) {
+    console.error('Error loading user statistics:', error)
+    userStatistics.value = {
+      totalBusinesses: 0,
+      totalScripts: 0,
+      scriptsByType: { content: 0, ad: 0 },
+      scriptsByPlatform: {},
+      businesses: []
+    }
+  }
+}
 
 /**
  * Maneja la navegación al wizard de creación de contenido o a los resultados existentes
@@ -69,15 +112,15 @@ function handleCreateContent() {
     }
 
     const selectedBusiness = businessStore.businesses[0]
-     
-     // Si ya existe contenido, redirigir a los resultados
-     if (hasExistingContent.value && existingContentId.value) {
-       router.push(`/content/results/${existingContentId.value}`)
-     } else {
-       // Si no existe contenido, ir al wizard
-       router.push(`/content/wizard/${selectedBusiness.id}`)
-     }
-    
+
+    // Si ya existe contenido, redirigir a los resultados
+    if (hasExistingContent.value && existingContentId.value) {
+      router.push(`/content/results/${existingContentId.value}`)
+    } else {
+      // Si no existe contenido, ir al wizard
+      router.push(`/content/wizard/${selectedBusiness.id}`)
+    }
+
   } catch (error: any) {
     console.error('Error al navegar:', error)
     triggerToast('Error al acceder al contenido', 'error')
@@ -130,19 +173,11 @@ function logout() {
                   </div>
                 </button>
                 
-                <button class="action-btn">
+                <button class="action-btn disabled" disabled title="Próximamente disponible">
                   <div class="action-icon">📊</div>
                   <div class="action-content">
                     <h3>Ver Análisis</h3>
-                    <p>Revisa el rendimiento</p>
-                  </div>
-                </button>
-                
-                <button class="action-btn">
-                  <div class="action-icon">⚙️</div>
-                  <div class="action-content">
-                    <h3>Configuración</h3>
-                    <p>Ajusta tus preferencias</p>
+                    <p>Próximamente</p>
                   </div>
                 </button>
               </div>
@@ -155,34 +190,34 @@ function logout() {
             
             <div class="stats-grid">
               <div class="stat-card">
-                <div class="stat-icon">📄</div>
+                <div class="stat-icon">📝</div>
                 <div class="stat-content">
-                  <h3>{{ contentStore.contentProjects?.length || 0 }}</h3>
-                  <p>Contenidos Creados</p>
+                  <h3>{{ userStatistics?.totalScripts || 0 }}</h3>
+                  <p>Scripts Creados</p>
                 </div>
               </div>
               
               <div class="stat-card">
-                <div class="stat-icon">👥</div>
+                <div class="stat-icon">🏢</div>
                 <div class="stat-content">
-                  <h3>0</h3>
-                  <p>Audiencia Alcanzada</p>
+                  <h3>{{ userStatistics?.totalBusinesses || 0 }}</h3>
+                  <p>Negocios Registrados</p>
                 </div>
               </div>
               
               <div class="stat-card">
-                <div class="stat-icon">📈</div>
+                <div class="stat-icon">📝</div>
                 <div class="stat-content">
-                  <h3>0%</h3>
-                  <p>Tasa de Conversión</p>
+                  <h3>{{ userStatistics?.scriptsByType.content || 0 }}</h3>
+                  <p>Scripts de Contenido</p>
                 </div>
               </div>
               
               <div class="stat-card">
-                <div class="stat-icon">💡</div>
+                <div class="stat-icon">📢</div>
                 <div class="stat-content">
-                  <h3>0</h3>
-                  <p>Ideas Generadas</p>
+                  <h3>{{ userStatistics?.scriptsByType.ad || 0 }}</h3>
+                  <p>Scripts de Anuncios</p>
                 </div>
               </div>
             </div>
@@ -401,7 +436,7 @@ function logout() {
   cursor: pointer;
   transition: all 0.2s ease;
 
-  &:hover {
+  &:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.2);
     transform: translateY(-2px);
   }
@@ -409,6 +444,16 @@ function logout() {
   &.primary {
     background: rgba(255, 255, 255, 0.2);
     border-color: rgba(255, 255, 255, 0.3);
+  }
+
+  &.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.1);
+      transform: none;
+    }
   }
 
   @media (max-width: 768px) {
