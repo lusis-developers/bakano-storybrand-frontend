@@ -1,3 +1,4 @@
+import { storeToRefs } from 'pinia'
 import { useContentStore } from '@/stores/content.store'
 import type {
   IContent,
@@ -14,7 +15,7 @@ import type {
 export const useContent = () => {
   const contentStore = useContentStore()
 
-  // Estado reactivo del store
+  // Estado reactivo del store usando storeToRefs para mantener reactividad
   const {
     contentProjects,
     currentContent,
@@ -23,9 +24,9 @@ export const useContent = () => {
     isGeneratingScript,
     error,
     pagination
-  } = contentStore
+  } = storeToRefs(contentStore)
 
-  // Getters computados del store
+  // Getters computados del store usando storeToRefs para mantener reactividad
   const {
     hasContentProjects,
     hasCurrentContent,
@@ -39,7 +40,7 @@ export const useContent = () => {
     hasTaglines,
     hasScripts,
     isQuestionsComplete
-  } = contentStore
+  } = storeToRefs(contentStore)
 
   // Acciones del store
   const {
@@ -184,7 +185,7 @@ export const useContent = () => {
    * Verificar si el contenido está listo para generar scripts
    */
   const canGenerateScripts = (): boolean => {
-    return hasSoundbites && hasTaglines
+    return hasSoundbites.value && hasTaglines.value
   }
 
   /**
@@ -195,7 +196,7 @@ export const useContent = () => {
     currentStep: string
     nextStep: string | null
   } => {
-    if (!currentContent) {
+    if (!currentContent.value) {
       return {
         percentage: 0,
         currentStep: 'No hay proyecto activo',
@@ -203,7 +204,7 @@ export const useContent = () => {
       }
     }
 
-    const status = currentContent.status
+    const status = currentContent.value?.status
     
     switch (status) {
       case 'draft':
