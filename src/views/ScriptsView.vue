@@ -62,8 +62,8 @@ const newScript = ref<IGenerateScriptRequest>({
 
 // Computadas
 const pageTitle = computed(() => {
-  if (currentContent && currentContent.questions) {
-    return `Scripts - ${currentContent.questions.companyName}`
+  if (currentContent.value && currentContent.value.questions) {
+    return `Scripts - ${currentContent.value.questions.companyName}`
   }
   return 'Scripts'
 })
@@ -77,23 +77,23 @@ const hasActiveFilters = computed(() => {
 })
 
 const canGenerateNewScript = computed(() => {
-  return currentContent &&
-    currentContent.soundbites &&
-    currentContent.soundbites.length > 0 &&
-    currentContent.taglines &&
-    currentContent.taglines.length > 0 &&
+  return currentContent.value &&
+    currentContent.value.soundbites &&
+    currentContent.value.soundbites.length > 0 &&
+    currentContent.value.taglines &&
+    currentContent.value.taglines.length > 0 &&
     !isGenerating.value
 })
 
 const soundbiteOptions = computed(() => {
-  return currentContent?.soundbites?.map(sb => ({
+  return currentContent.value?.soundbites?.map(sb => ({
     value: sb.text,
     label: `${sb.text} (${sb.category})`
   })) || []
 })
 
 const taglineOptions = computed(() => {
-  return currentContent?.taglines?.map(tl => ({
+  return currentContent.value?.taglines?.map(tl => ({
     value: tl.text,
     label: `${tl.text} (${tl.style})`
   })) || []
@@ -267,6 +267,113 @@ const formatDate = (date: Date) => {
     hour: '2-digit',
     minute: '2-digit'
   })
+}
+
+const formatScriptContent = (content: string) => {
+  try {
+    const parsed = JSON.parse(content)
+    
+    // Si es un objeto con estructura de script de video
+    if (parsed.visual && parsed.caption && parsed.text) {
+      return {
+        visual: parsed.visual,
+        caption: parsed.caption,
+        text: parsed.text,
+        isStructured: true
+      }
+    }
+    
+    // Si es otro tipo de objeto JSON
+    if (typeof parsed === 'object') {
+      return {
+        content: JSON.stringify(parsed, null, 2),
+        isStructured: false
+      }
+    }
+    
+    return {
+      content: content,
+      isStructured: false
+    }
+  } catch {
+    // Si no es JSON válido, procesar como markdown
+    return {
+      content: content,
+      isStructured: false,
+      isMarkdown: true
+    }
+  }
+}
+
+const parseMarkdownContent = (content: string) => {
+  // Dividir el contenido en secciones por títulos principales
+  const sections = content.split(/(?=^# )/gm).filter(section => section.trim())
+  
+  return sections.map(section => {
+    const lines = section.split('\n')
+    const title = lines[0]?.replace(/^# /, '') || ''
+    const body = lines.slice(1).join('\n')
+    
+    return {
+      title: title.trim(),
+      content: body.trim()
+    }
+  })
+}
+
+const formatMarkdownLine = (line: string) => {
+  // Procesar diferentes tipos de líneas markdown
+  if (line.startsWith('## ')) {
+    return { type: 'subtitle', content: line.replace(/^## /, '') }
+  }
+  if (line.startsWith('# ')) {
+    return { type: 'title', content: line.replace(/^# /, '') }
+  }
+  if (line.match(/^\[\d+:\d+-\d+:\d+\]/)) {
+    return { type: 'timestamp', content: line }
+  }
+  if (line.startsWith('**') && line.endsWith('**')) {
+    return { type: 'instruction', content: line.replace(/\*\*/g, '') }
+  }
+  if (line.includes('#')) {
+    return { type: 'hashtag', content: line }
+  }
+  return { type: 'text', content: line }
+}
+
+const getScriptPreview = (content: string) => {
+  const formatted = formatScriptContent(content)
+  
+  if (formatted.isStructured && 'text' in formatted) {
+    return formatted.text.substring(0, 150) + '...'
+  }
+  
+  if (formatted.isMarkdown) {
+    // Para contenido markdown, extraer el primer texto significativo
+    const sections = parseMarkdownContent(content)
+    if (sections.length > 0) {
+      const firstSection = sections[0]
+      const lines = firstSection.content.split('\n').filter(l => l.trim())
+      
+      // Buscar la primera línea de texto real (no timestamps, no instrucciones)
+      for (const line of lines) {
+        const lineType = formatMarkdownLine(line)
+        if (lineType.type === 'text' || lineType.type === 'subtitle') {
+          const cleanText = lineType.content.replace(/\*\*/g, '').replace(/\[.*?\]/g, '').trim()
+          if (cleanText.length > 20) {
+            return cleanText.substring(0, 150) + '...'
+          }
+        }
+      }
+      
+      // Si no encontramos texto, usar el título de la sección
+      if (firstSection.title) {
+        return firstSection.title.substring(0, 150) + '...'
+      }
+    }
+  }
+  
+  return (formatted.content || content).substring(0, 150) + '...'
 }
 
 // Watchers
@@ -505,7 +612,7 @@ onMounted(() => {
           
           <div class="script-content">
             <h3 class="script-title">{{ script.title }}</h3>
-            <p class="script-preview">{{ script.content.substring(0, 150) }}...</p>
+            <p class="script-preview">{{ getScriptPreview(script.content) }}</p>
             
             <div class="script-details">
               <span class="script-duration" v-if="script.duration">
@@ -566,7 +673,8 @@ onMounted(() => {
             <select v-model="newScript.platform" class="form-select">
               <option value="">General</option>
               <option value="youtube">YouTube</option>
-              <option value="social">Redes Sociales</option>
+              <option value="instagram">Instagram</option>
+              <option value="tiktok">TikTok</option>
               <option value="email">Email</option>
               <option value="website">Sitio Web</option>
             </select>
@@ -649,7 +757,77 @@ onMounted(() => {
           </div>
           
           <div class="script-full-content">
-            <pre>{{ selectedScript.content }}</pre>
+            <!-- Contenido estructurado JSON -->
+            <div v-if="selectedScript && formatScriptContent(selectedScript.content).isStructured" class="formatted-script">
+              <div class="script-section">
+                <h4 class="section-title">
+                  <i class="fas fa-video"></i>
+                  Visual
+                </h4>
+                <p class="section-content">{{ formatScriptContent(selectedScript.content).visual }}</p>
+              </div>
+              
+              <div class="script-section">
+                <h4 class="section-title">
+                  <i class="fas fa-comment"></i>
+                  Caption
+                </h4>
+                <p class="section-content">{{ formatScriptContent(selectedScript.content).caption }}</p>
+              </div>
+              
+              <div class="script-section">
+                <h4 class="section-title">
+                  <i class="fas fa-align-left"></i>
+                  Texto Principal
+                </h4>
+                <p class="section-content">{{ formatScriptContent(selectedScript.content).text }}</p>
+              </div>
+            </div>
+            
+            <!-- Contenido Markdown -->
+            <div v-else-if="selectedScript && formatScriptContent(selectedScript.content).isMarkdown" class="markdown-content">
+              <div 
+                v-for="(section, index) in parseMarkdownContent(selectedScript.content)" 
+                :key="index"
+                class="markdown-section"
+              >
+                <h3 class="markdown-title" v-if="section.title">
+                  <i class="fas fa-play-circle"></i>
+                  {{ section.title }}
+                </h3>
+                <div class="markdown-body">
+                  <div 
+                    v-for="(line, lineIndex) in section.content.split('\n').filter(l => l.trim())" 
+                    :key="lineIndex"
+                    class="markdown-line"
+                    :class="formatMarkdownLine(line).type"
+                  >
+                    <span v-if="formatMarkdownLine(line).type === 'timestamp'" class="timestamp-badge">
+                      <i class="fas fa-clock"></i>
+                      {{ formatMarkdownLine(line).content }}
+                    </span>
+                    <span v-else-if="formatMarkdownLine(line).type === 'subtitle'" class="subtitle-text">
+                      {{ formatMarkdownLine(line).content }}
+                    </span>
+                    <span v-else-if="formatMarkdownLine(line).type === 'instruction'" class="instruction-text">
+                      <i class="fas fa-camera"></i>
+                      {{ formatMarkdownLine(line).content }}
+                    </span>
+                    <span v-else-if="formatMarkdownLine(line).type === 'hashtag'" class="hashtag-text">
+                      {{ formatMarkdownLine(line).content }}
+                    </span>
+                    <span v-else class="regular-text">
+                      {{ formatMarkdownLine(line).content }}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <!-- Contenido sin formato -->
+            <div v-else-if="selectedScript" class="raw-content">
+              <pre>{{ formatScriptContent(selectedScript.content).content }}</pre>
+            </div>
           </div>
         </div>
         
@@ -1302,6 +1480,160 @@ onMounted(() => {
         border-radius: 8px;
         padding: 1.5rem;
         border: 1px solid #e2e8f0;
+
+        .formatted-script {
+          .script-section {
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            background: #f8f9fa;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+            
+            .section-title {
+              display: flex;
+              align-items: center;
+              gap: 0.5rem;
+              font-size: 1.1rem;
+              font-weight: 600;
+              color: #2d3748;
+              margin-bottom: 1rem;
+              
+              i {
+                color: #667eea;
+                font-size: 1rem;
+              }
+            }
+            
+            .section-content {
+              font-size: 1rem;
+              line-height: 1.6;
+              color: #4a5568;
+              margin: 0;
+              white-space: pre-wrap;
+              word-wrap: break-word;
+            }
+          }
+          
+          .raw-content {
+            background: #f8f9fa;
+            padding: 1.5rem;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 0.9rem;
+            line-height: 1.6;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            max-height: 400px;
+            overflow-y: auto;
+            margin: 0;
+          }
+        }
+
+        .markdown-content {
+          .markdown-section {
+            margin-bottom: 2.5rem;
+            padding: 1.5rem;
+            background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+            border-radius: 12px;
+            border: 1px solid #dee2e6;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            
+            .markdown-title {
+              font-size: 1.3rem;
+              font-weight: 700;
+              color: #2c3e50;
+              margin-bottom: 1.5rem;
+              display: flex;
+              align-items: center;
+              gap: 0.75rem;
+              padding-bottom: 0.75rem;
+              border-bottom: 2px solid #667eea;
+              
+              i {
+                color: #667eea;
+                font-size: 1.1rem;
+              }
+            }
+            
+            .markdown-body {
+              .markdown-line {
+                margin-bottom: 0.75rem;
+                line-height: 1.6;
+                
+                &.timestamp {
+                  margin: 1rem 0;
+                  
+                  .timestamp-badge {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    background: #667eea;
+                    color: white;
+                    padding: 0.4rem 0.8rem;
+                    border-radius: 20px;
+                    font-size: 0.85rem;
+                    font-weight: 600;
+                    
+                    i {
+                      font-size: 0.8rem;
+                    }
+                  }
+                }
+                
+                &.subtitle {
+                  .subtitle-text {
+                    font-size: 1.1rem;
+                    font-weight: 600;
+                    color: #495057;
+                    display: block;
+                    margin: 1rem 0 0.5rem 0;
+                    padding-left: 1rem;
+                    border-left: 3px solid #4ecdc4;
+                  }
+                }
+                
+                &.instruction {
+                  margin: 1rem 0;
+                  
+                  .instruction-text {
+                    display: inline-flex;
+                    align-items: center;
+                    gap: 0.5rem;
+                    background: #fff3cd;
+                    color: #856404;
+                    padding: 0.6rem 1rem;
+                    border-radius: 8px;
+                    border: 1px solid #ffeaa7;
+                    font-style: italic;
+                    
+                    i {
+                      color: #f39c12;
+                    }
+                  }
+                }
+                
+                &.hashtag {
+                  .hashtag-text {
+                    color: #667eea;
+                    font-weight: 500;
+                    
+                    &::before {
+                      content: "🏷️ ";
+                      margin-right: 0.25rem;
+                    }
+                  }
+                }
+                
+                &.text {
+                  .regular-text {
+                    color: #495057;
+                    line-height: 1.7;
+                  }
+                }
+              }
+            }
+          }
+        }
 
         pre {
           margin: 0;
