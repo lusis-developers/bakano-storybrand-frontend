@@ -3,6 +3,7 @@ import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useScripts } from '../composables/useScripts'
 import { useContent } from '../composables/useContent'
+import { useBusiness } from '../composables/useBusiness'
 import { useToast } from '../composables/useToast'
 import { useConfirmationDialog } from '../composables/useConfirmationDialog'
 import type {
@@ -32,6 +33,7 @@ const {
 } = useScripts()
 
 const { currentContent, fetchContentByBusiness, setCurrentContent } = useContent()
+const { fetchBusinessByContentId } = useBusiness()
 const { triggerToast } = useToast()
 const { reveal } = useConfirmationDialog()
 
@@ -110,8 +112,19 @@ const initializeView = async () => {
   contentId.value = routeContentId
 
   try {
-    // Cargar contenido y scripts en paralelo
-    const content = await fetchContentByBusiness(routeContentId)
+    // Obtener el business usando el contentId
+    const business = await fetchBusinessByContentId(routeContentId)
+    console.log('Business obtenido:', business)
+    
+    if (!business) {
+      triggerToast('Business not found', 'error')
+      return
+    }
+    
+    console.log('BusinessId:', business._id)
+    
+    // Cargar contenido y scripts usando el businessId correcto
+    const content = await fetchContentByBusiness(business._id)
     if (content) {
       setCurrentContent(content)
     }
