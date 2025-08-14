@@ -43,6 +43,7 @@ const showGenerateModal = ref(false)
 const showFiltersPanel = ref(false)
 const selectedScript = ref<IScript | null>(null)
 const showScriptModal = ref(false)
+const isInitializing = ref(true)
 
 // Filtros
 const activeFilters = ref<IScriptFilters>({})
@@ -132,6 +133,8 @@ const initializeView = async () => {
   } catch (err) {
     triggerToast('Error al cargar los datos', 'error')
     console.error('Error initializing scripts view:', err)
+  } finally {
+    isInitializing.value = false
   }
 }
 
@@ -554,7 +557,7 @@ onMounted(() => {
     </div>
 
     <!-- Loading State -->
-    <div class="loading-section" v-if="isLoading">
+    <div class="loading-section" v-if="isLoading || isInitializing">
       <div class="loading-spinner"></div>
       <p>Cargando scripts...</p>
     </div>
@@ -634,7 +637,7 @@ onMounted(() => {
     </div>
 
     <!-- Empty State -->
-    <div class="empty-state" v-else>
+    <div class="empty-state" v-else-if="!isInitializing">
       <div class="empty-icon">
         <i class="fas fa-file-alt"></i>
       </div>
