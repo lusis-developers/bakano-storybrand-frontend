@@ -5,7 +5,8 @@ import type {
   ICreateBusinessRequest,
   IUpdateBusinessRequest,
   IBusinessResponse,
-  IBusinessListResponse
+  IBusinessListResponse,
+  IBusinessByContentIdResponse
 } from '@/types/business.types'
 
 class BusinessService extends APIBase {
@@ -52,6 +53,22 @@ class BusinessService extends APIBase {
     try {
       const response: AxiosResponse<IBusinessResponse> = await this.get<IBusinessResponse>(
         `${this.endpoint}/${businessId}`
+      )
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  /**
+   * Obtiene un negocio por ID de contenido
+   * @param contentId - ID del contenido
+   * @returns Promise con los datos del negocio
+   */
+  async getBusinessByContentId(contentId: string): Promise<IBusinessByContentIdResponse> {
+    try {
+      const response: AxiosResponse<IBusinessByContentIdResponse> = await this.get<IBusinessByContentIdResponse>(
+        `content/${contentId}/business`
       )
       return response.data
     } catch (error) {
