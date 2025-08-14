@@ -37,6 +37,10 @@ export function useBusiness() {
     return await businessStore.fetchBusinessById(businessId)
   }
 
+  const fetchBusinessByContentId = async (contentId: string): Promise<IBusiness | null> => {
+    return await businessStore.fetchBusinessByContentId(contentId)
+  }
+
   const createBusiness = async (businessData: ICreateBusinessRequest): Promise<IBusiness | null> => {
     return await businessStore.createBusiness(businessData)
   }
@@ -202,6 +206,7 @@ export function useBusiness() {
     // Acciones principales
     fetchBusinesses,
     fetchBusinessById,
+    fetchBusinessByContentId,
     createBusiness,
     updateBusiness,
     deleteBusiness,
