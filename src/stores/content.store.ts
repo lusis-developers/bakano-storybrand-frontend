@@ -70,9 +70,14 @@ export const useContentStore = defineStore('content', () => {
       isLoading.value = true
       error.value = null
 
+      console.log('🔄 Store: Llamando a ContentService.createContentProject con:', { businessId, data })
+      
       const response = await ContentService.createContentProject(businessId, data)
+      
+      console.log('📦 Store: Respuesta completa del servicio:', response)
+      console.log('📦 Store: Contenido en respuesta:', response.content)
 
-      if (response.content) {
+      if (response && response.content && response.content._id) {
         currentContent.value = response.content
         // Agregar a la lista si no existe
         const existingIndex = contentProjects.value.findIndex(
@@ -81,12 +86,15 @@ export const useContentStore = defineStore('content', () => {
         if (existingIndex === -1) {
           contentProjects.value.unshift(response.content)
         }
+        console.log('✅ Store: Proyecto creado exitosamente:', response.content)
         return response.content
       }
 
+      console.log('❌ Store: Respuesta inválida o sin contenido:', response)
       return null
     } catch (err: any) {
-      error.value = err.response?.data?.message || 'Error al crear proyecto de contenido'
+      console.error('❌ Store: Error en createContentProject:', err)
+      error.value = err.message || err.response?.data?.message || 'Error al crear proyecto de contenido'
       throw err
     } finally {
       isLoading.value = false
