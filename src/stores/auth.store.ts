@@ -56,10 +56,14 @@ export const useAuthStore = defineStore('auth', () => {
       
       const response = await authService.register(userData)
       
-      // Guardar datos de autenticación
-      token.value = response.token
+      // Para el registro, el backend no devuelve token, solo guarda los datos del usuario
+      if (response.token) {
+        token.value = response.token
+        authService.saveAuthData(response)
+      }
+      
+      // Guardar datos del usuario registrado
       user.value = response.user
-      authService.saveAuthData(response)
       
       toast.triggerToast('Registro exitoso. Por favor verifica tu correo electrónico.', 'success')
       router.push('/login')
@@ -81,7 +85,7 @@ export const useAuthStore = defineStore('auth', () => {
       const response = await authService.login(credentials)
       
       // Guardar datos de autenticación
-      token.value = response.token
+      token.value = response.token || null
       user.value = response.user
       authService.saveAuthData(response)
       
