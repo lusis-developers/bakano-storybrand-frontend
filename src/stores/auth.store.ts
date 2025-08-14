@@ -93,10 +93,27 @@ export const useAuthStore = defineStore('auth', () => {
       
       // Lógica de redirección inteligente
       if (response.user.isVerified) {
-        // TODO: Verificar si el usuario ya completó el onboarding
-        // Por ahora, redirigir a onboarding para nuevos usuarios
-        // En el futuro, verificar onboarding_completed y redirigir a dashboard si ya está completo
-        router.push('/onboarding')
+        // Verificar si el usuario ya completó el onboarding
+        try {
+          const { onboardingService } = await import('@/services/onboarding.service')
+          const onboardingResponse = await onboardingService.getOnboarding()
+          
+          // Si el onboarding está completo, ir al dashboard
+          if (onboardingResponse.onboarding.preferences?.onboardingCompleted) {
+            router.push('/dashboard')
+          } else {
+            // Si no está completo, ir al onboarding
+            router.push('/onboarding')
+          }
+        } catch (onboardingError: any) {
+          // Si no existe onboarding (404), crear uno nuevo
+          if (onboardingError.status === 404) {
+            router.push('/onboarding')
+          } else {
+            // Para otros errores, ir al onboarding por seguridad
+            router.push('/onboarding')
+          }
+        }
       } else {
         toast.triggerToast('Por favor verifica tu cuenta para acceder a todas las funcionalidades', 'info')
         router.push('/')
