@@ -8,7 +8,9 @@ import type {
   IGenerateSoundbitesTaglinesRequest,
   IGenerateScriptRequest,
   IGenerateScriptResponse,
-  IBusinessQuestions
+  IScriptFilters,
+  IScriptsResponse,
+  IToggleScriptCompletionRequest,
 } from '../types/content.types'
 
 /**
@@ -22,12 +24,12 @@ export class ContentService extends APIBase {
    */
   static async createContentProject(
     businessId: string,
-    data: ICreateContentRequest
+    data: ICreateContentRequest,
   ): Promise<IContentResponse> {
     const instance = new ContentService()
     const response = await instance.post<IContentResponse>(
       `${this.BASE_URL}/business/${businessId}`,
-      data
+      data,
     )
     return response.data
   }
@@ -37,9 +39,7 @@ export class ContentService extends APIBase {
    */
   static async getContentByBusiness(businessId: string): Promise<IContentResponse> {
     const instance = new ContentService()
-    const response = await instance.get<IContentResponse>(
-      `${this.BASE_URL}/business/${businessId}`
-    )
+    const response = await instance.get<IContentResponse>(`${this.BASE_URL}/business/${businessId}`)
     return response.data
   }
 
@@ -49,20 +49,20 @@ export class ContentService extends APIBase {
   static async getUserContentProjects(
     page: number = 1,
     limit: number = 10,
-    status?: string
+    status?: string,
   ): Promise<IContentListResponse> {
     const params = new URLSearchParams({
       page: page.toString(),
-      limit: limit.toString()
+      limit: limit.toString(),
     })
-    
+
     if (status) {
       params.append('status', status)
     }
 
     const instance = new ContentService()
     const response = await instance.get<IContentListResponse>(
-      `${this.BASE_URL}/projects?${params.toString()}`
+      `${this.BASE_URL}/projects?${params.toString()}`,
     )
     return response.data
   }
@@ -72,12 +72,12 @@ export class ContentService extends APIBase {
    */
   static async updateQuestions(
     contentId: string,
-    data: IUpdateQuestionsRequest
+    data: IUpdateQuestionsRequest,
   ): Promise<IContentResponse> {
     const instance = new ContentService()
     const response = await instance.put<IContentResponse>(
       `${this.BASE_URL}/${contentId}/questions`,
-      data
+      data,
     )
     return response.data
   }
@@ -87,7 +87,7 @@ export class ContentService extends APIBase {
    */
   static async generateSoundbitesAndTaglines(
     contentId: string,
-    data: IGenerateSoundbitesTaglinesRequest = {}
+    data: IGenerateSoundbitesTaglinesRequest = {},
   ): Promise<{
     message: string
     soundbites: IContent['soundbites']
@@ -98,10 +98,7 @@ export class ContentService extends APIBase {
       message: string
       soundbites: IContent['soundbites']
       taglines: IContent['taglines']
-    }>(
-      `${this.BASE_URL}/${contentId}/generate-soundbites-taglines`,
-      data
-    )
+    }>(`${this.BASE_URL}/${contentId}/generate-soundbites-taglines`, data)
     return response.data
   }
 
@@ -110,12 +107,66 @@ export class ContentService extends APIBase {
    */
   static async generateScript(
     contentId: string,
-    data: IGenerateScriptRequest
+    data: IGenerateScriptRequest,
   ): Promise<IGenerateScriptResponse> {
     const instance = new ContentService()
     const response = await instance.post<IGenerateScriptResponse>(
       `${this.BASE_URL}/${contentId}/generate-script`,
-      data
+      data,
+    )
+    return response.data
+  }
+
+  /**
+   * Obtener scripts de un proyecto de contenido
+   */
+  static async getScripts(contentId: string, filters?: IScriptFilters): Promise<IScriptsResponse> {
+    const params = new URLSearchParams()
+
+    if (filters) {
+      if (filters.type) params.append('type', filters.type)
+      if (filters.platform) params.append('platform', filters.platform)
+      if (filters.completed !== undefined) params.append('completed', filters.completed.toString())
+      if (filters.startDate) params.append('startDate', filters.startDate)
+      if (filters.endDate) params.append('endDate', filters.endDate)
+    }
+
+    const queryString = params.toString()
+    const url = queryString
+      ? `${this.BASE_URL}/${contentId}/scripts?${queryString}`
+      : `${this.BASE_URL}/${contentId}/scripts`
+
+    const instance = new ContentService()
+    const response = await instance.get<IScriptsResponse>(url)
+    return response.data
+  }
+
+  /**
+   * Eliminar un script específico
+   */
+  static async deleteScript(
+    contentId: string,
+    scriptIndex: number,
+  ): Promise<{ message: string; remainingScripts: number }> {
+    const instance = new ContentService()
+    const response = await instance.delete<{ message: string; remainingScripts: number }>(
+      `${this.BASE_URL}/${contentId}/scripts/${scriptIndex}`,
+    )
+    return response.data
+  }
+
+  /**
+   * Marcar/desmarcar script como completado
+   */
+  static async toggleScriptCompletion(
+    contentId: string,
+    scriptIndex: number,
+    data: IToggleScriptCompletionRequest,
+  ): Promise<{ message: string }> {
+    const instance = new ContentService()
+    const response = await instance.patch<{ message: string }>(
+      `${this.BASE_URL}/${contentId}/scripts/${scriptIndex}/completion`,
+      data,
     )
     return response.data
   }
@@ -125,9 +176,7 @@ export class ContentService extends APIBase {
    */
   static async deleteContentProject(contentId: string): Promise<{ message: string }> {
     const instance = new ContentService()
-    const response = await instance.delete<{ message: string }>(
-      `${this.BASE_URL}/${contentId}`
-    )
+    const response = await instance.delete<{ message: string }>(`${this.BASE_URL}/${contentId}`)
     return response.data
   }
 }
