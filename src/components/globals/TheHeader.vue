@@ -30,19 +30,13 @@ const handleLogout = () => {
     <nav class="nav">
       <div class="nav__container">
         <!-- Logo -->
-        <RouterLink to="/" class="nav__logo" @click="closeMenu">
+        <RouterLink :to="authStore.isAuthenticated ? '/dashboard' : '/'" class="nav__logo" @click="closeMenu">
           <img 
             src="@/assets/logos/bakano-dark.png" 
             alt="Bakano" 
             class="nav__logo-img"
           />
         </RouterLink>
-
-        <div class="nav__menu">
-          <RouterLink to="/" class="nav__link" @click="closeMenu">
-            Inicio
-          </RouterLink>
-        </div>
 
         <div class="nav__auth">
           <div v-if="!authStore.isAuthenticated" class="nav__auth-guest">
@@ -107,19 +101,6 @@ const handleLogout = () => {
       <!-- Mobile Navigation -->
       <div class="nav__mobile" :class="{ 'nav__mobile--open': isMenuOpen }">
         <div class="nav__mobile-menu">
-          <RouterLink to="/" class="nav__mobile-link" @click="closeMenu">
-            Inicio
-          </RouterLink>
-          <RouterLink to="/about" class="nav__mobile-link" @click="closeMenu">
-            Acerca de
-          </RouterLink>
-          <RouterLink to="/services" class="nav__mobile-link" @click="closeMenu">
-            Servicios
-          </RouterLink>
-          <RouterLink to="/contact" class="nav__mobile-link" @click="closeMenu">
-            Contacto
-          </RouterLink>
-          
           <!-- Mobile Auth Section -->
           <div class="nav__mobile-auth">
             <div v-if="!authStore.isAuthenticated" class="nav__mobile-auth-guest">
