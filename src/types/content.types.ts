@@ -38,6 +38,7 @@ export interface IScript {
   platform?: 'youtube' | 'social' | 'email' | 'website'
   selectedSoundbite?: string
   selectedTagline?: string
+  completed: boolean
   generatedAt: Date
 }
 
@@ -109,6 +110,42 @@ export interface IContentListResponse {
 export interface IGenerateScriptResponse {
   message: string
   script: IScript
+}
+
+// Tipos para manejo de scripts
+export interface IScriptFilters {
+  type?: 'content' | 'ad'
+  platform?: 'youtube' | 'social' | 'email' | 'website'
+  completed?: boolean
+  startDate?: string
+  endDate?: string
+}
+
+export interface IScriptsResponse {
+  message: string
+  scripts: IScript[]
+  total: number
+  filters: IScriptFilters
+}
+
+export interface IToggleScriptCompletionRequest {
+  completed: boolean
+}
+
+export interface IScriptStats {
+  total: number
+  completed: number
+  pending: number
+  byType: {
+    content: number
+    ad: number
+  }
+  byPlatform: {
+    youtube: number
+    social: number
+    email: number
+    website: number
+  }
 }
 
 // Tipos para formularios
