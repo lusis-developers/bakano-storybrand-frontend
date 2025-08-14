@@ -37,7 +37,7 @@ export interface User {
 
 export interface AuthResponse {
   user: User
-  token: string
+  token?: string
   refreshToken?: string
   expiresIn?: number
 }
@@ -211,18 +211,22 @@ class AuthService extends APIBase {
    * Guarda los datos de autenticación en localStorage
    */
   saveAuthData(authResponse: AuthResponse): void {
-    // El backend devuelve el token con 'Bearer ' incluido, necesitamos extraer solo el token
-    const cleanToken = authResponse.token.startsWith('Bearer ') 
-      ? authResponse.token.substring(7) 
-      : authResponse.token
-    
-    console.log('🔍 DEBUG - Token received from backend:', authResponse.token)
-    console.log('🔍 DEBUG - Clean token to save:', cleanToken)
-    
-    localStorage.setItem('access_token', cleanToken)
-    if (authResponse.refreshToken) {
-      localStorage.setItem('refresh_token', authResponse.refreshToken)
+    // Verificar si existe el token antes de procesarlo
+    if (authResponse.token) {
+      // El backend devuelve el token con 'Bearer ' incluido, necesitamos extraer solo el token
+      const cleanToken = authResponse.token.startsWith('Bearer ') 
+        ? authResponse.token.substring(7) 
+        : authResponse.token
+      
+      console.log('🔍 DEBUG - Token received from backend:', authResponse.token)
+      console.log('🔍 DEBUG - Clean token to save:', cleanToken)
+      
+      localStorage.setItem('access_token', cleanToken)
+      if (authResponse.refreshToken) {
+        localStorage.setItem('refresh_token', authResponse.refreshToken)
+      }
     }
+    
     localStorage.setItem('user_data', JSON.stringify(authResponse.user))
   }
 
