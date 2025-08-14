@@ -47,7 +47,7 @@ const showScriptModal = ref(false)
 // Filtros
 const activeFilters = ref<IScriptFilters>({})
 const filterType = ref<'all' | 'content' | 'ad'>('all')
-const filterPlatform = ref<'all' | 'youtube' | 'social' | 'email' | 'website'>('all')
+const filterPlatform = ref<'all' | 'youtube' | 'instagram' | 'tiktok' | 'social' | 'email' | 'website'>('all')
 const filterCompleted = ref<'all' | 'completed' | 'pending'>('all')
 const filterDateFrom = ref('')
 const filterDateTo = ref('')
@@ -143,7 +143,7 @@ const applyFilters = async () => {
   }
 
   if (filterPlatform.value !== 'all') {
-    filters.platform = filterPlatform.value as 'youtube' | 'social' | 'email' | 'website'
+    filters.platform = filterPlatform.value as 'youtube' | 'instagram' | 'tiktok' | 'social' | 'email' | 'website'
   }
 
   if (filterCompleted.value !== 'all') {
@@ -252,6 +252,8 @@ const getScriptTypeLabel = (type: string) => {
 const getPlatformLabel = (platform?: string) => {
   const labels: Record<string, string> = {
     youtube: 'YouTube',
+    instagram: 'Instagram',
+    tiktok: 'TikTok',
     social: 'Redes Sociales',
     email: 'Email',
     website: 'Sitio Web'
@@ -497,6 +499,8 @@ onMounted(() => {
             <select v-model="filterPlatform">
               <option value="all">Todas</option>
               <option value="youtube">YouTube</option>
+              <option value="instagram">Instagram</option>
+              <option value="tiktok">TikTok</option>
               <option value="social">Redes Sociales</option>
               <option value="email">Email</option>
               <option value="website">Sitio Web</option>
