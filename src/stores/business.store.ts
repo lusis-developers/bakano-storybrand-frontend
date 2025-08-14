@@ -108,6 +108,36 @@ export const useBusinessStore = defineStore('business', () => {
     }
   }
 
+  // Función para obtener un negocio por ID de contenido
+  const fetchBusinessByContentId = async (contentId: string): Promise<IBusiness | null> => {
+    loading.value.fetching = true
+    errors.value.fetch = null
+
+    try {
+      const response = await businessService.getBusinessByContentId(contentId)
+      if (response.business) {
+        currentBusiness.value = response.business
+
+        // Actualizar en la lista si ya existe
+         const index = businesses.value.findIndex((b) => b.id === response.business._id)
+         if (index !== -1) {
+           businesses.value[index] = response.business
+         }
+
+        return response.business
+      } else {
+        throw new Error(response.message || 'Error al obtener el negocio')
+      }
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Error desconocido al obtener el negocio por content ID'
+      errors.value.fetch = errorMessage
+      console.error('Error fetching business by content ID:', error)
+      return null
+    } finally {
+      loading.value.fetching = false
+    }
+  }
+
   // Función para crear un nuevo negocio
   const createBusiness = async (
     businessData: ICreateBusinessRequest,
@@ -283,6 +313,7 @@ export const useBusinessStore = defineStore('business', () => {
     // Acciones
     fetchBusinesses,
     fetchBusinessById,
+    fetchBusinessByContentId,
     createBusiness,
     updateBusiness,
     deleteBusiness,
