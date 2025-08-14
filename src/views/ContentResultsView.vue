@@ -145,6 +145,15 @@ const copyToClipboard = async (text: string) => {
 const goToDashboard = () => {
   router.push('/dashboard')
 }
+
+/**
+ * Navegar a la vista de scripts
+ */
+const goToScripts = () => {
+  if (currentContent.value?._id) {
+    router.push(`/content/scripts/${currentContent.value._id}`)
+  }
+}
 </script>
 
 <template>
@@ -246,6 +255,10 @@ const goToDashboard = () => {
           
           <button @click="editQuestions" class="btn btn-outline">
             ✏️ Editar Preguntas
+          </button>
+          
+          <button @click="goToScripts" class="btn btn-secondary">
+            📝 Ver Scripts
           </button>
         </div>
 
@@ -912,6 +925,16 @@ const goToDashboard = () => {
   &:hover:not(:disabled) {
     background: #667eea;
     color: white;
+  }
+}
+
+.btn-secondary {
+  background: linear-gradient(135deg, #4ecdc4, #44a08d);
+  color: white;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(78, 205, 196, 0.3);
   }
 }
 </style>
