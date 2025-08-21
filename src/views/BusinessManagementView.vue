@@ -180,7 +180,8 @@ onMounted(async () => {
       <div class="header-content">
         <div class="header-left">
           <button @click="goToDashboard" class="btn btn-ghost btn-sm">
-            ← Volver al Dashboard
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            Volver al Dashboard
           </button>
           <h1>Gestión de Negocios</h1>
           <p class="subtitle">Administra tus negocios y configuraciones</p>
@@ -192,7 +193,7 @@ onMounted(async () => {
             class="btn btn-primary"
             :disabled="isLoading"
           >
-            <span class="icon">+</span>
+            <i class="fas fa-plus" aria-hidden="true"></i>
             Crear Negocio
           </button>
         </div>
@@ -218,7 +219,7 @@ onMounted(async () => {
               class="clear-search-btn"
               type="button"
             >
-              ✕
+              <i class="fas fa-times" aria-hidden="true"></i>
             </button>
           </div>
         </div>
@@ -235,13 +236,13 @@ onMounted(async () => {
               @click="viewMode = 'grid'" 
               :class="['view-btn', { active: viewMode === 'grid' }]"
             >
-              ⊞
+              <i class="fas fa-th" aria-hidden="true"></i>
             </button>
             <button 
               @click="viewMode = 'list'" 
               :class="['view-btn', { active: viewMode === 'list' }]"
             >
-              ☰
+              <i class="fas fa-list" aria-hidden="true"></i>
             </button>
           </div>
         </div>
@@ -256,7 +257,9 @@ onMounted(async () => {
 
     <!-- Error State -->
     <div v-else-if="errors.fetch" class="error-state">
-      <div class="error-icon">⚠️</div>
+      <div class="error-icon">
+        <i class="fas fa-exclamation-triangle" aria-hidden="true"></i>
+      </div>
       <h3>Error al cargar negocios</h3>
       <p>{{ errors.fetch }}</p>
       <button @click="fetchBusinesses" class="btn btn-primary">
@@ -266,7 +269,9 @@ onMounted(async () => {
 
     <!-- Empty State -->
     <div v-else-if="!hasBusinesses" class="empty-state">
-      <div class="empty-icon">🏢</div>
+      <div class="empty-icon">
+        <i class="fas fa-building" aria-hidden="true"></i>
+      </div>
       <h3>No tienes negocios registrados</h3>
       <p>Crea tu primer negocio para comenzar a gestionar tu marca</p>
       <button @click="handleCreateBusiness" class="btn btn-primary">
@@ -276,7 +281,9 @@ onMounted(async () => {
 
     <!-- No Results State -->
     <div v-else-if="!hasFilteredResults" class="no-results-state">
-      <div class="no-results-icon">🔍</div>
+      <div class="no-results-icon">
+        <i class="fas fa-search" aria-hidden="true"></i>
+      </div>
       <h3>No se encontraron resultados</h3>
       <p>Intenta ajustar los filtros o el término de búsqueda</p>
       <button @click="searchTerm = ''; filterStatus = 'all'" class="btn btn-outline">
@@ -460,6 +467,10 @@ onMounted(async () => {
     background: #e2e8f0;
     color: #374151;
   }
+  
+  i {
+    font-size: 0.75rem;
+  }
 }
 
 .filter-controls {
@@ -512,6 +523,10 @@ onMounted(async () => {
 
   &:not(:last-child) {
     border-right: 1px solid #e2e8f0;
+  }
+  
+  i {
+    font-size: 1rem;
   }
 }
 
@@ -572,6 +587,11 @@ onMounted(async () => {
 .no-results-icon {
   font-size: 3rem;
   margin-bottom: 1rem;
+  color: #64748b;
+  
+  i {
+    font-size: 3rem;
+  }
 }
 
 // Businesses Section
