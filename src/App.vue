@@ -3,6 +3,7 @@ import Header from './components/globals/TheHeader.vue'
 import Footer from './components/globals/TheFooter.vue'
 import ConfirmationDialog from './components/shared/ConfirmationDialog.vue';
 import ToastNotification from './components/shared/ToastNotification.vue';
+import SlowConnectionGlobalWarning from './components/shared/SlowConnectionGlobalWarning.vue';
 </script>
 
 <template>
@@ -12,6 +13,7 @@ import ToastNotification from './components/shared/ToastNotification.vue';
   </main>
   <ConfirmationDialog/>
   <ToastNotification/>
+  <SlowConnectionGlobalWarning/>
   <Footer />
 </template>
 
