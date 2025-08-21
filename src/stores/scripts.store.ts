@@ -36,6 +36,8 @@ export const useScriptsStore = defineStore('scripts', () => {
 
     const byPlatform = {
       youtube: scripts.value.filter(s => s.platform === 'youtube').length,
+      instagram: scripts.value.filter(s => s.platform === 'instagram').length,
+      tiktok: scripts.value.filter(s => s.platform === 'tiktok').length,
       social: scripts.value.filter(s => s.platform === 'social').length,
       email: scripts.value.filter(s => s.platform === 'email').length,
       website: scripts.value.filter(s => s.platform === 'website').length
