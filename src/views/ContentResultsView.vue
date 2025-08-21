@@ -186,7 +186,9 @@ const goToScripts = () => {
           'ready-to-generate': shouldShowGenerateButton
         }">
           <div class="status-icon">
-            {{ isContentComplete ? '✅' : shouldShowGenerateButton ? '🚀' : '⚠️' }}
+            <i v-if="isContentComplete" class="fas fa-check-circle"></i>
+            <i v-else-if="shouldShowGenerateButton" class="fas fa-rocket"></i>
+            <i v-else class="fas fa-exclamation-triangle"></i>
           </div>
           <div class="status-text">
             <h3>
@@ -206,21 +208,21 @@ const goToScripts = () => {
         <div v-if="shouldShowGenerateButton" class="generate-section">
           <div class="generate-card">
             <div class="generate-header">
-              <h2>🎯 Generar Contenido StoryBrand</h2>
+              <h2><i class="fas fa-bullseye"></i> Generar Contenido StoryBrand</h2>
               <p>Basado en las respuestas de tu negocio, nuestra IA creará:</p>
             </div>
             
             <div class="generate-features">
               <div class="feature-item">
-                <span class="feature-icon">💬</span>
+                <span class="feature-icon"><i class="fas fa-comments"></i></span>
                 <span class="feature-text">Soundbites únicos para tu marca</span>
               </div>
               <div class="feature-item">
-                <span class="feature-icon">🏷️</span>
+                <span class="feature-icon"><i class="fas fa-tags"></i></span>
                 <span class="feature-text">Taglines memorables y efectivos</span>
               </div>
               <div class="feature-item">
-                <span class="feature-icon">⚡</span>
+                <span class="feature-icon"><i class="fas fa-bolt"></i></span>
                 <span class="feature-text">Contenido optimizado para conversión</span>
               </div>
             </div>
@@ -250,22 +252,22 @@ const goToScripts = () => {
             class="btn btn-primary"
           >
             <span v-if="isRegenerating">Regenerando...</span>
-            <span v-else>🔄 Regenerar Contenido</span>
+            <span v-else><i class="fas fa-sync-alt"></i> Regenerar Contenido</span>
           </button>
           
           <button @click="editQuestions" class="btn btn-outline">
-            ✏️ Editar Preguntas
+            <i class="fas fa-edit"></i> Editar Preguntas
           </button>
           
           <button @click="goToScripts" class="btn btn-secondary">
-            📝 Ver Scripts
+            <i class="fas fa-file-alt"></i> Ver Scripts
           </button>
         </div>
 
         <!-- Soundbites Section -->
         <section class="content-section">
           <div class="section-header">
-            <h2>🎯 Soundbites</h2>
+            <h2><i class="fas fa-bullseye"></i> Soundbites</h2>
             <p>Frases clave que capturan la esencia de tu marca</p>
           </div>
           
@@ -280,7 +282,7 @@ const goToScripts = () => {
               <div class="soundbite-text">{{ soundbite.text }}</div>
               <div class="soundbite-actions">
                 <button class="copy-btn" @click="copyToClipboard(soundbite.text)">
-                  📋 Copiar
+                  <i class="fas fa-copy"></i> Copiar
                 </button>
               </div>
             </div>
@@ -294,7 +296,7 @@ const goToScripts = () => {
         <!-- Taglines Section -->
         <section class="content-section">
           <div class="section-header">
-            <h2>🏷️ Taglines</h2>
+            <h2><i class="fas fa-tags"></i> Taglines</h2>
             <p>Eslóganes memorables para tu marca</p>
           </div>
           
@@ -309,7 +311,7 @@ const goToScripts = () => {
               <div class="tagline-text">{{ tagline.text }}</div>
               <div class="tagline-actions">
                 <button class="copy-btn" @click="copyToClipboard(tagline.text)">
-                  📋 Copiar
+                  <i class="fas fa-copy"></i> Copiar
                 </button>
               </div>
             </div>
@@ -322,10 +324,10 @@ const goToScripts = () => {
 
         <!-- Next Steps -->
         <section class="next-steps">
-          <h2>🚀 Próximos Pasos</h2>
+          <h2><i class="fas fa-rocket"></i> Próximos Pasos</h2>
           <div class="steps-grid">
             <div class="step-card">
-              <div class="step-icon">📝</div>
+              <div class="step-icon"><i class="fas fa-file-alt"></i></div>
               <h3>Generar Scripts</h3>
               <p>Crea scripts para contenido y anuncios usando tus soundbites y taglines</p>
               <button @click="goToScripts" class="btn btn-primary">
@@ -334,7 +336,7 @@ const goToScripts = () => {
             </div>
             
             <div class="step-card">
-              <div class="step-icon">📊</div>
+              <div class="step-icon"><i class="fas fa-chart-bar"></i></div>
               <h3>Analizar Rendimiento</h3>
               <p>Revisa qué contenido funciona mejor con tu audiencia</p>
               <button class="btn btn-outline" disabled>
@@ -343,7 +345,7 @@ const goToScripts = () => {
             </div>
             
             <div class="step-card">
-              <div class="step-icon">🎨</div>
+              <div class="step-icon"><i class="fas fa-palette"></i></div>
               <h3>Crear Variaciones</h3>
               <p>Genera diferentes versiones para distintas plataformas</p>
               <button class="btn btn-outline" disabled>
@@ -356,7 +358,7 @@ const goToScripts = () => {
 
       <!-- Error State -->
       <div v-else class="error-state">
-        <div class="error-icon">❌</div>
+        <div class="error-icon"><i class="fas fa-times-circle"></i></div>
         <h3>Contenido no encontrado</h3>
         <p>No se pudo cargar el contenido solicitado</p>
         <button @click="goToDashboard" class="btn btn-primary">
