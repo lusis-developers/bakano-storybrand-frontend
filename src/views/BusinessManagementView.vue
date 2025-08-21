@@ -8,6 +8,7 @@ import BusinessCard from '@/components/business/BusinessCard.vue'
 import BusinessForm from '@/components/business/BusinessForm.vue'
 import BusinessDangerZone from '@/components/business/DangerZone.vue'
 import SearchableSelect from '@/components/shared/SearchableSelect.vue'
+import BusinessLimitAlert from '@/components/BusinessLimitAlert.vue'
 import type { IBusiness, ICreateBusinessRequest, IUpdateBusinessRequest } from '@/types/business.types'
 
 // Composables
@@ -36,6 +37,7 @@ const { triggerToast: showToast } = useToast()
 const showCreateForm = ref(false)
 const showEditForm = ref(false)
 const showDangerZone = ref(false)
+const showBusinessLimitAlert = ref(false)
 const selectedBusiness = ref<IBusiness | null>(null)
 const searchTerm = ref('')
 const selectedBusinessId = ref<string | number | null>(null)
@@ -75,6 +77,12 @@ const hasFilteredResults = computed(() => filteredBusinesses.value.length > 0)
 
 // Métodos
 const handleCreateBusiness = () => {
+  // Check if user already has a business
+  if (businesses.value.length > 0) {
+    showBusinessLimitAlert.value = true
+    return
+  }
+  
   clearErrors()
   selectedBusiness.value = null
   showCreateForm.value = true
@@ -155,6 +163,10 @@ const handleManageDangerZone = (business: IBusiness) => {
 const handleCloseDangerZone = () => {
   showDangerZone.value = false
   selectedBusiness.value = null
+}
+
+const handleCloseBusinessLimitAlert = () => {
+  showBusinessLimitAlert.value = false
 }
 
 const goToDashboard = () => {
@@ -326,6 +338,12 @@ onMounted(async () => {
       v-if="showDangerZone && selectedBusiness"
       :business="selectedBusiness"
       @close="handleCloseDangerZone"
+    />
+
+    <!-- Business Limit Alert -->
+    <BusinessLimitAlert
+      :visible="showBusinessLimitAlert"
+      @close="handleCloseBusinessLimitAlert"
     />
   </div>
 </template>
