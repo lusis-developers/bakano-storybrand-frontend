@@ -1,5 +1,12 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
+import { showSlowWarning, hideSlowConnectionWarning } from '@/services/httpBase'
+import { ref } from 'vue'
+
+// Estado para tracking de navegación
+let navigationStartTime = 0
+let navigationTimer: number | null = null
+const isNavigating = ref(false)
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -76,6 +83,28 @@ const router = createRouter({
 
 // Navigation Guards
 router.beforeEach(async (to, from, next) => {
+  // Iniciar tracking de navegación lenta
+  navigationStartTime = Date.now()
+  isNavigating.value = true
+  
+  // Configurar timer para detectar navegación lenta (3 segundos)
+  if (navigationTimer) {
+    clearTimeout(navigationTimer)
+  }
+  
+  navigationTimer = setTimeout(() => {
+    if (isNavigating.value && !showSlowWarning.value) {
+      // Mostrar aviso de conexión lenta si la navegación toma más de 3 segundos
+      const duration = Date.now() - navigationStartTime
+      if (duration >= 3000) {
+        showSlowWarning.value = true
+        // Auto-ocultar después de 5 segundos
+        setTimeout(() => {
+          showSlowWarning.value = false
+        }, 5000)
+      }
+    }
+  }, 3000)
   const authStore = useAuthStore()
 
   // Rutas que requieren estar deslogueado (guest)
@@ -129,6 +158,43 @@ router.beforeEach(async (to, from, next) => {
   }
 
   next()
+})
+
+// Interceptor después de cada navegación exitosa
+router.afterEach((to, from) => {
+  // Limpiar estado de navegación
+  isNavigating.value = false
+  
+  // Limpiar timer si existe
+  if (navigationTimer) {
+    clearTimeout(navigationTimer)
+    navigationTimer = null
+  }
+  
+  // Calcular duración total de navegación
+  const navigationDuration = Date.now() - navigationStartTime
+  
+  // Si la navegación tomó más de 3 segundos, mostrar aviso brevemente
+  if (navigationDuration >= 3000 && !showSlowWarning.value) {
+    showSlowWarning.value = true
+    // Auto-ocultar después de 3 segundos para navegaciones completadas
+    setTimeout(() => {
+      showSlowWarning.value = false
+    }, 3000)
+  }
+})
+
+// Interceptor para errores de navegación
+router.onError((error) => {
+  // Limpiar estado de navegación en caso de error
+  isNavigating.value = false
+  
+  if (navigationTimer) {
+    clearTimeout(navigationTimer)
+    navigationTimer = null
+  }
+  
+  console.error('Error de navegación:', error)
 })
 
 export default router
