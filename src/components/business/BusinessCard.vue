@@ -10,7 +10,6 @@ interface Props {
 interface Emits {
   (e: 'edit', business: IBusiness): void
   (e: 'delete', business: IBusiness): void
-  (e: 'manage-danger-zone', business: IBusiness): void
 }
 
 const props = defineProps<Props>()
@@ -58,10 +57,6 @@ const handleDelete = () => {
   emit('delete', props.business)
 }
 
-const handleManageDangerZone = () => {
-  emit('manage-danger-zone', props.business)
-}
-
 const openWebsite = () => {
   if (props.business.website) {
     window.open(props.business.website, '_blank')
@@ -102,16 +97,9 @@ const callPhone = () => {
           class="action-btn edit"
           title="Editar negocio"
         >
-          ✏️
+          <i class="fas fa-edit"></i>
         </button>
         
-        <button 
-          @click="handleManageDangerZone" 
-          class="action-btn danger"
-          title="Configuración avanzada"
-        >
-          ⚙️
-        </button>
       </div>
     </div>
 
@@ -130,7 +118,7 @@ const callPhone = () => {
             class="contact-item email"
             title="Enviar email"
           >
-            <span class="contact-icon">📧</span>
+            <span class="contact-icon"><i class="fas fa-envelope"></i></span>
             <span class="contact-text">{{ business.email }}</span>
           </button>
 
@@ -140,7 +128,7 @@ const callPhone = () => {
             class="contact-item phone"
             title="Llamar"
           >
-            <span class="contact-icon">📞</span>
+            <span class="contact-icon"><i class="fas fa-phone"></i></span>
             <span class="contact-text">{{ business.phone }}</span>
           </button>
 
@@ -150,7 +138,7 @@ const callPhone = () => {
             class="contact-item website"
             title="Visitar sitio web"
           >
-            <span class="contact-icon">🌐</span>
+            <span class="contact-icon"><i class="fas fa-globe"></i></span>
             <span class="contact-text">{{ business.website.replace(/^https?:\/\//, '') }}</span>
           </button>
         </div>
@@ -158,7 +146,7 @@ const callPhone = () => {
 
       <!-- Address -->
       <div v-if="hasAddress" class="address-info">
-        <span class="address-icon">📍</span>
+        <span class="address-icon"><i class="fas fa-map-marker-alt"></i></span>
         <span class="address-text">{{ addressText }}</span>
       </div>
     </div>
@@ -168,7 +156,7 @@ const callPhone = () => {
       <div class="footer-info">
         <span class="created-date">Creado: {{ formattedDate }}</span>
         <span v-if="business.employees?.length" class="employee-count">
-          👥 {{ business.employees.length }} empleado{{ business.employees.length !== 1 ? 's' : '' }}
+          <i class="fas fa-users"></i> {{ business.employees.length }} empleado{{ business.employees.length !== 1 ? 's' : '' }}
         </span>
       </div>
 
