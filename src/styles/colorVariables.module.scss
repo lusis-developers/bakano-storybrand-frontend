@@ -8,3 +8,13 @@ $text-light: #f5f5f5;
 $overlay-purple: rgba($BAKANO-PURPLE, 0.1);
 
 $BAKANO-GREEN: #3bb77e;
+
+// Alert colors
+$alert-warning: #f59e0b;
+$alert-info: #3b82f6;
+$alert-success: #10b981;
+$alert-error: #ef4444;
+$alert-warning-bg: rgba($alert-warning, 0.1);
+$alert-info-bg: rgba($alert-info, 0.1);
+$alert-success-bg: rgba($alert-success, 0.1);
+$alert-error-bg: rgba($alert-error, 0.1);
