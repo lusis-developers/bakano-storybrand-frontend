@@ -2,13 +2,10 @@
 import { ref, reactive, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { RouterLink } from 'vue-router'
-import { useSlowConnection } from '@/composables/useSlowConnection'
-import SlowConnectionWarning from '@/components/shared/SlowConnectionWarning.vue'
 
 const authStore = useAuthStore()
 
-// Detección de conexión lenta
-const { showSlowWarning, hideSlowWarning } = useSlowConnection()
+
 
 // Estado del formulario
 const formData = reactive({
@@ -84,11 +81,7 @@ const buttonText = computed(() => {
 </script>
 
 <template>
-  <!-- Warning de conexión lenta -->
-  <SlowConnectionWarning 
-    :show="showSlowWarning" 
-    @close="hideSlowWarning" 
-  />
+
   
   <div class="login-view">
     <div class="login-container">
