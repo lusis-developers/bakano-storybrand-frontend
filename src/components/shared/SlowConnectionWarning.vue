@@ -22,11 +22,7 @@ const handleClose = () => {
     <div v-if="show" class="slow-connection-warning">
       <div class="warning-content">
         <div class="warning-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="2" fill="none"/>
-            <path d="m2 17 10 5 10-5" stroke="currentColor" stroke-width="2" fill="none"/>
-            <path d="m2 12 10 5 10-5" stroke="currentColor" stroke-width="2" fill="none"/>
-          </svg>
+          <i class="fas fa-layer-group fa-lg"></i>
         </div>
         
         <div class="warning-text">
