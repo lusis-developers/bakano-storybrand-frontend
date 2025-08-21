@@ -72,7 +72,7 @@ class AuthService extends APIBase {
     try {
       const response: AxiosResponse<AuthResponse> = await this.post<AuthResponse>(
         'auth/register',
-        userData
+        userData,
       )
       return response.data
     } catch (error) {
@@ -87,7 +87,7 @@ class AuthService extends APIBase {
     try {
       const response: AxiosResponse<AuthResponse> = await this.post<AuthResponse>(
         'auth/login',
-        credentials
+        credentials,
       )
       return response.data
     } catch (error) {
@@ -101,7 +101,7 @@ class AuthService extends APIBase {
   async verifyUser(token: string): Promise<VerifyResponse> {
     try {
       const response: AxiosResponse<VerifyResponse> = await this.get<VerifyResponse>(
-        `auth/verify/${token}`
+        `auth/verify/${token}`,
       )
       return response.data
     } catch (error) {
@@ -116,7 +116,7 @@ class AuthService extends APIBase {
     try {
       const response: AxiosResponse<{ message: string }> = await this.post<{ message: string }>(
         'auth/forgot-password',
-        { email }
+        { email },
       )
       return response.data
     } catch (error) {
@@ -131,7 +131,7 @@ class AuthService extends APIBase {
     try {
       const response: AxiosResponse<{ message: string }> = await this.post<{ message: string }>(
         'auth/reset-password',
-        resetData
+        resetData,
       )
       return response.data
     } catch (error) {
@@ -146,7 +146,7 @@ class AuthService extends APIBase {
     try {
       const response: AxiosResponse<{ message: string }> = await this.post<{ message: string }>(
         'auth/change-password',
-        passwordData
+        passwordData,
       )
       return response.data
     } catch (error) {
@@ -161,7 +161,7 @@ class AuthService extends APIBase {
     try {
       const response: AxiosResponse<AuthResponse> = await this.post<AuthResponse>(
         'auth/refresh-token',
-        { refreshToken }
+        { refreshToken },
       )
       return response.data
     } catch (error) {
@@ -176,7 +176,7 @@ class AuthService extends APIBase {
     try {
       const response: AxiosResponse<{ message: string }> = await this.post<{ message: string }>(
         'auth/resend-verification',
-        { email }
+        { email },
       )
       return response.data
     } catch (error) {
@@ -199,8 +199,7 @@ class AuthService extends APIBase {
    */
   clearCorruptedTokens(): void {
     const token = localStorage.getItem('access_token')
-    console.log('🔍 DEBUG - Checking for corrupted tokens:', token)
-    
+
     if (token && (token.includes('undefined') || token.includes('null') || token.length < 10)) {
       console.log('❌ DEBUG - Found corrupted token, clearing localStorage')
       this.logout()
@@ -214,19 +213,19 @@ class AuthService extends APIBase {
     // Verificar si existe el token antes de procesarlo
     if (authResponse.token) {
       // El backend devuelve el token con 'Bearer ' incluido, necesitamos extraer solo el token
-      const cleanToken = authResponse.token.startsWith('Bearer ') 
-        ? authResponse.token.substring(7) 
+      const cleanToken = authResponse.token.startsWith('Bearer ')
+        ? authResponse.token.substring(7)
         : authResponse.token
-      
+
       console.log('🔍 DEBUG - Token received from backend:', authResponse.token)
       console.log('🔍 DEBUG - Clean token to save:', cleanToken)
-      
+
       localStorage.setItem('access_token', cleanToken)
       if (authResponse.refreshToken) {
         localStorage.setItem('refresh_token', authResponse.refreshToken)
       }
     }
-    
+
     localStorage.setItem('user_data', JSON.stringify(authResponse.user))
   }
 
