@@ -157,7 +157,7 @@ function logout() {
                   class="action-btn primary"
                 >
                   <div class="action-icon">
-                    <span>{{ hasExistingContent ? '👁️' : '📝' }}</span>
+                    <i :class="hasExistingContent ? 'fas fa-eye' : 'fas fa-edit'"></i>
                   </div>
                   <div class="action-content">
                     <h3>{{ hasExistingContent ? 'Ver Contenido' : 'Crear Contenido' }}</h3>
@@ -166,7 +166,7 @@ function logout() {
                 </button>
                 
                 <button @click="router.push('/business')" class="action-btn">
-                  <div class="action-icon">🏢</div>
+                  <div class="action-icon"><i class="fas fa-building"></i></div>
                   <div class="action-content">
                     <h3>Gestionar Negocios</h3>
                     <p>Administra tus negocios</p>
@@ -174,7 +174,7 @@ function logout() {
                 </button>
                 
                 <button class="action-btn disabled" disabled title="Próximamente disponible">
-                  <div class="action-icon">📊</div>
+                  <div class="action-icon"><i class="fas fa-chart-bar"></i></div>
                   <div class="action-content">
                     <h3>Ver Análisis</h3>
                     <p>Próximamente</p>
@@ -190,7 +190,7 @@ function logout() {
             
             <div class="stats-grid">
               <div class="stat-card">
-                <div class="stat-icon">📝</div>
+                <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
                 <div class="stat-content">
                   <h3>{{ userStatistics?.totalScripts || 0 }}</h3>
                   <p>Scripts Creados</p>
@@ -198,7 +198,7 @@ function logout() {
               </div>
               
               <div class="stat-card">
-                <div class="stat-icon">🏢</div>
+                <div class="stat-icon"><i class="fas fa-building"></i></div>
                 <div class="stat-content">
                   <h3>{{ userStatistics?.totalBusinesses || 0 }}</h3>
                   <p>Negocios Registrados</p>
@@ -206,7 +206,7 @@ function logout() {
               </div>
               
               <div class="stat-card">
-                <div class="stat-icon">📝</div>
+                <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
                 <div class="stat-content">
                   <h3>{{ userStatistics?.scriptsByType.content || 0 }}</h3>
                   <p>Scripts de Contenido</p>
@@ -214,7 +214,7 @@ function logout() {
               </div>
               
               <div class="stat-card">
-                <div class="stat-icon">📢</div>
+                <div class="stat-icon"><i class="fas fa-bullhorn"></i></div>
                 <div class="stat-content">
                   <h3>{{ userStatistics?.scriptsByType.ad || 0 }}</h3>
                   <p>Scripts de Anuncios</p>
@@ -229,7 +229,7 @@ function logout() {
             
             <div class="activity-card">
               <div v-if="!hasExistingContent" class="empty-state">
-                <div class="empty-icon">🎉</div>
+                <div class="empty-icon"><i class="fas fa-rocket"></i></div>
                 <h3>¡Todo listo para comenzar!</h3>
                 <p>Has completado tu configuración inicial. Comienza creando tu primer contenido.</p>
                 <button 
@@ -241,7 +241,7 @@ function logout() {
               </div>
               
               <div v-else class="existing-content-state">
-                <div class="content-icon">✅</div>
+                <div class="content-icon"><i class="fas fa-check-circle"></i></div>
                 <h3>¡Contenido generado!</h3>
                 <p>Ya tienes contenido creado para tu marca. Puedes revisarlo o generar nuevo contenido.</p>
                 <div class="content-actions">
