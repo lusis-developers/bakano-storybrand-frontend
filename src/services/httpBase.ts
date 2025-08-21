@@ -18,16 +18,12 @@ class APIBase {
     }
 
     const accessToken = localStorage.getItem('access_token')
-    console.log('🔍 DEBUG - Token from localStorage:', accessToken)
     
     if (accessToken) {
       headers['Authorization'] = `Bearer ${accessToken}`
-      console.log('🔍 DEBUG - Authorization header:', headers['Authorization'])
     } else {
       console.log('❌ DEBUG - No access token found in localStorage')
     }
-
-    console.log('🔍 DEBUG - Final headers:', headers)
     return headers
   }
 
