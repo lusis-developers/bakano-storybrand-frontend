@@ -6,7 +6,7 @@ import { useConfirmationDialog } from '@/composables/useConfirmationDialog'
 import { useToast } from '@/composables/useToast'
 import BusinessCard from '@/components/business/BusinessCard.vue'
 import BusinessForm from '@/components/business/BusinessForm.vue'
-import BusinessDangerZone from '@/components/business/DangerZone.vue'
+
 import SearchableSelect from '@/components/shared/SearchableSelect.vue'
 import BusinessLimitAlert from '@/components/BusinessLimitAlert.vue'
 import type { IBusiness, ICreateBusinessRequest, IUpdateBusinessRequest } from '@/types/business.types'
@@ -36,7 +36,7 @@ const { triggerToast: showToast } = useToast()
 // Estado local
 const showCreateForm = ref(false)
 const showEditForm = ref(false)
-const showDangerZone = ref(false)
+
 const showBusinessLimitAlert = ref(false)
 const selectedBusiness = ref<IBusiness | null>(null)
 const searchTerm = ref('')
@@ -154,16 +154,7 @@ const handleCancelForm = () => {
   clearErrors()
 }
 
-const handleManageDangerZone = (business: IBusiness) => {
-  selectedBusiness.value = business
-  setCurrentBusiness(business)
-  showDangerZone.value = true
-}
 
-const handleCloseDangerZone = () => {
-  showDangerZone.value = false
-  selectedBusiness.value = null
-}
 
 const handleCloseBusinessLimitAlert = () => {
   showBusinessLimitAlert.value = false
@@ -307,7 +298,7 @@ onMounted(async () => {
           :view-mode="viewMode"
           @edit="handleEditBusiness"
           @delete="handleDeleteBusiness"
-          @manage-danger-zone="handleManageDangerZone"
+
         />
       </div>
     </section>
@@ -333,12 +324,7 @@ onMounted(async () => {
       @cancel="handleCancelForm"
     />
 
-    <!-- Danger Zone Modal -->
-    <BusinessDangerZone
-      v-if="showDangerZone && selectedBusiness"
-      :business="selectedBusiness"
-      @close="handleCloseDangerZone"
-    />
+
 
     <!-- Business Limit Alert -->
     <BusinessLimitAlert
