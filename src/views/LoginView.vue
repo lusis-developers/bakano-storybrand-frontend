@@ -1,9 +1,14 @@
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { RouterLink } from 'vue-router'
+import { useSlowConnection } from '@/composables/useSlowConnection'
+import SlowConnectionWarning from '@/components/shared/SlowConnectionWarning.vue'
 
 const authStore = useAuthStore()
+
+// Detección de conexión lenta
+const { showSlowWarning, hideSlowWarning } = useSlowConnection()
 
 // Estado del formulario
 const formData = reactive({
@@ -65,9 +70,26 @@ const handleSubmit = async () => {
     isSubmitting.value = false
   }
 }
+
+// Computed para el texto del botón
+const buttonText = computed(() => {
+  if (isSubmitting.value) {
+    return 'Iniciando sesión...'
+  }
+  if (authStore.loading) {
+    return 'Verificando perfil...'
+  }
+  return 'Iniciar sesión'
+})
 </script>
 
 <template>
+  <!-- Warning de conexión lenta -->
+  <SlowConnectionWarning 
+    :show="showSlowWarning" 
+    @close="hideSlowWarning" 
+  />
+  
   <div class="login-view">
     <div class="login-container">
       <div class="login-card">
@@ -154,7 +176,7 @@ const handleSubmit = async () => {
             :disabled="isSubmitting || authStore.loading"
           >
             <span v-if="isSubmitting || authStore.loading" class="loading-spinner"></span>
-            {{ isSubmitting || authStore.loading ? 'Iniciando sesión...' : 'Iniciar sesión' }}
+            {{ buttonText }}
           </button>
         </form>
 
