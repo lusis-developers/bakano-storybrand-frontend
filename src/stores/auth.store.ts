@@ -133,7 +133,11 @@ export const useAuthStore = defineStore('auth', () => {
       toast.triggerToast(error.value ?? 'Error desconocido', 'error')
       throw err
     } finally {
-      loading.value = false
+      // Mantener loading hasta que la redirección esté completa
+      // Se desactivará cuando el componente se desmonte o en la nueva ruta
+      setTimeout(() => {
+        loading.value = false
+      }, 100)
     }
   }
 
