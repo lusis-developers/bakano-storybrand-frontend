@@ -397,6 +397,7 @@ onMounted(() => {
 
 <template>
   <div class="scripts-view">
+    <div class="scripts-container">
     <!-- Header -->
     <div class="scripts-header">
       <div class="header-content">
@@ -852,6 +853,7 @@ onMounted(() => {
         </div>
       </div>
     </div>
+    </div>
   </div>
 </template>
 
@@ -864,6 +866,12 @@ onMounted(() => {
   @media (max-width: 768px) {
     padding: 1rem;
   }
+}
+
+.scripts-container {
+  max-width: 1400px;
+  margin: 0 auto;
+  width: 100%;
 }
 
 .scripts-header {
