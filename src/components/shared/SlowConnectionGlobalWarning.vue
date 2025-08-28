@@ -34,8 +34,6 @@ const hideWarning = hideSlowConnectionWarning
 </template>
 
 <style lang="scss" scoped>
-@use '@/styles/colorVariables.module.scss' as *;
-
 .slow-connection-global-warning {
   position: fixed;
   top: 0;
@@ -43,19 +41,19 @@ const hideWarning = hideSlowConnectionWarning
   right: 0;
   z-index: 9999;
   pointer-events: none;
-  
+
   .warning-container {
     max-width: 100%;
     margin: 0 auto;
     padding: 1rem;
     pointer-events: auto;
-    
+
     @media (min-width: 768px) {
       max-width: 600px;
       padding: 1rem 2rem;
     }
   }
-  
+
   .warning-content {
     background: linear-gradient(135deg, #ff6b35 0%, #f7931e 100%);
     color: white;
@@ -67,14 +65,14 @@ const hideWarning = hideSlowConnectionWarning
     gap: 1rem;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.2);
-    
+
     @media (max-width: 767px) {
       padding: 0.875rem;
       gap: 0.75rem;
       border-radius: 0.5rem;
     }
   }
-  
+
   .warning-icon {
     flex-shrink: 0;
     width: 2.5rem;
@@ -84,49 +82,49 @@ const hideWarning = hideSlowConnectionWarning
     display: flex;
     align-items: center;
     justify-content: center;
-    
+
     i {
       font-size: 1.25rem;
       animation: pulse 2s infinite;
     }
-    
+
     @media (max-width: 767px) {
       width: 2rem;
       height: 2rem;
-      
+
       i {
         font-size: 1rem;
       }
     }
   }
-  
+
   .warning-text {
     flex: 1;
     min-width: 0;
-    
+
     h4 {
       margin: 0 0 0.25rem 0;
       font-size: 1rem;
       font-weight: 600;
       line-height: 1.2;
-      
+
       @media (max-width: 767px) {
         font-size: 0.9rem;
       }
     }
-    
+
     p {
       margin: 0;
       font-size: 0.875rem;
       opacity: 0.95;
       line-height: 1.3;
-      
+
       @media (max-width: 767px) {
         font-size: 0.8rem;
       }
     }
   }
-  
+
   .close-button {
     flex-shrink: 0;
     background: rgba(255, 255, 255, 0.2);
@@ -140,24 +138,24 @@ const hideWarning = hideSlowConnectionWarning
     justify-content: center;
     cursor: pointer;
     transition: all 0.2s ease;
-    
+
     &:hover {
       background: rgba(255, 255, 255, 0.3);
       transform: scale(1.05);
     }
-    
+
     &:active {
       transform: scale(0.95);
     }
-    
+
     i {
       font-size: 0.875rem;
     }
-    
+
     @media (max-width: 767px) {
       width: 1.75rem;
       height: 1.75rem;
-      
+
       i {
         font-size: 0.75rem;
       }
@@ -167,9 +165,12 @@ const hideWarning = hideSlowConnectionWarning
 
 // Animaciones
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     opacity: 1;
   }
+
   50% {
     opacity: 0.6;
   }
