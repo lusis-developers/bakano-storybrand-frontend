@@ -58,7 +58,8 @@ const newScript = ref<IGenerateScriptRequest>({
   scriptType: 'content',
   platform: undefined,
   selectedSoundbite: undefined,
-  selectedTagline: undefined
+  selectedTagline: undefined,
+  customText: undefined
 })
 
 // Computadas
@@ -103,7 +104,7 @@ const taglineOptions = computed(() => {
 // Métodos
 const initializeView = async () => {
   console.log('Inicializando vista de scripts con ID:', route.params.contentId)
-  
+
   const routeContentId = route.params.contentId as string
   if (!routeContentId) {
     router.push('/dashboard')
@@ -116,14 +117,14 @@ const initializeView = async () => {
     // Obtener el business usando el contentId
     const business = await fetchBusinessByContentId(routeContentId)
     console.log('Business obtenido:', business)
-    
+
     if (!business) {
       triggerToast('Business not found', 'error')
       return
     }
-    
+
     console.log('BusinessId:', business._id)
-    
+
     // Cargar contenido y scripts usando el businessId correcto
     const content = await fetchContentByBusiness(business._id)
     if (content) {
@@ -188,7 +189,8 @@ const openGenerateModal = () => {
     scriptType: 'content',
     platform: undefined,
     selectedSoundbite: undefined,
-    selectedTagline: undefined
+    selectedTagline: undefined,
+    customText: undefined
   }
 
   showGenerateModal.value = true
@@ -277,7 +279,7 @@ const formatDate = (date: Date) => {
 const formatScriptContent = (content: string) => {
   try {
     const parsed = JSON.parse(content)
-    
+
     // Si es un objeto con estructura de script de video
     if (parsed.visual && parsed.caption && parsed.text) {
       return {
@@ -287,7 +289,7 @@ const formatScriptContent = (content: string) => {
         isStructured: true
       }
     }
-    
+
     // Si es otro tipo de objeto JSON
     if (typeof parsed === 'object') {
       return {
@@ -295,7 +297,7 @@ const formatScriptContent = (content: string) => {
         isStructured: false
       }
     }
-    
+
     return {
       content: content,
       isStructured: false
@@ -313,12 +315,12 @@ const formatScriptContent = (content: string) => {
 const parseMarkdownContent = (content: string) => {
   // Dividir el contenido en secciones por títulos principales
   const sections = content.split(/(?=^# )/gm).filter(section => section.trim())
-  
+
   return sections.map(section => {
     const lines = section.split('\n')
     const title = lines[0]?.replace(/^# /, '') || ''
     const body = lines.slice(1).join('\n')
-    
+
     return {
       title: title.trim(),
       content: body.trim()
@@ -348,18 +350,18 @@ const formatMarkdownLine = (line: string) => {
 
 const getScriptPreview = (content: string) => {
   const formatted = formatScriptContent(content)
-  
+
   if (formatted.isStructured && 'text' in formatted) {
     return formatted.text.substring(0, 150) + '...'
   }
-  
+
   if (formatted.isMarkdown) {
     // Para contenido markdown, extraer el primer texto significativo
     const sections = parseMarkdownContent(content)
     if (sections.length > 0) {
       const firstSection = sections[0]
       const lines = firstSection.content.split('\n').filter(l => l.trim())
-      
+
       // Buscar la primera línea de texto real (no timestamps, no instrucciones)
       for (const line of lines) {
         const lineType = formatMarkdownLine(line)
@@ -370,14 +372,14 @@ const getScriptPreview = (content: string) => {
           }
         }
       }
-      
+
       // Si no encontramos texto, usar el título de la sección
       if (firstSection.title) {
         return firstSection.title.substring(0, 150) + '...'
       }
     }
   }
-  
+
   return (formatted.content || content).substring(0, 150) + '...'
 }
 
@@ -714,6 +716,17 @@ onMounted(() => {
                 {{ option.label }}
               </option>
             </select>
+          </div>
+          
+          <div class="form-group">
+            <label>Tema Personalizado (Opcional)</label>
+            <textarea 
+              v-model="newScript.customText"
+              class="form-textarea"
+              placeholder="Describe el tema específico del que quieres hablar en este script..."
+              rows="3"
+            ></textarea>
+            <small class="form-help">Especifica un tema o mensaje particular que quieras incluir en el script</small>
           </div>
         </div>
         
@@ -1461,6 +1474,35 @@ onMounted(() => {
             border-color: #667eea;
           }
         }
+
+        .form-textarea {
+          width: 90%;
+          padding: 0.75rem;
+          border: 2px solid #e2e8f0;
+          border-radius: 8px;
+          font-size: 1rem;
+          transition: border-color 0.3s ease;
+          resize: vertical;
+          min-height: 80px;
+          font-family: inherit;
+
+          &:focus {
+            outline: none;
+            border-color: #667eea;
+          }
+
+          &::placeholder {
+            color: #9ca3af;
+          }
+        }
+
+        .form-help {
+          display: block;
+          margin-top: 0.25rem;
+          font-size: 0.875rem;
+          color: #6b7280;
+          line-height: 1.4;
+        }
       }
 
       .script-meta-info {
@@ -1503,7 +1545,7 @@ onMounted(() => {
             background: #f8f9fa;
             border-radius: 12px;
             border-left: 4px solid #667eea;
-            
+
             .section-title {
               display: flex;
               align-items: center;
@@ -1512,13 +1554,13 @@ onMounted(() => {
               font-weight: 600;
               color: #2d3748;
               margin-bottom: 1rem;
-              
+
               i {
                 color: #667eea;
                 font-size: 1rem;
               }
             }
-            
+
             .section-content {
               font-size: 1rem;
               line-height: 1.6;
@@ -1528,7 +1570,7 @@ onMounted(() => {
               word-wrap: break-word;
             }
           }
-          
+
           .raw-content {
             background: #f8f9fa;
             padding: 1.5rem;
@@ -1552,7 +1594,7 @@ onMounted(() => {
             border-radius: 12px;
             border: 1px solid #dee2e6;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
-            
+
             .markdown-title {
               font-size: 1.3rem;
               font-weight: 700;
@@ -1563,21 +1605,21 @@ onMounted(() => {
               gap: 0.75rem;
               padding-bottom: 0.75rem;
               border-bottom: 2px solid #667eea;
-              
+
               i {
                 color: #667eea;
                 font-size: 1.1rem;
               }
             }
-            
+
             .markdown-body {
               .markdown-line {
                 margin-bottom: 0.75rem;
                 line-height: 1.6;
-                
+
                 &.timestamp {
                   margin: 1rem 0;
-                  
+
                   .timestamp-badge {
                     display: inline-flex;
                     align-items: center;
@@ -1588,13 +1630,13 @@ onMounted(() => {
                     border-radius: 20px;
                     font-size: 0.85rem;
                     font-weight: 600;
-                    
+
                     i {
                       font-size: 0.8rem;
                     }
                   }
                 }
-                
+
                 &.subtitle {
                   .subtitle-text {
                     font-size: 1.1rem;
@@ -1606,10 +1648,10 @@ onMounted(() => {
                     border-left: 3px solid #4ecdc4;
                   }
                 }
-                
+
                 &.instruction {
                   margin: 1rem 0;
-                  
+
                   .instruction-text {
                     display: inline-flex;
                     align-items: center;
@@ -1620,25 +1662,25 @@ onMounted(() => {
                     border-radius: 8px;
                     border: 1px solid #ffeaa7;
                     font-style: italic;
-                    
+
                     i {
                       color: #f39c12;
                     }
                   }
                 }
-                
+
                 &.hashtag {
                   .hashtag-text {
                     color: #667eea;
                     font-weight: 500;
-                    
+
                     &::before {
                       content: "🏷️ ";
                       margin-right: 0.25rem;
                     }
                   }
                 }
-                
+
                 &.text {
                   .regular-text {
                     color: #495057;
