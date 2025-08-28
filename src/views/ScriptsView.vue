@@ -88,6 +88,13 @@ const canGenerateNewScript = computed(() => {
     !isGenerating.value
 })
 
+const canSubmitScript = computed(() => {
+  return newScript.value.scriptType &&
+    newScript.value.platform !== undefined &&
+    newScript.value.selectedSoundbite &&
+    newScript.value.selectedTagline
+})
+
 const soundbiteOptions = computed(() => {
   return currentContent.value?.soundbites?.map(sb => ({
     value: sb.text,
@@ -235,7 +242,10 @@ const openGenerateModal = () => {
 }
 
 const handleGenerateScript = async () => {
-  if (!contentId.value) return
+  if (!contentId.value || !canSubmitScript.value) {
+    triggerToast('Por favor completa todos los campos requeridos', 'error')
+    return
+  }
 
   try {
     const generatedScript = await generateScript(contentId.value, newScript.value)
@@ -760,14 +770,14 @@ onMounted(() => {
             Cancelar
           </button>
           <button 
-            @click="handleGenerateScript"
-            class="generate-button"
-            :disabled="isGenerating"
-          >
-            <i v-if="isGenerating" class="fas fa-spinner fa-spin"></i>
-            <i v-else class="fas fa-magic"></i>
-            {{ isGenerating ? 'Generando...' : 'Generar Script' }}
-          </button>
+              @click="handleGenerateScript"
+              class="generate-script-button"
+              :disabled="isGenerating || !canSubmitScript"
+            >
+              <i v-if="isGenerating" class="fas fa-spinner fa-spin"></i>
+              <i v-else class="fas fa-magic"></i>
+              {{ isGenerating ? 'Generando...' : 'Generar Script' }}
+            </button>
         </div>
       </div>
     </div>
