@@ -139,6 +139,8 @@ const handleLogout = () => {
 </template>
 
 <style lang="scss" scoped>
+@use 'sass:color';
+
 .header {
   position: fixed;
   top: 0;
@@ -226,7 +228,7 @@ const handleLogout = () => {
     }
 
     &-button {
-      background: linear-gradient(135deg, $BAKANO-PINK 0%, darken($BAKANO-PINK, 10%) 100%);
+      background: linear-gradient(135deg, $BAKANO-PINK 0%, color.adjust($BAKANO-PINK, $lightness: -10%) 100%);
       color: white;
       text-decoration: none;
       font-weight: 600;
@@ -275,7 +277,7 @@ const handleLogout = () => {
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: linear-gradient(135deg, $BAKANO-PINK 0%, darken($BAKANO-PINK, 10%) 100%);
+    background: linear-gradient(135deg, $BAKANO-PINK 0%, color.adjust($BAKANO-PINK, $lightness: -10%) 100%);
     color: white;
     display: flex;
     align-items: center;
@@ -526,7 +528,7 @@ const handleLogout = () => {
       }
 
       &-button {
-        background: linear-gradient(135deg, $BAKANO-PINK 0%, darken($BAKANO-PINK, 10%) 100%);
+        background: linear-gradient(135deg, $BAKANO-PINK 0%, color.adjust($BAKANO-PINK, $lightness: -10%) 100%);
         color: white;
         text-decoration: none;
         font-weight: 600;
@@ -561,7 +563,7 @@ const handleLogout = () => {
       width: 40px;
       height: 40px;
       border-radius: 50%;
-      background: linear-gradient(135deg, $BAKANO-PINK 0%, darken($BAKANO-PINK, 10%) 100%);
+      background: linear-gradient(135deg, $BAKANO-PINK 0%, color.adjust($BAKANO-PINK, $lightness: -10%) 100%);
       color: white;
       display: flex;
       align-items: center;

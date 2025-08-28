@@ -34,7 +34,7 @@ const hideWarning = hideSlowConnectionWarning
 </template>
 
 <style lang="scss" scoped>
-@import '@/styles/colorVariables.module.scss';
+@use '@/styles/colorVariables.module.scss' as *;
 
 .slow-connection-global-warning {
   position: fixed;

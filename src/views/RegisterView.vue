@@ -261,6 +261,7 @@ const handleSubmit = async () => {
 </template>
 
 <style lang="scss" scoped>
+@use 'sass:color';
 @use '@/styles/index.scss' as *;
 
 .register-view {
@@ -400,7 +401,7 @@ const handleSubmit = async () => {
 }
 
 .submit-button {
-  background: linear-gradient(135deg, $BAKANO-PINK 0%, darken($BAKANO-PINK, 10%) 100%);
+  background: linear-gradient(135deg, $BAKANO-PINK 0%, color.adjust($BAKANO-PINK, $lightness: -10%) 100%);
   color: white;
   border: none;
   padding: 0.875rem 1.5rem;
@@ -416,7 +417,7 @@ const handleSubmit = async () => {
   margin-top: 0.5rem;
 
   &:hover:not(:disabled) {
-    background: linear-gradient(135deg, darken($BAKANO-PINK, 10%) 0%, darken($BAKANO-PINK, 20%) 100%);
+    background: linear-gradient(135deg, color.adjust($BAKANO-PINK, $lightness: -10%) 0%, color.adjust($BAKANO-PINK, $lightness: -20%) 100%);
     transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba($BAKANO-PINK, 0.3);
   }
@@ -470,7 +471,7 @@ const handleSubmit = async () => {
   transition: color 0.2s ease;
 
   &:hover {
-    color: darken($BAKANO-PINK, 10%);
+    color: color.adjust($BAKANO-PINK, $lightness: -10%);
     text-decoration: underline;
   }
 

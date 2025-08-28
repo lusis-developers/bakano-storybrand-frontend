@@ -43,7 +43,8 @@ const handleOverlayClick = () => {
 </script>
 
 <style scoped lang="scss">
-@import '@/styles/colorVariables.module.scss';
+@use 'sass:color';
+@use '@/styles/colorVariables.module.scss' as *;
 
 .alert-overlay {
   position: fixed;
@@ -151,7 +152,7 @@ const handleOverlayClick = () => {
   transition: all 0.2s ease;
   
   &:hover {
-    background-color: darken($BAKANO-PINK, 10%);
+    background-color: color.adjust($BAKANO-PINK, $lightness: -10%);
     transform: translateY(-1px);
   }
   

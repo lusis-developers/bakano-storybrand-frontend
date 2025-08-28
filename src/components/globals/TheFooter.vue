@@ -76,8 +76,10 @@ const socialLinks = [
 </template>
 
 <style lang="scss" scoped>
+@use 'sass:color';
+
 .footer {
-  background: linear-gradient(135deg, $BAKANO-DARK 0%, darken($BAKANO-DARK, 5%) 100%);
+  background: linear-gradient(135deg, $BAKANO-DARK 0%, color.adjust($BAKANO-DARK, $lightness: -5%) 100%);
   color: $text-light;
   margin-top: auto;
 

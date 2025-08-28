@@ -73,6 +73,7 @@ const {
 </template>
 
 <style scoped lang="scss">
+@use 'sass:color';
 @use '@/styles/index.scss' as *;
 
 .dialog-overlay {
@@ -141,7 +142,7 @@ const {
 .selection-option {
   display: flex;
   align-items: center;
-  background-color: lighten($BAKANO-LIGHT, 3%);
+  background-color: color.adjust($BAKANO-LIGHT, $lightness: 3%);
   padding: 0.75rem;
   border-radius: 8px;
   border: 1px solid $BAKANO-LIGHT;
@@ -171,7 +172,7 @@ const {
 .confirmation-input-area {
   margin: 1.5rem 0;
   padding: 1rem;
-  background-color: lighten($BAKANO-PINK, 42%);
+  background-color: color.adjust($BAKANO-PINK, $lightness: 42%);
   border-radius: 8px;
   text-align: center;
 
@@ -188,7 +189,7 @@ const {
   width: 90%;
   padding: 0.75rem;
   border-radius: 6px;
-  border: 1px solid lighten($BAKANO-PINK, 25%);
+  border: 1px solid color.adjust($BAKANO-PINK, $lightness: 25%);
   font-size: 1rem;
   text-align: center;
   font-family: $font-secondary;
