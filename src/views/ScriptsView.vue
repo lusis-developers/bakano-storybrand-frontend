@@ -6,6 +6,7 @@ import { useContent } from '../composables/useContent'
 import { useBusiness } from '../composables/useBusiness'
 import { useToast } from '../composables/useToast'
 import { useConfirmationDialog } from '../composables/useConfirmationDialog'
+import CustomSelect from '../components/shared/CustomSelect.vue'
 import type {
   IScript,
   IScriptFilters,
@@ -100,6 +101,43 @@ const taglineOptions = computed(() => {
     label: `${tl.text} (${tl.style})`
   })) || []
 })
+
+// Options for CustomSelect components
+const scriptTypeOptions = [
+  { value: 'content', label: 'Contenido' },
+  { value: 'ad', label: 'Anuncio' }
+]
+
+const platformOptions = [
+  { value: '', label: 'General' },
+  { value: 'youtube', label: 'YouTube' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'tiktok', label: 'TikTok' },
+  { value: 'email', label: 'Email' },
+  { value: 'website', label: 'Sitio Web' }
+]
+
+const filterTypeOptions = [
+  { value: 'all', label: 'Todos' },
+  { value: 'content', label: 'Contenido' },
+  { value: 'ad', label: 'Anuncio' }
+]
+
+const filterPlatformOptions = [
+  { value: 'all', label: 'Todas' },
+  { value: 'youtube', label: 'YouTube' },
+  { value: 'instagram', label: 'Instagram' },
+  { value: 'tiktok', label: 'TikTok' },
+  { value: 'social', label: 'Redes Sociales' },
+  { value: 'email', label: 'Email' },
+  { value: 'website', label: 'Sitio Web' }
+]
+
+const filterCompletedOptions = [
+  { value: 'all', label: 'Todos' },
+  { value: 'completed', label: 'Completados' },
+  { value: 'pending', label: 'Pendientes' }
+]
 
 // Métodos
 const initializeView = async () => {
@@ -493,33 +531,32 @@ onMounted(() => {
         <div class="filters-grid">
           <div class="filter-group">
             <label>Tipo</label>
-            <select v-model="filterType">
-              <option value="all">Todos</option>
-              <option value="content">Contenido</option>
-              <option value="ad">Anuncio</option>
-            </select>
+            <CustomSelect
+              v-model="filterType"
+              :options="filterTypeOptions"
+              placeholder="Seleccionar tipo"
+              class="custom-select"
+            />
           </div>
           
           <div class="filter-group">
             <label>Plataforma</label>
-            <select v-model="filterPlatform">
-              <option value="all">Todas</option>
-              <option value="youtube">YouTube</option>
-              <option value="instagram">Instagram</option>
-              <option value="tiktok">TikTok</option>
-              <option value="social">Redes Sociales</option>
-              <option value="email">Email</option>
-              <option value="website">Sitio Web</option>
-            </select>
+            <CustomSelect
+              v-model="filterPlatform"
+              :options="filterPlatformOptions"
+              placeholder="Seleccionar plataforma"
+              class="custom-select"
+            />
           </div>
           
           <div class="filter-group">
             <label>Estado</label>
-            <select v-model="filterCompleted">
-              <option value="all">Todos</option>
-              <option value="completed">Completados</option>
-              <option value="pending">Pendientes</option>
-            </select>
+            <CustomSelect
+              v-model="filterCompleted"
+              :options="filterCompletedOptions"
+              placeholder="Seleccionar estado"
+              class="custom-select"
+            />
           </div>
           
           <div class="filter-group">
@@ -672,50 +709,38 @@ onMounted(() => {
         <div class="modal-body">
           <div class="form-group">
             <label>Tipo de Script</label>
-            <select v-model="newScript.scriptType" class="form-select">
-              <option value="content">Contenido</option>
-              <option value="ad">Anuncio</option>
-            </select>
+            <CustomSelect
+              v-model="newScript.scriptType"
+              :options="scriptTypeOptions"
+              placeholder="Seleccionar tipo de script"
+            />
           </div>
           
           <div class="form-group">
             <label>Plataforma (Opcional)</label>
-            <select v-model="newScript.platform" class="form-select">
-              <option value="">General</option>
-              <option value="youtube">YouTube</option>
-              <option value="instagram">Instagram</option>
-              <option value="tiktok">TikTok</option>
-              <option value="email">Email</option>
-              <option value="website">Sitio Web</option>
-            </select>
+            <CustomSelect
+              v-model="newScript.platform"
+              :options="platformOptions"
+              placeholder="Seleccionar plataforma"
+            />
           </div>
           
           <div class="form-group">
             <label>Soundbite (Opcional)</label>
-            <select v-model="newScript.selectedSoundbite" class="form-select">
-              <option value="">Seleccionar automáticamente</option>
-              <option 
-                v-for="option in soundbiteOptions" 
-                :key="option.value"
-                :value="option.value"
-              >
-                {{ option.label }}
-              </option>
-            </select>
+            <CustomSelect
+              v-model="newScript.selectedSoundbite"
+              :options="[{ value: '', label: 'Seleccionar automáticamente' }, ...soundbiteOptions]"
+              placeholder="Seleccionar soundbite"
+            />
           </div>
           
           <div class="form-group">
             <label>Tagline (Opcional)</label>
-            <select v-model="newScript.selectedTagline" class="form-select">
-              <option value="">Seleccionar automáticamente</option>
-              <option 
-                v-for="option in taglineOptions" 
-                :key="option.value"
-                :value="option.value"
-              >
-                {{ option.label }}
-              </option>
-            </select>
+            <CustomSelect
+              v-model="newScript.selectedTagline"
+              :options="[{ value: '', label: 'Seleccionar automáticamente' }, ...taglineOptions]"
+              placeholder="Seleccionar tagline"
+            />
           </div>
           
           <div class="form-group">
@@ -1103,7 +1128,6 @@ onMounted(() => {
           color: #2d3748;
         }
 
-        select,
         .date-input {
           width: 100%;
           padding: 0.75rem;
@@ -1461,19 +1485,7 @@ onMounted(() => {
           color: #2d3748;
         }
 
-        .form-select {
-          width: 100%;
-          padding: 0.75rem;
-          border: 2px solid #e2e8f0;
-          border-radius: 8px;
-          font-size: 1rem;
-          transition: border-color 0.3s ease;
 
-          &:focus {
-            outline: none;
-            border-color: #667eea;
-          }
-        }
 
         .form-textarea {
           width: 90%;
