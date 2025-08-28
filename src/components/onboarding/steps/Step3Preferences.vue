@@ -82,8 +82,8 @@ function isContentTypeSelected(type: string): boolean {
           @change="updatePreference('aiProviderPreference', ($event.target as HTMLSelectElement).value)"
         >
           <option value="openai">OpenAI</option>
-          <option value="anthropic">Anthropic</option>
-          <option value="google">Google</option>
+          <option value="gemini">Gemini</option>
+          <option value="no_preference">Sin preferencia</option>
         </select>
       </div>
       
