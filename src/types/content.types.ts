@@ -78,6 +78,7 @@ export interface IGenerateScriptRequest {
   platform?: 'youtube' | 'instagram' | 'tiktok' | 'social' | 'email' | 'website'
   selectedSoundbite?: string
   selectedTagline?: string
+  customText?: string
 }
 
 // Tipos para responses
