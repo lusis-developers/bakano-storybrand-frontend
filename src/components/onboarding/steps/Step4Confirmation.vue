@@ -60,8 +60,8 @@ const communicationFrequencyLabels: Record<string, string> = {
 
 const aiProviderLabels: Record<string, string> = {
   openai: 'OpenAI',
-  anthropic: 'Anthropic',
-  google: 'Google'
+  gemini: 'Gemini',
+  no_preference: 'Sin preferencia'
 }
 
 const brandVoiceLabels: Record<string, string> = {
@@ -162,24 +162,14 @@ function handleSubmit() {
         </div>
       </div>
       
-      <!-- Botón de confirmación -->
-      <div class="confirmation-actions">
-        <div class="confirmation-message">
-          <p>¿Confirmas que toda la información es correcta?</p>
-          <p class="sub-message">Podrás modificar estos datos más tarde desde tu perfil.</p>
-        </div>
-        
-        <button 
-          type="button"
-          class="submit-button"
-          :disabled="isSubmitting"
-          @click="handleSubmit"
-        >
-          <span v-if="isSubmitting" class="loading-spinner"></span>
-          {{ isSubmitting ? 'Completando...' : 'Completar Configuración' }}
-        </button>
+      <!-- Mensaje de confirmación -->
+      <div class="confirmation-message">
+        <p>¿Confirmas que toda la información es correcta?</p>
+        <p class="sub-message">Podrás modificar estos datos más tarde desde tu perfil.</p>
       </div>
     </div>
+    
+
   </div>
 </template>
 
@@ -246,18 +236,13 @@ function handleSubmit() {
   }
 }
 
-.confirmation-actions {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 2rem;
+
+
+.confirmation-message {
   background: linear-gradient(135deg, #f8fafc, #e2e8f0);
   border-radius: 12px;
   border: 1px solid #e2e8f0;
-}
-
-.confirmation-message {
+  padding: 1.5rem;
   text-align: center;
 
   p {
@@ -275,50 +260,5 @@ function handleSubmit() {
   }
 }
 
-.submit-button {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.875rem 2rem;
-  background: linear-gradient(135deg, #667eea, #764ba2);
-  color: white;
-  border: none;
-  border-radius: 8px;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  min-width: 200px;
 
-  &:hover:not(:disabled) {
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
-  }
-
-  &:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
-    transform: none;
-  }
-}
-
-.loading-spinner {
-  width: 16px;
-  height: 16px;
-  border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top: 2px solid white;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-  0% {
-    transform: rotate(0deg);
-  }
-
-  100% {
-    transform: rotate(360deg);
-  }
-}
 </style>
