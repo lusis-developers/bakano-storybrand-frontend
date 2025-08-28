@@ -43,6 +43,7 @@ const handleOverlayClick = () => {
 </script>
 
 <style scoped lang="scss">
+@use 'sass:color';
 .alert-overlay {
   position: fixed;
   top: 0;
