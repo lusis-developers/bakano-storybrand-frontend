@@ -43,9 +43,6 @@ const handleOverlayClick = () => {
 </script>
 
 <style scoped lang="scss">
-@use 'sass:color';
-@use '@/styles/colorVariables.module.scss' as *;
-
 .alert-overlay {
   position: fixed;
   top: 0;
@@ -87,7 +84,7 @@ const handleOverlayClick = () => {
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
-  
+
   i {
     font-size: 24px;
   }
@@ -104,11 +101,11 @@ const handleOverlayClick = () => {
   display: flex;
   align-items: center;
   justify-content: center;
-  
+
   i {
     font-size: 16px;
   }
-  
+
   &:hover {
     background-color: #f3f4f6;
     color: #6b7280;
@@ -150,12 +147,12 @@ const handleOverlayClick = () => {
   font-weight: 500;
   cursor: pointer;
   transition: all 0.2s ease;
-  
+
   &:hover {
     background-color: color.adjust($BAKANO-PINK, $lightness: -10%);
     transform: translateY(-1px);
   }
-  
+
   &:active {
     transform: translateY(0);
   }
@@ -166,6 +163,7 @@ const handleOverlayClick = () => {
     opacity: 0;
     transform: translateY(-20px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -177,18 +175,18 @@ const handleOverlayClick = () => {
     margin: 20px;
     max-width: none;
   }
-  
+
   .alert-header,
   .alert-content,
   .alert-actions {
     padding-left: 20px;
     padding-right: 20px;
   }
-  
+
   .alert-title {
     font-size: 18px;
   }
-  
+
   .alert-message {
     font-size: 14px;
   }
