@@ -122,6 +122,7 @@ const generatedContent = ref<{
 const isGenerating = ref(false)
 const generationStep = ref('')
 const showResults = ref(false)
+const currentContentId = ref<string | null>(null)
 
 async function submitWizard() {
   try {
@@ -145,6 +146,7 @@ async function submitWizard() {
     console.log('✅ Respuesta del createContentProject:', content)
     
     if (content && content._id) {
+      currentContentId.value = content._id
       triggerToast('Proyecto creado exitosamente', 'success')
       
       // Generar automáticamente soundbites y taglines
@@ -152,7 +154,7 @@ async function submitWizard() {
         isGenerating.value = true
         generationStep.value = 'Generando soundbites y taglines con IA...'
         
-        const result = await generateContent(content._id)
+        const result = await generateContent(content._id, false)
         
         if (result) {
           generatedContent.value = {
@@ -210,9 +212,30 @@ function goToResults() {
   }
 }
 
-function regenerateContent() {
-  if (generatedContent.value) {
-    submitWizard()
+async function regenerateContent() {
+  if (!currentContentId.value) {
+    triggerToast('No hay contenido para regenerar', 'error')
+    return
+  }
+
+  try {
+    isGenerating.value = true
+    generationStep.value = 'Regenerando contenido con IA...'
+    
+    const result = await generateContent(currentContentId.value, true)
+    
+    if (result) {
+      generatedContent.value = {
+        soundbites: result.soundbites || [],
+        taglines: result.taglines || []
+      }
+      triggerToast('¡Contenido regenerado exitosamente!', 'success')
+    }
+  } catch (error) {
+    console.error('Error al regenerar contenido:', error)
+    triggerToast('Error al regenerar contenido', 'error')
+  } finally {
+    isGenerating.value = false
   }
 }
 
@@ -547,6 +570,8 @@ onMounted(async () => {
   min-height: 100vh;
   background: $BAKANO-LIGHT;
   padding: 2rem 0;
+  overflow-x: hidden;
+  width: 100%;
 
   @media (max-width: 768px) {
     padding: 1rem 0;
@@ -557,9 +582,15 @@ onMounted(async () => {
   max-width: 800px;
   margin: 0 auto;
   padding: 0 1rem;
+  width: 100%;
+  box-sizing: border-box;
 
   @media (max-width: 768px) {
     padding: 0 0.75rem;
+  }
+
+  @media (max-width: 480px) {
+    padding: 0 0.5rem;
   }
 }
 
@@ -627,11 +658,12 @@ onMounted(async () => {
     display: flex;
     justify-content: space-between;
     gap: 0.5rem;
-    overflow-x: auto;
+    flex-wrap: wrap;
     padding-bottom: 0.5rem;
 
     @media (max-width: 768px) {
       gap: 0.25rem;
+      justify-content: center;
     }
   }
 
@@ -641,10 +673,13 @@ onMounted(async () => {
     align-items: center;
     cursor: pointer;
     transition: all 0.2s ease;
+    flex: 1;
+    max-width: 120px;
     min-width: 80px;
 
     @media (max-width: 768px) {
       min-width: 60px;
+      max-width: 90px;
     }
 
     .step-number {
@@ -966,11 +1001,16 @@ onMounted(async () => {
 
     .content-grid {
       display: grid;
-      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
       gap: 1rem;
 
       @media (max-width: 768px) {
         grid-template-columns: 1fr;
+      }
+
+      @media (max-width: 320px) {
+        grid-template-columns: 1fr;
+        gap: 0.75rem;
       }
     }
 
