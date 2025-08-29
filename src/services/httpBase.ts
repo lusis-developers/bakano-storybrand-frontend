@@ -19,13 +19,13 @@ const isSlowConnection = ref(false)
 const checkNetworkSpeed = (): boolean => {
   const nav = navigator as any
   const connection = nav.connection || nav.mozConnection || nav.webkitConnection
-  
+
   if (connection) {
     const slowTypes = ['slow-2g', '2g']
     const is3gSlow = connection.effectiveType === '3g' && (connection.downlink || 0) < 1.5
     return slowTypes.includes(connection.effectiveType || '') || is3gSlow
   }
-  
+
   return false
 }
 
@@ -63,16 +63,16 @@ class APIBase {
       (config) => {
         // Verificar conexión lenta al inicio del request
         isSlowConnection.value = checkNetworkSpeed()
-        
+
         // Agregar timestamp para medir duración
         config.metadata = { startTime: Date.now() }
-        
+
         // Configurar timeout más corto para detectar conexiones lentas
         config.timeout = config.timeout || 15000 // 15 segundos
-        
+
         return config
       },
-      (error) => Promise.reject(error)
+      (error) => Promise.reject(error),
     )
 
     // Interceptor de response para detectar timeouts y respuestas lentas
@@ -80,12 +80,12 @@ class APIBase {
       (response) => {
         const config = response.config as any
         const duration = Date.now() - (config.metadata?.startTime || 0)
-        
+
         // Si el request tomó más de 5 segundos o hay conexión lenta, mostrar aviso
         if (duration > 5000 || isSlowConnection.value) {
           showSlowConnectionWarning()
         }
-        
+
         return response
       },
       (error) => {
@@ -93,14 +93,14 @@ class APIBase {
         if (error.code === 'ECONNABORTED' || error.message.includes('timeout')) {
           showSlowConnectionWarning()
         }
-        
+
         // Si hay conexión lenta detectada, mostrar aviso
         if (isSlowConnection.value) {
           showSlowConnectionWarning()
         }
-        
+
         return Promise.reject(error)
-      }
+      },
     )
   }
 
@@ -114,7 +114,7 @@ class APIBase {
     }
 
     const accessToken = localStorage.getItem('access_token')
-    
+
     if (accessToken) {
       headers['Authorization'] = `Bearer ${accessToken}`
     } else {
@@ -149,6 +149,7 @@ class APIBase {
     endpoint: string,
     data: unknown,
     headers?: { [key: string]: string },
+    config?: AxiosRequestConfig,
   ): Promise<AxiosResponse<T>> {
     const url = this.buildUrl(endpoint)
     const isFormData = data instanceof FormData
@@ -166,6 +167,7 @@ class APIBase {
     try {
       return await this.axiosInstance.post<T>(url, data, {
         headers: finalHeaders,
+        ...config, // Permite configuraciones personalizadas como timeout
       })
     } catch (error: unknown) {
       if (axios.isAxiosError(error) && error.response) {
