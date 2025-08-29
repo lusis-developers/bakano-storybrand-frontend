@@ -103,18 +103,42 @@ export class ContentService extends APIBase {
   }
 
   /**
-   * Generar script de contenido o anuncio
+   * Generar script para un proyecto de contenido
+   * Usa un timeout extendido de 120 segundos para permitir la generación con IA
    */
   static async generateScript(
     contentId: string,
     data: IGenerateScriptRequest,
   ): Promise<IGenerateScriptResponse> {
+    console.log('🚀 ContentService.generateScript - Iniciando llamada al servicio')
+    console.log('📝 ContentService.generateScript - Datos enviados:', data)
+    
     const instance = new ContentService()
-    const response = await instance.post<IGenerateScriptResponse>(
-      `${this.BASE_URL}/${contentId}/generate-script`,
-      data,
-    )
-    return response.data
+    console.log('🔧 ContentService.generateScript - Instancia creada')
+    
+    try {
+      // Configuración con timeout extendido para generación de scripts con IA
+      const config = {
+        timeout: 120000, // 120 segundos (2 minutos)
+      }
+      
+      console.log('⏱️ ContentService.generateScript - Usando timeout de 120 segundos')
+      
+      const response = await instance.post<IGenerateScriptResponse>(
+        `${this.BASE_URL}/${contentId}/generate-script`,
+        data,
+        undefined, // headers
+        config, // configuración personalizada
+      )
+      console.log('✅ ContentService.generateScript - Respuesta recibida:', response)
+      console.log('📊 ContentService.generateScript - Status:', response.status)
+      console.log('📄 ContentService.generateScript - Data:', response.data)
+      
+      return response.data
+    } catch (error) {
+      console.error('❌ ContentService.generateScript - Error capturado:', error)
+      throw error
+    }
   }
 
   /**
