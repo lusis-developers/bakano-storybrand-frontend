@@ -95,6 +95,30 @@ const progressPercentage = computed(() => {
   return (currentStep.value / wizardSteps.length) * 100
 })
 
+const prefilledFieldsCount = computed(() => prefilledFields.value.length)
+
+const prefilledFieldsMessage = computed(() => {
+  const fieldNames: Record<string, string> = {
+    companyName: 'Nombre de la empresa',
+    productsServices: 'Productos/servicios',
+    targetAudience: 'Audiencia objetivo',
+    mainProblem: 'Problema principal',
+    solution: 'Tu solución',
+    uniqueCharacteristics: 'Características únicas',
+    authority: 'Autoridad y credibilidad',
+    steps: 'Pasos del proceso'
+  }
+
+  const prefilledNames = prefilledFields.value.map(field => fieldNames[field]).filter(Boolean)
+
+  if (prefilledNames.length === 0) return ''
+  if (prefilledNames.length === 1) return `Se prellenó: ${prefilledNames[0]}`
+  if (prefilledNames.length === 2) return `Se prellenaron: ${prefilledNames.join(' y ')}`
+
+  const lastField = prefilledNames.pop()
+  return `Se prellenaron: ${prefilledNames.join(', ')} y ${lastField}`
+})
+
 // Métodos
 function nextStep() {
   if (canProceed.value && !isLastStep.value) {
@@ -123,18 +147,19 @@ const isGenerating = ref(false)
 const generationStep = ref('')
 const showResults = ref(false)
 const currentContentId = ref<string | null>(null)
+const prefilledFields = ref<string[]>([])
 
 async function submitWizard() {
   try {
     isSubmitting.value = true
     showResults.value = false
     generatedContent.value = null
-    
+
     console.log('🚀 Iniciando creación de proyecto con datos:', {
       businessId: businessId.value,
       questions: questions.value
     })
-    
+
     // Crear proyecto de contenido
     generationStep.value = 'Creando proyecto...'
     const content = await createContentProject(businessId.value, {
@@ -142,20 +167,20 @@ async function submitWizard() {
       tone: 'professional',
       aiProvider: 'gemini'
     })
-    
+
     console.log('✅ Respuesta del createContentProject:', content)
-    
+
     if (content && content._id) {
       currentContentId.value = content._id
       triggerToast('Proyecto creado exitosamente', 'success')
-      
+
       // Generar automáticamente soundbites y taglines
       try {
         isGenerating.value = true
         generationStep.value = 'Generando soundbites y taglines con IA...'
-        
+
         const result = await generateContent(content._id, false)
-        
+
         if (result) {
           generatedContent.value = {
             soundbites: result.soundbites || [],
@@ -164,7 +189,7 @@ async function submitWizard() {
           showResults.value = true
           triggerToast('¡Contenido generado exitosamente!', 'success')
         }
-        
+
       } catch (error) {
         console.error('Error al generar contenido:', error)
         triggerToast('Error al generar contenido automático', 'error')
@@ -177,7 +202,7 @@ async function submitWizard() {
       console.error('❌ No se recibió contenido válido:', content)
       triggerToast('Error: No se pudo crear el proyecto', 'error')
     }
-    
+
   } catch (error: any) {
     console.error('❌ Error al crear proyecto:', error)
     console.error('❌ Error details:', {
@@ -186,7 +211,7 @@ async function submitWizard() {
       response: error.response,
       stack: error.stack
     })
-    
+
     // Mejorar el mensaje de error basado en el tipo de error
     let errorMessage = 'Error al crear el proyecto'
     if (error.status === 401) {
@@ -198,7 +223,7 @@ async function submitWizard() {
     } else if (error.message) {
       errorMessage = error.message
     }
-    
+
     triggerToast(errorMessage, 'error')
   } finally {
     isSubmitting.value = false
@@ -221,9 +246,9 @@ async function regenerateContent() {
   try {
     isGenerating.value = true
     generationStep.value = 'Regenerando contenido con IA...'
-    
+
     const result = await generateContent(currentContentId.value, true)
-    
+
     if (result) {
       generatedContent.value = {
         soundbites: result.soundbites || [],
@@ -249,6 +274,126 @@ function getButtonText() {
   return 'Crear Proyecto StoryBrand'
 }
 
+// Función para prellenar datos del negocio
+function prefillBusinessData(business: any) {
+  prefilledFields.value = []
+
+  // Información básica
+  if (business.name) {
+    console.log('business.name: ', business.name)
+    questions.value.companyName = business.name
+    prefilledFields.value.push('companyName')
+  }
+
+  if (business.description) {
+    questions.value.productsServices = business.description
+    prefilledFields.value.push('productsServices')
+  }
+
+  // Si hay información de industria, podemos sugerir audiencia objetivo
+  if (business.industry) {
+    const industryTargetAudiences: Record<string, string> = {
+      'Technology': 'Empresas y profesionales que buscan soluciones tecnológicas innovadoras para optimizar sus procesos y aumentar su productividad.',
+      'Healthcare': 'Pacientes y profesionales de la salud que necesitan servicios médicos de calidad y atención personalizada.',
+      'Finance': 'Individuos y empresas que buscan servicios financieros confiables para gestionar y hacer crecer su patrimonio.',
+      'Education': 'Estudiantes, padres de familia y instituciones educativas que buscan programas de formación de alta calidad.',
+      'Retail': 'Consumidores que buscan productos de calidad a precios competitivos con una excelente experiencia de compra.',
+      'Consulting': 'Empresas y emprendedores que necesitan asesoría especializada para resolver desafíos específicos y crecer.',
+      'Real Estate': 'Compradores, vendedores e inversionistas que buscan oportunidades inmobiliarias con asesoría profesional.',
+      'Food & Beverage': 'Consumidores que valoran la calidad, sabor y experiencia gastronómica única.',
+      'Entertainment': 'Audiencias que buscan entretenimiento de calidad y experiencias memorables.',
+      'Other': ''
+    }
+
+    if (industryTargetAudiences[business.industry]) {
+      questions.value.targetAudience = industryTargetAudiences[business.industry]
+      prefilledFields.value.push('targetAudience')
+    }
+  }
+
+  // Si hay sitio web, podemos inferir que tienen presencia digital
+  if (business.website && !questions.value.uniqueCharacteristics) {
+    questions.value.uniqueCharacteristics = 'Contamos con una sólida presencia digital y años de experiencia en el mercado, lo que nos permite ofrecer soluciones confiables y accesibles.'
+    prefilledFields.value.push('uniqueCharacteristics')
+  }
+
+  // Sugerencias basadas en el tipo de negocio
+  const commonProblems: Record<string, string> = {
+    'Technology': 'Procesos manuales ineficientes, falta de automatización y dificultades para escalar tecnológicamente.',
+    'Healthcare': 'Dificultad para acceder a atención médica de calidad, largos tiempos de espera y falta de seguimiento personalizado.',
+    'Finance': 'Falta de claridad en las finanzas personales, dificultad para ahorrar e invertir de manera efectiva.',
+    'Education': 'Falta de programas educativos actualizados y personalizados que se adapten a las necesidades individuales.',
+    'Retail': 'Dificultad para encontrar productos de calidad a precios justos con un servicio al cliente excepcional.',
+    'Consulting': 'Falta de expertise interno para resolver problemas complejos y tomar decisiones estratégicas acertadas.',
+    'Real Estate': 'Complejidad del mercado inmobiliario y falta de asesoría confiable para tomar decisiones de inversión.',
+    'Food & Beverage': 'Dificultad para encontrar opciones gastronómicas que combinen calidad, sabor y buena relación calidad-precio.',
+    'Entertainment': 'Falta de opciones de entretenimiento de calidad que ofrezcan experiencias verdaderamente memorables.',
+    'Other': ''
+  }
+
+  if (business.industry && commonProblems[business.industry]) {
+    questions.value.mainProblem = commonProblems[business.industry]
+    prefilledFields.value.push('mainProblem')
+  }
+
+  // Sugerencias de soluciones basadas en la industria
+  const commonSolutions: Record<string, string> = {
+    'Technology': 'Ofrecemos soluciones tecnológicas personalizadas que automatizan procesos, mejoran la eficiencia y permiten el crecimiento escalable de tu negocio.',
+    'Healthcare': 'Brindamos atención médica integral con tecnología avanzada, seguimiento personalizado y un equipo de profesionales comprometidos con tu bienestar.',
+    'Finance': 'Proporcionamos asesoría financiera personalizada y herramientas que te ayudan a tomar decisiones inteligentes para hacer crecer tu patrimonio.',
+    'Education': 'Ofrecemos programas educativos innovadores y personalizados que se adaptan a tu ritmo de aprendizaje y objetivos profesionales.',
+    'Retail': 'Proporcionamos productos de alta calidad con una experiencia de compra excepcional y servicio al cliente personalizado.',
+    'Consulting': 'Ofrecemos consultoría especializada con metodologías probadas que te ayudan a resolver desafíos complejos y alcanzar tus objetivos.',
+    'Real Estate': 'Brindamos asesoría inmobiliaria integral con análisis de mercado detallado y acompañamiento en cada paso del proceso.',
+    'Food & Beverage': 'Ofrecemos experiencias gastronómicas únicas con ingredientes de calidad y un servicio excepcional.',
+    'Entertainment': 'Creamos experiencias de entretenimiento memorables que conectan emocionalmente con nuestras audiencias.',
+    'Other': ''
+  }
+
+  if (business.industry && commonSolutions[business.industry]) {
+    questions.value.solution = commonSolutions[business.industry]
+    prefilledFields.value.push('solution')
+  }
+
+  // Sugerencias de autoridad basadas en la industria
+  const authorityTemplates: Record<string, string> = {
+    'Technology': 'Contamos con un equipo de expertos en tecnología con años de experiencia en el desarrollo de soluciones innovadoras para empresas de diversos sectores.',
+    'Healthcare': 'Nuestro equipo está conformado por profesionales certificados con amplia experiencia clínica y compromiso con la excelencia médica.',
+    'Finance': 'Somos asesores financieros certificados con track record comprobado en la gestión exitosa de patrimonios y planificación financiera.',
+    'Education': 'Contamos con educadores certificados y metodologías pedagógicas innovadoras respaldadas por años de experiencia en formación.',
+    'Retail': 'Tenemos años de experiencia en el sector retail con un profundo conocimiento del mercado y las necesidades del consumidor.',
+    'Consulting': 'Somos consultores certificados con experiencia comprobada ayudando a empresas a resolver desafíos complejos y alcanzar sus objetivos.',
+    'Real Estate': 'Contamos con agentes inmobiliarios certificados y un profundo conocimiento del mercado local e internacional.',
+    'Food & Beverage': 'Tenemos chefs y especialistas gastronómicos con formación internacional y pasión por crear experiencias culinarias únicas.',
+    'Entertainment': 'Contamos con un equipo creativo con amplia experiencia en la industria del entretenimiento y producción de eventos.',
+    'Other': ''
+  }
+
+  if (business.industry && authorityTemplates[business.industry]) {
+    questions.value.authority = authorityTemplates[business.industry]
+    prefilledFields.value.push('authority')
+  }
+
+  // Sugerencias de pasos del proceso basadas en la industria
+  const processSteps: Record<string, string> = {
+    'Technology': '1. Consulta inicial para entender tus necesidades tecnológicas\n2. Análisis detallado de tus procesos actuales\n3. Diseño de la solución personalizada\n4. Implementación y configuración\n5. Capacitación del equipo\n6. Soporte continuo y optimización',
+    'Healthcare': '1. Evaluación inicial y historial médico\n2. Diagnóstico profesional\n3. Plan de tratamiento personalizado\n4. Implementación del tratamiento\n5. Seguimiento y monitoreo\n6. Evaluación de resultados y ajustes',
+    'Finance': '1. Consulta inicial para conocer tu situación financiera\n2. Análisis detallado de tus objetivos y riesgos\n3. Diseño de estrategia financiera personalizada\n4. Implementación del plan de inversión\n5. Monitoreo y seguimiento continuo\n6. Revisiones periódicas y ajustes',
+    'Education': '1. Evaluación de nivel y objetivos de aprendizaje\n2. Diseño de plan de estudios personalizado\n3. Inicio del programa educativo\n4. Seguimiento del progreso\n5. Evaluaciones y retroalimentación\n6. Certificación y seguimiento post-graduación',
+    'Retail': '1. Consulta sobre tus necesidades específicas\n2. Presentación de opciones personalizadas\n3. Proceso de compra simplificado\n4. Entrega o instalación profesional\n5. Seguimiento post-venta\n6. Soporte continuo y garantías',
+    'Consulting': '1. Diagnóstico inicial de la situación\n2. Análisis profundo del problema\n3. Desarrollo de estrategia de solución\n4. Implementación del plan de acción\n5. Monitoreo y ajustes\n6. Evaluación de resultados y transferencia de conocimiento',
+    'Real Estate': '1. Consulta inicial sobre tus objetivos inmobiliarios\n2. Análisis de mercado y opciones disponibles\n3. Visitas y evaluación de propiedades\n4. Negociación y gestión de documentos\n5. Cierre de la transacción\n6. Seguimiento post-venta y servicios adicionales',
+    'Food & Beverage': '1. Consulta sobre preferencias y necesidades\n2. Recomendación de opciones personalizadas\n3. Preparación con ingredientes frescos\n4. Presentación y servicio\n5. Seguimiento de la experiencia\n6. Fidelización y ofertas especiales',
+    'Entertainment': '1. Consulta sobre tipo de evento o experiencia\n2. Diseño conceptual y propuesta\n3. Planificación detallada y coordinación\n4. Ejecución del evento o experiencia\n5. Seguimiento durante el evento\n6. Evaluación post-evento y mejoras',
+    'Other': ''
+  }
+
+  if (business.industry && processSteps[business.industry]) {
+    questions.value.steps = processSteps[business.industry]
+    prefilledFields.value.push('steps')
+  }
+}
+
 // Lifecycle
 onMounted(async () => {
   // Verificar que el businessId existe
@@ -257,16 +402,40 @@ onMounted(async () => {
     router.push('/dashboard')
     return
   }
-  
+
+  console.log('🔍 Buscando negocio con ID:', businessId.value)
+
   // Cargar información del negocio si está disponible
   if (businessStore.businesses.length === 0) {
+    console.log('📥 Cargando negocios desde el servidor...')
     await businessStore.fetchBusinesses()
   }
-  
-  const business = businessStore.businesses.find(b => b.id === businessId.value)
+
+  console.log('📋 Negocios disponibles:', businessStore.businesses.map(b => ({ id: b.id, _id: b._id, name: b.name })))
+
+  // Buscar el negocio por id o _id
+  let business = businessStore.businesses.find(b => b.id === businessId.value)
+  if (!business) {
+    business = businessStore.businesses.find(b => b._id === businessId.value)
+  }
+
+  // Si solo hay un negocio, usarlo directamente
+  if (!business && businessStore.businesses.length === 1) {
+    business = businessStore.businesses[0]
+    console.log('✨ Usando el único negocio disponible:', business.name)
+  }
+
   if (business) {
-    questions.value.companyName = business.name
-    questions.value.productsServices = business.description || ''
+    console.log('✅ Negocio encontrado:', business)
+    prefillBusinessData(business)
+
+    // Mostrar mensaje de éxito con detalles específicos
+    if (prefilledFieldsCount.value > 0) {
+      triggerToast(`${prefilledFieldsCount.value} campo${prefilledFieldsCount.value > 1 ? 's' : ''} prellenado${prefilledFieldsCount.value > 1 ? 's' : ''}. ${prefilledFieldsMessage.value}. Puedes editarlos si lo deseas.`, 'success')
+    }
+  } else {
+    console.log('❌ No se encontró el negocio con ID:', businessId.value)
+    console.log('📋 IDs disponibles:', businessStore.businesses.map(b => `id: ${b.id}, _id: ${b._id}`))
   }
 })
 </script>
@@ -322,23 +491,35 @@ onMounted(async () => {
             <!-- Paso 1: Información Básica -->
             <div v-if="currentStep === 1" class="form-fields">
               <div class="field-group">
-                <label for="companyName">Nombre de la empresa *</label>
+                <label for="companyName">
+                  Nombre de la empresa *
+                  <span v-if="prefilledFields.includes('companyName')" class="prefilled-indicator" title="Campo prellenado automáticamente">
+                    ✨ Prellenado
+                  </span>
+                </label>
                 <input 
                   id="companyName"
                   v-model="questions.companyName" 
                   type="text" 
                   placeholder="Ej: TechSolutions Inc."
                   class="form-input"
+                  :class="{ 'prefilled-field': prefilledFields.includes('companyName') }"
                 />
               </div>
               
               <div class="field-group">
-                <label for="productsServices">Productos o servicios *</label>
+                <label for="productsServices">
+                  Productos o servicios *
+                  <span v-if="prefilledFields.includes('productsServices')" class="prefilled-indicator" title="Campo prellenado automáticamente">
+                    ✨ Prellenado
+                  </span>
+                </label>
                 <textarea 
                   id="productsServices"
                   v-model="questions.productsServices" 
                   placeholder="Describe los productos o servicios que ofreces..."
                   class="form-textarea"
+                  :class="{ 'prefilled-field': prefilledFields.includes('productsServices') }"
                   rows="4"
                 ></textarea>
               </div>
@@ -347,12 +528,18 @@ onMounted(async () => {
             <!-- Paso 2: Audiencia Objetivo -->
             <div v-if="currentStep === 2" class="form-fields">
               <div class="field-group">
-                <label for="targetAudience">Audiencia objetivo *</label>
+                <label for="targetAudience">
+                  Audiencia objetivo *
+                  <span v-if="prefilledFields.includes('targetAudience')" class="prefilled-indicator" title="Campo prellenado automáticamente">
+                    ✨ Prellenado
+                  </span>
+                </label>
                 <textarea 
                   id="targetAudience"
                   v-model="questions.targetAudience" 
                   placeholder="Describe a tu cliente ideal: edad, profesión, intereses, problemas que enfrentan..."
                   class="form-textarea"
+                  :class="{ 'prefilled-field': prefilledFields.includes('targetAudience') }"
                   rows="5"
                 ></textarea>
                 <small class="field-hint">
@@ -364,12 +551,18 @@ onMounted(async () => {
             <!-- Paso 3: Problema Principal -->
             <div v-if="currentStep === 3" class="form-fields">
               <div class="field-group">
-                <label for="mainProblem">Problema principal *</label>
+                <label for="mainProblem">
+                  Problema principal *
+                  <span v-if="prefilledFields.includes('mainProblem')" class="prefilled-indicator" title="Campo prellenado automáticamente">
+                    ✨ Prellenado
+                  </span>
+                </label>
                 <textarea 
                   id="mainProblem"
                   v-model="questions.mainProblem" 
                   placeholder="¿Cuál es el problema más grande que enfrentan tus clientes?"
                   class="form-textarea"
+                  :class="{ 'prefilled-field': prefilledFields.includes('mainProblem') }"
                   rows="4"
                 ></textarea>
                 <small class="field-hint">
@@ -381,12 +574,18 @@ onMounted(async () => {
             <!-- Paso 4: Tu Solución -->
             <div v-if="currentStep === 4" class="form-fields">
               <div class="field-group">
-                <label for="solution">Tu solución *</label>
+                <label for="solution">
+                  Tu solución *
+                  <span v-if="prefilledFields.includes('solution')" class="prefilled-indicator" title="Campo prellenado automáticamente">
+                    ✨ Prellenado
+                  </span>
+                </label>
                 <textarea 
                   id="solution"
                   v-model="questions.solution" 
                   placeholder="¿Cómo resuelves el problema de tus clientes?"
                   class="form-textarea"
+                  :class="{ 'prefilled-field': prefilledFields.includes('solution') }"
                   rows="4"
                 ></textarea>
                 <small class="field-hint">
@@ -398,12 +597,18 @@ onMounted(async () => {
             <!-- Paso 5: Características Únicas -->
             <div v-if="currentStep === 5" class="form-fields">
               <div class="field-group">
-                <label for="uniqueCharacteristics">Características únicas *</label>
+                <label for="uniqueCharacteristics">
+                  Características únicas *
+                  <span v-if="prefilledFields.includes('uniqueCharacteristics')" class="prefilled-indicator" title="Campo prellenado automáticamente">
+                    ✨ Prellenado
+                  </span>
+                </label>
                 <textarea 
                   id="uniqueCharacteristics"
                   v-model="questions.uniqueCharacteristics" 
                   placeholder="¿Qué te hace diferente de la competencia?"
                   class="form-textarea"
+                  :class="{ 'prefilled-field': prefilledFields.includes('uniqueCharacteristics') }"
                   rows="4"
                 ></textarea>
                 <small class="field-hint">
@@ -415,12 +620,18 @@ onMounted(async () => {
             <!-- Paso 6: Autoridad y Credibilidad -->
             <div v-if="currentStep === 6" class="form-fields">
               <div class="field-group">
-                <label for="authority">Autoridad y credibilidad *</label>
+                <label for="authority">
+                  Autoridad y credibilidad *
+                  <span v-if="prefilledFields.includes('authority')" class="prefilled-indicator" title="Campo prellenado automáticamente">
+                    ✨ Prellenado
+                  </span>
+                </label>
                 <textarea 
                   id="authority"
                   v-model="questions.authority" 
                   placeholder="¿Por qué deberían confiar en ti?"
                   class="form-textarea"
+                  :class="{ 'prefilled-field': prefilledFields.includes('authority') }"
                   rows="4"
                 ></textarea>
                 <small class="field-hint">
@@ -432,12 +643,18 @@ onMounted(async () => {
             <!-- Paso 7: Pasos del Proceso -->
             <div v-if="currentStep === 7" class="form-fields">
               <div class="field-group">
-                <label for="steps">Pasos del proceso *</label>
+                <label for="steps">
+                  Pasos del proceso *
+                  <span v-if="prefilledFields.includes('steps')" class="prefilled-indicator" title="Campo prellenado automáticamente">
+                    ✨ Prellenado
+                  </span>
+                </label>
                 <textarea 
                   id="steps"
                   v-model="questions.steps" 
                   placeholder="¿Cuáles son los pasos que sigues para ayudar a tus clientes?"
                   class="form-textarea"
+                  :class="{ 'prefilled-field': prefilledFields.includes('steps') }"
                   rows="5"
                 ></textarea>
                 <small class="field-hint">
@@ -792,6 +1009,26 @@ onMounted(async () => {
         font-weight: 600;
         color: #374151;
         font-size: 0.875rem;
+        position: relative;
+
+        .prefilled-indicator {
+          display: inline-block;
+          margin-left: 0.5rem;
+          font-size: 0.75rem;
+          color: #667eea;
+          font-weight: 500;
+          background: rgba(102, 126, 234, 0.1);
+          padding: 0.2rem 0.5rem;
+          border-radius: 12px;
+          border: 1px solid rgba(102, 126, 234, 0.2);
+          cursor: help;
+          transition: all 0.2s ease;
+
+          &:hover {
+            background: rgba(102, 126, 234, 0.15);
+            border-color: rgba(102, 126, 234, 0.3);
+          }
+        }
       }
 
       .form-input,
@@ -800,7 +1037,7 @@ onMounted(async () => {
         border: 2px solid #e5e7eb;
         border-radius: 8px;
         font-size: 1rem;
-        transition: border-color 0.2s ease;
+        transition: all 0.2s ease;
         resize: vertical;
 
         &:focus {
@@ -810,6 +1047,17 @@ onMounted(async () => {
 
         &::placeholder {
           color: #9ca3af;
+        }
+
+        &.prefilled-field {
+          background: rgba(102, 126, 234, 0.02);
+          border-color: rgba(102, 126, 234, 0.2);
+
+          &:focus {
+            background: white;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+          }
         }
       }
 
@@ -1092,13 +1340,26 @@ onMounted(async () => {
 
 // Animations
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes progress {
-  0% { transform: translateX(-100%); }
-  50% { transform: translateX(0%); }
-  100% { transform: translateX(100%); }
+  0% {
+    transform: translateX(-100%);
+  }
+
+  50% {
+    transform: translateX(0%);
+  }
+
+  100% {
+    transform: translateX(100%);
+  }
 }
 </style>
