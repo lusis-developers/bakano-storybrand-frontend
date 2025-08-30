@@ -557,7 +557,7 @@ onMounted(async () => {
             :disabled="isGenerating"
           >
             <i class="fas fa-redo"></i>
-            Regenerar Contenido
+            Regenerar Soundbites y Taglines
           </button>
         </div>
       </div>
