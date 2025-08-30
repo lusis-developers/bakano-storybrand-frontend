@@ -25,43 +25,43 @@ const isContentComplete = computed(() => hasSoundbites.value && hasTaglines.valu
 const hasQuestionsCompleted = computed(() => {
   const content = currentContent.value
   if (!content?.questions) return false
-  
+
   const questions = content.questions
-  return questions.companyName && 
-         questions.productsServices && 
-         questions.targetAudience && 
-         questions.mainProblem && 
-         questions.solution && 
-         questions.uniqueCharacteristics && 
-         questions.authority && 
-         questions.steps
+  return questions.companyName &&
+    questions.productsServices &&
+    questions.targetAudience &&
+    questions.mainProblem &&
+    questions.solution &&
+    questions.uniqueCharacteristics &&
+    questions.authority &&
+    questions.steps
 })
 const shouldShowGenerateButton = computed(() => {
   return hasQuestionsCompleted.value && !isContentComplete.value
 })
 
-// Cargar contenido al montar
+// Cargar soundbites y taglines al montar
 onMounted(async () => {
   try {
     isLoading.value = true
-    
-    // Si no tenemos el contenido actual, intentar cargarlo
+
+    // Si no tenemos los soundbites y taglines actuales, intentar cargarlos
     if (!currentContent.value || currentContent.value._id !== contentId.value) {
-      // Aquí necesitaríamos una función para cargar contenido por ID
+      // Aquí necesitaríamos una función para cargar soundbites y taglines por ID
       // Por ahora, verificamos si está en la lista de proyectos
       const existingContent = contentStore.contentProjects.find(p => p._id === contentId.value)
       if (existingContent) {
         contentStore.setCurrentContent(existingContent)
       } else {
-        triggerToast('Contenido no encontrado', 'error')
+        triggerToast('Soundbites y taglines no encontrados', 'error')
         router.push('/dashboard')
         return
       }
     }
-    
+
   } catch (error: any) {
-    console.error('Error al cargar contenido:', error)
-    triggerToast('Error al cargar el contenido', 'error')
+    console.error('Error al cargar soundbites y taglines:', error)
+    triggerToast('Error al cargar los soundbites y taglines', 'error')
     router.push('/dashboard')
   } finally {
     isLoading.value = false
@@ -69,19 +69,19 @@ onMounted(async () => {
 })
 
 /**
- * Generar contenido por primera vez
+ * Generar soundbites y taglines por primera vez
  */
 const generateContent = async () => {
   try {
     isGenerating.value = true
-    triggerToast('Generando contenido con IA...', 'info')
-    
+    triggerToast('Generando soundbites y taglines con IA...', 'info')
+
     await contentStore.generateSoundbitesAndTaglines(contentId.value, false)
-    
-    triggerToast('¡Contenido generado exitosamente!', 'success')
+
+    triggerToast('¡Soundbites y taglines generados exitosamente!', 'success')
   } catch (error: any) {
-    console.error('Error al generar contenido:', error)
-    triggerToast('Error al generar contenido', 'error')
+    console.error('Error al generar soundbites y taglines:', error)
+    triggerToast('Error al generar soundbites y taglines', 'error')
   } finally {
     isGenerating.value = false
   }
@@ -93,14 +93,14 @@ const generateContent = async () => {
 const regenerateContent = async () => {
   try {
     isRegenerating.value = true
-    triggerToast('Regenerando contenido...', 'info')
-    
+    triggerToast('Regenerando soundbites y taglines...', 'info')
+
     await contentStore.generateSoundbitesAndTaglines(contentId.value, true)
-    
-    triggerToast('Contenido regenerado exitosamente', 'success')
+
+    triggerToast('Soundbites y taglines regenerados exitosamente', 'success')
   } catch (error: any) {
-    console.error('Error al regenerar contenido:', error)
-    triggerToast('Error al regenerar contenido', 'error')
+    console.error('Error al regenerar soundbites y taglines:', error)
+    triggerToast('Error al regenerar soundbites y taglines', 'error')
   } finally {
     isRegenerating.value = false
   }
@@ -154,6 +154,19 @@ const goToScripts = () => {
     router.push(`/content/scripts/${currentContent.value._id}`)
   }
 }
+
+/**
+ * Scroll suave hacia la sección de scripts
+ */
+const scrollToScripts = () => {
+  const scriptsSection = document.querySelector('.scripts-hero-section')
+  if (scriptsSection) {
+    scriptsSection.scrollIntoView({
+      behavior: 'smooth',
+      block: 'start'
+    })
+  }
+}
 </script>
 
 <template>
@@ -166,7 +179,7 @@ const goToScripts = () => {
         </button>
         
         <div class="results-title">
-          <h1>Contenido Generado</h1>
+          <h1>Soundbites y Taglines Generados</h1>
           <p v-if="currentContent">Para: {{ currentContent.questions?.companyName || 'Tu empresa' }}</p>
         </div>
       </header>
@@ -174,14 +187,14 @@ const goToScripts = () => {
       <!-- Loading State -->
       <div v-if="isLoading" class="loading-state">
         <div class="loading-spinner"></div>
-        <p>Cargando contenido...</p>
+        <p>Cargando soundbites y taglines...</p>
       </div>
 
       <!-- Content Results -->
       <div v-else-if="currentContent" class="results-content">
         <!-- Status Banner -->
-        <div class="status-banner" :class="{ 
-          'complete': isContentComplete, 
+        <div class="status-banner" :class="{
+          'complete': isContentComplete,
           'incomplete': !isContentComplete && !shouldShowGenerateButton,
           'ready-to-generate': shouldShowGenerateButton
         }">
@@ -192,14 +205,14 @@ const goToScripts = () => {
           </div>
           <div class="status-text">
             <h3>
-              {{ isContentComplete ? 'Contenido Completo' : 
-                 shouldShowGenerateButton ? '¡Listo para Generar!' : 
-                 'Contenido Incompleto' }}
+              {{ isContentComplete ? 'Soundbites y Taglines Completos' :
+                shouldShowGenerateButton ? '¡Listo para Generar!' :
+                  'Soundbites y Taglines Incompletos' }}
             </h3>
             <p>
-              {{ isContentComplete ? 'Tu contenido está listo para usar' : 
-                 shouldShowGenerateButton ? 'Tus preguntas están completas. ¡Genera tu contenido StoryBrand ahora!' : 
-                 'Faltan elementos por generar' }}
+              {{ isContentComplete ? 'Tus soundbites y taglines están listos para usar' :
+                shouldShowGenerateButton ? 'Tus preguntas están completas. ¡Genera tus soundbites y taglines StoryBrand ahora!' :
+                  'Faltan soundbites y taglines por generar' }}
             </p>
           </div>
         </div>
@@ -208,7 +221,7 @@ const goToScripts = () => {
         <div v-if="shouldShowGenerateButton" class="generate-section">
           <div class="generate-card">
             <div class="generate-header">
-              <h2><i class="fas fa-bullseye"></i> Generar Contenido StoryBrand</h2>
+              <h2><i class="fas fa-bullseye"></i> Generar Soundbites y Taglines StoryBrand</h2>
               <p>Basado en las respuestas de tu negocio, nuestra IA creará:</p>
             </div>
             
@@ -223,7 +236,7 @@ const goToScripts = () => {
               </div>
               <div class="feature-item">
                 <span class="feature-icon"><i class="fas fa-bolt"></i></span>
-                <span class="feature-text">Contenido optimizado para conversión</span>
+                <span class="feature-text">Soundbites y taglines optimizados para conversión</span>
               </div>
             </div>
             
@@ -234,13 +247,50 @@ const goToScripts = () => {
             >
               <span v-if="isGenerating">
                 <i class="fas fa-spinner fa-spin"></i>
-                Generando contenido...
+                Generando soundbites y taglines...
               </span>
               <span v-else>
                 <i class="fas fa-magic"></i>
-                Generar Contenido Ahora
+                Generar Soundbites y Taglines Ahora
               </span>
             </button>
+          </div>
+        </div>
+
+        <!-- Progress Indicator -->
+        <div v-if="isContentComplete" class="progress-indicator">
+          <div class="progress-step completed">
+            <div class="step-circle">
+              <i class="fas fa-check"></i>
+            </div>
+            <div class="step-label">
+              <h4>Soundbites y Taglines Generados</h4>
+              <p>Soundbites y taglines listos</p>
+            </div>
+          </div>
+          
+          <div class="progress-connector"></div>
+          
+          <div class="progress-step current" @click="scrollToScripts" style="cursor: pointer;">
+            <div class="step-circle">
+              <i class="fas fa-file-alt"></i>
+            </div>
+            <div class="step-label">
+              <h4>Crear Scripts</h4>
+              <p>Siguiente paso recomendado</p>
+            </div>
+          </div>
+          
+          <div class="progress-connector disabled"></div>
+          
+          <div class="progress-step disabled">
+            <div class="step-circle">
+              <i class="fas fa-rocket"></i>
+            </div>
+            <div class="step-label">
+              <h4>Lanzar Campañas</h4>
+              <p>Usar scripts en marketing</p>
+            </div>
           </div>
         </div>
 
@@ -249,18 +299,14 @@ const goToScripts = () => {
           <button 
             @click="regenerateContent" 
             :disabled="isRegenerating"
-            class="btn btn-primary"
+            class="btn btn-outline"
           >
             <span v-if="isRegenerating">Regenerando...</span>
-            <span v-else><i class="fas fa-sync-alt"></i> Regenerar Contenido</span>
+            <span v-else><i class="fas fa-sync-alt"></i> Regenerar Soundbites y taglines</span>
           </button>
           
           <button @click="editQuestions" class="btn btn-outline">
             <i class="fas fa-edit"></i> Editar Preguntas
-          </button>
-          
-          <button @click="goToScripts" class="btn btn-secondary">
-            <i class="fas fa-file-alt"></i> Ver Scripts
           </button>
         </div>
 
@@ -322,32 +368,100 @@ const goToScripts = () => {
           </div>
         </section>
 
-        <!-- Next Steps -->
-        <section class="next-steps">
-          <h2><i class="fas fa-rocket"></i> Próximos Pasos</h2>
-          <div class="steps-grid">
-            <div class="step-card">
-              <div class="step-icon"><i class="fas fa-file-alt"></i></div>
-              <h3>Generar Scripts</h3>
-              <p>Crea scripts para contenido y anuncios usando tus soundbites y taglines</p>
-              <button @click="goToScripts" class="btn btn-primary">
-                Ir a Scripts
-              </button>
+        <!-- Scripts CTA Hero Section -->
+        <section class="scripts-hero-section">
+          <div class="scripts-hero-content">
+            <div class="hero-badge">
+              <i class="fas fa-magic"></i>
+              <span>Siguiente Paso Recomendado</span>
             </div>
             
-            <div class="step-card">
+            <h2 class="hero-title">
+              <i class="fas fa-file-alt"></i>
+              ¡Convierte tus soundbites y taglines en Scripts poderosos!
+            </h2>
+            
+            <p class="hero-description">
+              Ahora que tienes tus <strong>soundbites</strong> y <strong>taglines</strong> listos, 
+              es momento de crear scripts profesionales para tus campañas de marketing.
+            </p>
+            
+            <div class="scripts-benefits">
+              <div class="benefit-item">
+                <div class="benefit-icon">
+                  <i class="fas fa-bullhorn"></i>
+                </div>
+                <div class="benefit-text">
+                  <h4>Scripts para Anuncios</h4>
+                  <p>Facebook, Instagram, Google Ads</p>
+                </div>
+              </div>
+              
+              <div class="benefit-item">
+                <div class="benefit-icon">
+                  <i class="fas fa-video"></i>
+                </div>
+                <div class="benefit-text">
+                  <h4>Soundbites y Taglines para Redes</h4>
+                  <p>Posts, stories, videos promocionales</p>
+                </div>
+              </div>
+              
+              <div class="benefit-item">
+                <div class="benefit-icon">
+                  <i class="fas fa-envelope"></i>
+                </div>
+                <div class="benefit-text">
+                  <h4>Email Marketing</h4>
+                  <p>Secuencias de venta y nurturing</p>
+                </div>
+              </div>
+            </div>
+            
+            <div class="hero-actions">
+              <button @click="goToScripts" class="btn btn-scripts-primary">
+                <i class="fas fa-rocket"></i>
+                Crear Scripts Ahora
+              </button>
+              
+              <div class="hero-note">
+                <i class="fas fa-info-circle"></i>
+                <span>Usa tus soundbites y taglines para generar scripts únicos</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="scripts-preview">
+            <div class="preview-card">
+              <div class="preview-header">
+                <i class="fas fa-file-alt"></i>
+                <span>Vista previa del script</span>
+              </div>
+              <div class="preview-content">
+                <p>"{{ currentContent?.soundbites?.[0]?.text || 'Tu soundbite principal' }}"</p>
+                <p class="preview-cta">{{ currentContent?.taglines?.[0]?.text || 'Tu tagline memorable' }}</p>
+              </div>
+            </div>
+          </div>
+        </section>
+        
+        <!-- Additional Steps -->
+        <section class="additional-steps">
+          <h3><i class="fas fa-plus-circle"></i> Más opciones disponibles</h3>
+          <div class="steps-grid">
+            <div class="step-card secondary">
               <div class="step-icon"><i class="fas fa-chart-bar"></i></div>
-              <h3>Analizar Rendimiento</h3>
-              <p>Revisa qué contenido funciona mejor con tu audiencia</p>
+              <h4>Analizar Rendimiento</h4>
+              <p>Revisa qué soundbites y taglines funcionan mejor</p>
               <button class="btn btn-outline" disabled>
                 Próximamente
               </button>
             </div>
             
-            <div class="step-card">
+            <div class="step-card secondary">
               <div class="step-icon"><i class="fas fa-palette"></i></div>
-              <h3>Crear Variaciones</h3>
-              <p>Genera diferentes versiones para distintas plataformas</p>
+              <h4>Crear Variaciones</h4>
+              <p>Genera versiones para distintas plataformas</p>
               <button class="btn btn-outline" disabled>
                 Próximamente
               </button>
@@ -359,8 +473,8 @@ const goToScripts = () => {
       <!-- Error State -->
       <div v-else class="error-state">
         <div class="error-icon"><i class="fas fa-times-circle"></i></div>
-        <h3>Contenido no encontrado</h3>
-        <p>No se pudo cargar el contenido solicitado</p>
+        <h3>Soundbites y taglines no encontrados</h3>
+        <p>No se pudieron cargar los soundbites y taglines solicitados</p>
         <button @click="goToDashboard" class="btn btn-primary">
           Volver al Dashboard
         </button>
@@ -456,8 +570,13 @@ const goToScripts = () => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 
 // Status Banner
@@ -497,12 +616,160 @@ const goToScripts = () => {
   }
 }
 
+// Progress Indicator
+.progress-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 3rem;
+  padding: 2rem;
+  background: white;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+}
+
+.progress-step {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  position: relative;
+
+  @media (max-width: 768px) {
+    flex-direction: row;
+    text-align: left;
+    width: 100%;
+  }
+
+  &.completed {
+    .step-circle {
+      background: #10b981;
+      color: white;
+      border-color: #10b981;
+    }
+
+    .step-label h4 {
+      color: #10b981;
+    }
+  }
+
+  &.current {
+    .step-circle {
+      background: #667eea;
+      color: white;
+      border-color: #667eea;
+      animation: pulse 2s infinite;
+    }
+
+    .step-label h4 {
+      color: #667eea;
+      font-weight: 700;
+    }
+  }
+
+  &.disabled {
+    opacity: 0.5;
+
+    .step-circle {
+      background: #f1f5f9;
+      color: #94a3b8;
+      border-color: #e2e8f0;
+    }
+
+    .step-label h4 {
+      color: #94a3b8;
+    }
+
+    .step-label p {
+      color: #cbd5e1;
+    }
+  }
+}
+
+.step-circle {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  border: 3px solid #e2e8f0;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.25rem;
+  margin-bottom: 1rem;
+  transition: all 0.3s ease;
+
+  @media (max-width: 768px) {
+    width: 3rem;
+    height: 3rem;
+    font-size: 1rem;
+    margin-bottom: 0;
+    margin-right: 1rem;
+    flex-shrink: 0;
+  }
+}
+
+.step-label {
+  h4 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    color: #64748b;
+    transition: all 0.3s ease;
+  }
+
+  p {
+    font-size: 0.875rem;
+    color: #94a3b8;
+    margin: 0;
+  }
+}
+
+.progress-connector {
+  width: 4rem;
+  height: 2px;
+  background: #10b981;
+  margin: 0 1rem;
+
+  @media (max-width: 768px) {
+    width: 2px;
+    height: 2rem;
+    margin: 0;
+    position: absolute;
+    left: 1.5rem;
+    top: 4rem;
+  }
+
+  &.disabled {
+    background: #e2e8f0;
+  }
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4);
+  }
+
+  50% {
+    box-shadow: 0 0 0 10px rgba(102, 126, 234, 0);
+  }
+}
+
 // Action Buttons
 .action-buttons {
   display: flex;
   gap: 1rem;
   margin-bottom: 2rem;
   flex-wrap: wrap;
+  justify-content: center;
 
   @media (max-width: 480px) {
     flex-direction: column;
@@ -672,8 +939,234 @@ const goToScripts = () => {
   }
 }
 
-// Next Steps
-.next-steps {
+// Scripts Hero Section
+.scripts-hero-section {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 20px;
+  padding: 3rem;
+  margin-bottom: 2rem;
+  color: white;
+  position: relative;
+  overflow: hidden;
+
+  @media (max-width: 768px) {
+    padding: 2rem 1.5rem;
+  }
+
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><defs><pattern id="grain" width="100" height="100" patternUnits="userSpaceOnUse"><circle cx="50" cy="50" r="1" fill="%23ffffff" opacity="0.1"/></pattern></defs><rect width="100" height="100" fill="url(%23grain)"/></svg>') repeat;
+    pointer-events: none;
+  }
+}
+
+.scripts-hero-content {
+  position: relative;
+  z-index: 1;
+  max-width: 800px;
+
+  .hero-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
+    padding: 0.5rem 1rem;
+    border-radius: 50px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 1.5rem;
+
+    i {
+      color: #fbbf24;
+    }
+  }
+
+  .hero-title {
+    font-size: 2.5rem;
+    font-weight: 800;
+    margin-bottom: 1rem;
+    line-height: 1.2;
+
+    @media (max-width: 768px) {
+      font-size: 2rem;
+    }
+
+    @media (max-width: 480px) {
+      font-size: 1.75rem;
+    }
+
+    i {
+      color: #fbbf24;
+      margin-right: 0.5rem;
+    }
+  }
+
+  .hero-description {
+    font-size: 1.25rem;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    opacity: 0.95;
+
+    @media (max-width: 768px) {
+      font-size: 1.125rem;
+    }
+
+    strong {
+      color: #fbbf24;
+      font-weight: 700;
+    }
+  }
+}
+
+.scripts-benefits {
+  display: grid;
+  gap: 1.5rem;
+  margin-bottom: 2.5rem;
+
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .benefit-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 1rem;
+
+    .benefit-icon {
+      background: rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(10px);
+      width: 3rem;
+      height: 3rem;
+      border-radius: 12px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+
+      i {
+        font-size: 1.25rem;
+        color: #fbbf24;
+      }
+    }
+
+    .benefit-text {
+      h4 {
+        font-size: 1.125rem;
+        font-weight: 700;
+        margin-bottom: 0.25rem;
+        color: white;
+      }
+
+      p {
+        font-size: 0.875rem;
+        opacity: 0.8;
+        margin: 0;
+      }
+    }
+  }
+}
+
+.hero-actions {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 1rem;
+
+  .btn-scripts-primary {
+    background: #fbbf24;
+    color: #1e293b;
+    border: none;
+    padding: 1rem 2rem;
+    border-radius: 12px;
+    font-size: 1.125rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+
+    &:hover {
+      background: #f59e0b;
+      transform: translateY(-2px);
+      box-shadow: 0 10px 25px rgba(251, 191, 36, 0.3);
+    }
+
+    i {
+      font-size: 1rem;
+    }
+  }
+
+  .hero-note {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    font-size: 0.875rem;
+    opacity: 0.8;
+
+    i {
+      color: #fbbf24;
+    }
+  }
+}
+
+.scripts-preview {
+  position: absolute;
+  right: 2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 300px;
+
+  @media (max-width: 1024px) {
+    display: none;
+  }
+
+  .preview-card {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 16px;
+    padding: 1.5rem;
+
+    .preview-header {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      font-size: 0.875rem;
+      font-weight: 600;
+      margin-bottom: 1rem;
+      opacity: 0.8;
+
+      i {
+        color: #fbbf24;
+      }
+    }
+
+    .preview-content {
+      p {
+        font-size: 0.875rem;
+        line-height: 1.5;
+        margin-bottom: 0.75rem;
+        opacity: 0.9;
+
+        &.preview-cta {
+          font-weight: 700;
+          color: #fbbf24;
+          margin-bottom: 0;
+        }
+      }
+    }
+  }
+}
+
+// Additional Steps
+.additional-steps {
   background: white;
   border-radius: 16px;
   padding: 2rem;
@@ -683,15 +1176,20 @@ const goToScripts = () => {
     padding: 1.5rem;
   }
 
-  h2 {
-    font-size: 1.5rem;
-    font-weight: 700;
-    color: #1e293b;
+  h3 {
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #64748b;
     margin-bottom: 1.5rem;
     text-align: center;
 
     @media (max-width: 768px) {
-      font-size: 1.25rem;
+      font-size: 1.125rem;
+    }
+
+    i {
+      color: #667eea;
+      margin-right: 0.5rem;
     }
   }
 }
@@ -716,12 +1214,36 @@ const goToScripts = () => {
     border-color: #667eea;
   }
 
+  &.secondary {
+    background: #fafafa;
+    border-color: #e5e7eb;
+
+    &:hover {
+      border-color: #9ca3af;
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(156, 163, 175, 0.1);
+    }
+
+    .step-icon {
+      color: #9ca3af;
+    }
+
+    h4 {
+      color: #6b7280;
+    }
+
+    p {
+      color: #9ca3af;
+    }
+  }
+
   .step-icon {
     font-size: 2rem;
     margin-bottom: 1rem;
   }
 
-  h3 {
+  h3,
+  h4 {
     font-size: 1.125rem;
     font-weight: 600;
     color: #1e293b;
