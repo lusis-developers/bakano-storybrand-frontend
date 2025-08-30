@@ -65,7 +65,7 @@ const handleCopy = (text: string) => {
   h2 {
     font-size: 1.75rem;
     font-weight: 700;
-    color: #1e293b;
+    color: $BAKANO-DARK;
     margin-bottom: 0.5rem;
     display: flex;
     align-items: center;
@@ -77,12 +77,12 @@ const handleCopy = (text: string) => {
     }
 
     i {
-      color: #667eea;
+      color: $BAKANO-PURPLE;
     }
   }
 
   p {
-    color: #64748b;
+    color: darken($BAKANO-DARK, 20%);
     font-size: 1.125rem;
 
     @media (max-width: 768px) {
@@ -103,16 +103,16 @@ const handleCopy = (text: string) => {
 }
 
 .soundbite-card {
-  background: white;
+  background: $white;
   border-radius: 12px;
   padding: 1.5rem;
-  border: 1px solid #e2e8f0;
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid rgba($BAKANO-PURPLE, 0.1);
+  box-shadow: 0 2px 4px rgba($BAKANO-DARK, 0.05);
   transition: all 0.2s ease;
 
   &:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 8px 25px rgba($BAKANO-PURPLE, 0.15);
   }
 
   @media (max-width: 768px) {
@@ -125,8 +125,8 @@ const handleCopy = (text: string) => {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  color: #667eea;
-  background: #f1f5f9;
+  color: $BAKANO-PURPLE;
+  background: $BAKANO-LIGHT;
   padding: 0.25rem 0.75rem;
   border-radius: 6px;
   display: inline-block;
@@ -136,7 +136,7 @@ const handleCopy = (text: string) => {
 .soundbite-text {
   font-size: 1.125rem;
   font-weight: 600;
-  color: #1e293b;
+  color: $BAKANO-DARK;
   line-height: 1.6;
   margin-bottom: 1rem;
 
@@ -151,9 +151,9 @@ const handleCopy = (text: string) => {
 }
 
 .copy-btn {
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
-  color: #64748b;
+  background: $BAKANO-LIGHT;
+  border: 1px solid rgba($BAKANO-PURPLE, 0.2);
+  color: darken($BAKANO-DARK, 20%);
   padding: 0.5rem 1rem;
   border-radius: 8px;
   font-size: 0.875rem;
@@ -165,21 +165,21 @@ const handleCopy = (text: string) => {
   gap: 0.25rem;
 
   &:hover {
-    background: #667eea;
-    color: white;
-    border-color: #667eea;
+    background: $BAKANO-PURPLE;
+    color: $white;
+    border-color: $BAKANO-PURPLE;
   }
 }
 
 .empty-content {
   text-align: center;
   padding: 3rem;
-  background: white;
+  background: $white;
   border-radius: 12px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid rgba($BAKANO-PURPLE, 0.1);
 
   p {
-    color: #64748b;
+    color: darken($BAKANO-DARK, 20%);
     font-size: 1.125rem;
     margin: 0;
   }
@@ -187,26 +187,26 @@ const handleCopy = (text: string) => {
 
 // Category-specific styles
 .category-hero {
-  border-left: 4px solid #10b981;
+  border-left: 4px solid $BAKANO-GREEN;
 }
 
 .category-problem {
-  border-left: 4px solid #f59e0b;
+  border-left: 4px solid $alert-warning;
 }
 
 .category-solution {
-  border-left: 4px solid #3b82f6;
+  border-left: 4px solid $alert-info;
 }
 
 .category-authority {
-  border-left: 4px solid #8b5cf6;
+  border-left: 4px solid $BAKANO-PURPLE;
 }
 
 .category-plan {
-  border-left: 4px solid #06b6d4;
+  border-left: 4px solid $BAKANO-PINK;
 }
 
 .category-cta {
-  border-left: 4px solid #ef4444;
+  border-left: 4px solid $alert-error;
 }
 </style>
