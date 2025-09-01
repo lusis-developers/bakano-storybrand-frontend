@@ -117,7 +117,9 @@ const regenerateContent = async () => {
  */
 const editQuestions = () => {
   if (currentContent.value?.business) {
-    router.push(`/content/wizard/${currentContent.value.business}`)
+    const businessId = currentContent.value.business
+    console.log('Navigating to wizard with businessId:', businessId)
+    router.push(`/content/wizard/${businessId}`)
   }
 }
 
