@@ -81,7 +81,7 @@ function copyToClipboard(text: string) {
               class="copy-btn"
               title="Copiar al portapapeles"
             >
-              📋
+              <i class="fas fa-copy"></i>
             </button>
           </div>
         </div>
@@ -105,7 +105,7 @@ function copyToClipboard(text: string) {
               class="copy-btn"
               title="Copiar al portapapeles"
             >
-              📋
+              <i class="fas fa-copy"></i>
             </button>
           </div>
         </div>
@@ -130,7 +130,7 @@ function copyToClipboard(text: string) {
                 class="copy-btn"
                 title="Copiar al portapapeles"
               >
-                📋
+                <i class="fas fa-copy"></i>
               </button>
             </div>
             <div class="script-content">{{ script }}</div>
@@ -378,14 +378,14 @@ function copyToClipboard(text: string) {
     border-color: $BAKANO-PURPLE;
     transform: scale(1.05);
   }
-
+  
   &.copied {
     background: $BAKANO-GREEN;
     color: $white;
     border-color: $BAKANO-GREEN;
   }
-
-  @media (max-width: 768px) {
+    
+    @media (max-width: 768px) {
     position: static;
     margin-top: 1.5rem;
     width: 100%;
