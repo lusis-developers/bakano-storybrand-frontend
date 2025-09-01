@@ -1,6 +1,7 @@
 import axios from 'axios'
 import type { AxiosResponse, AxiosRequestConfig } from 'axios'
 import { ref } from 'vue'
+import router from '@/router'
 
 // Extender la interfaz de AxiosRequestConfig para incluir metadata
 declare module 'axios' {
@@ -97,6 +98,12 @@ class APIBase {
         // Si hay conexión lenta detectada, mostrar aviso
         if (isSlowConnection.value) {
           showSlowConnectionWarning()
+        }
+
+        // Manejar código 401 (No autorizado) - Redirigir al login
+        if (error.response?.status === 401) {
+          // Emitir evento de token expirado para que el auth store lo maneje
+          window.dispatchEvent(new CustomEvent('auth:token-expired'))
         }
 
         return Promise.reject(error)
