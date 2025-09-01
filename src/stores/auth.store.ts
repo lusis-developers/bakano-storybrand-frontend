@@ -207,8 +207,13 @@ export const useAuthStore = defineStore('auth', () => {
       token.value = null
       error.value = 'Tu sesión ha expirado. Por favor, inicia sesión nuevamente.'
 
-      // Redirigir al login
-      router.push('/login')
+      // Limpiar localStorage
+      authService.logout()
+
+      // Redirigir al login solo si no estamos ya en la página de login
+      if (router.currentRoute.value.path !== '/login') {
+        router.push('/login')
+      }
     })
   }
 
