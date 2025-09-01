@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { ref, computed, watch } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useContent } from '@/composables/useContent'
 import { useToast } from '@/composables/useToast'
@@ -17,6 +17,18 @@ export function useWizard() {
   const isSubmitting = ref(false)
   const businessId = ref(route.params.businessId as string)
   const prefilledFields = ref<string[]>([])
+
+  // Watcher para actualizar businessId cuando cambie la ruta
+  watch(
+    () => route.params.businessId,
+    (newBusinessId) => {
+      if (newBusinessId && typeof newBusinessId === 'string') {
+        businessId.value = newBusinessId
+        console.log('BusinessId actualizado desde ruta:', newBusinessId)
+      }
+    },
+    { immediate: true }
+  )
 
   // Formulario de preguntas
   const questions = ref<IBusinessQuestions>({
