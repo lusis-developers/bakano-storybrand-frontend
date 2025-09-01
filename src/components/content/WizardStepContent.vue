@@ -105,7 +105,8 @@ function isTextarea(fieldName: string): boolean {
               class="prefilled-indicator"
               title="Campo prellenado automáticamente"
             >
-              ✨ Prellenado
+              <i class="fas fa-magic"></i>
+              Prellenado
             </span>
           </label>
           
@@ -277,9 +278,9 @@ function isTextarea(fieldName: string): boolean {
   font-weight: 600;
   cursor: help;
 
-  &::before {
-    content: '✓';
+  i {
     font-size: 0.75rem;
+    margin-right: 0.25rem;
   }
 }
 
