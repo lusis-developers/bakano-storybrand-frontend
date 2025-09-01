@@ -44,7 +44,10 @@ function handleStepClick(stepNumber: number) {
         }"
         @click="handleStepClick(step.id)"
       >
-        <span class="step-number">{{ step.id }}</span>
+        <div class="step-number">
+          <span v-if="step.id <= currentStep">{{ step.id }}</span>
+          <i v-if="step.id < currentStep" class="fas fa-check"></i>
+        </div>
         <span class="step-title">{{ step.title }}</span>
       </div>
     </div>
@@ -155,8 +158,7 @@ function handleStepClick(stepNumber: number) {
       background: $BAKANO-GREEN;
       color: $white;
 
-      &::after {
-        content: '✓';
+      i {
         position: absolute;
         font-size: 0.7rem;
         font-weight: bold;
