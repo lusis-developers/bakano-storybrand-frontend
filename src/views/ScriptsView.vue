@@ -7,6 +7,7 @@ import { useBusiness } from '../composables/useBusiness'
 import { useToast } from '../composables/useToast'
 import { useConfirmationDialog } from '../composables/useConfirmationDialog'
 import CustomSelect from '../components/shared/CustomSelect.vue'
+import GenerationProgress from '../components/shared/GenerationProgress.vue'
 import type {
   IScript,
   IScriptFilters,
@@ -902,6 +903,12 @@ onMounted(() => {
       </div>
     </div>
     </div>
+
+    <!-- Generation Progress Overlay -->
+    <GenerationProgress 
+      :is-generating="isGenerating"
+      message="Generando script personalizado para tu marca..."
+    />
   </div>
 </template>
 
