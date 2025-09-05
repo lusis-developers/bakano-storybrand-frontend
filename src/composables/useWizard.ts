@@ -51,6 +51,7 @@ export function useWizard() {
   const generationStep = ref('')
   const showResults = ref(false)
   const currentContentId = ref<string | null>(null)
+  const isEditMode = ref(false)
 
   // Configuración de pasos del wizard
   const wizardSteps = [
@@ -360,12 +361,17 @@ export function useWizard() {
               taglines: result.taglines || []
             }
             showResults.value = true
-            triggerToast('¡Contenido generado exitosamente!', 'success')
+            triggerToast('¡Soundbites y taglines generados exitosamente!', 'success')
+            
+            // Navegar a la vista de resultados
+            setTimeout(() => {
+              router.push(`/content/results/${content._id}`)
+            }, 1500)
           }
 
         } catch (error) {
           console.error('Error al generar contenido:', error)
-          triggerToast('Error al generar contenido automático', 'error')
+          triggerToast('Error al generar soundbites y taglines', 'error')
           // Navegar a resultados aunque falle la generación
           router.push(`/content/results/${content._id}`)
         } finally {
@@ -442,9 +448,25 @@ export function useWizard() {
       return generationStep.value || 'Generando contenido...'
     }
     if (isSubmitting.value) {
-      return 'Creando proyecto...'
+      return isEditMode.value ? 'Actualizando proyecto...' : 'Creando proyecto...'
     }
-    return 'Crear Proyecto StoryBrand'
+    return isEditMode.value ? 'Actualizar Soundbites y Taglines' : 'Crear Soundbites y Taglines'
+  }
+
+  function getGenerationMessage() {
+    const messages = [
+      '🎯 Analizando tu información empresarial...',
+      '✨ Creando soundbites únicos para tu marca...',
+      '🚀 Generando taglines personalizados...',
+      '💡 Aplicando la metodología StoryBrand...',
+      '🎨 Puliendo soundbites y taglines finales...'
+    ]
+    
+    if (isGenerating.value) {
+      return generationStep.value || messages[Math.floor(Math.random() * messages.length)]
+    }
+    
+    return ''
   }
 
   /**
@@ -457,6 +479,9 @@ export function useWizard() {
     }
 
     console.log('🔄 Iniciando prellenado desde contenido existente:', content)
+    
+    // Activar modo edición
+    isEditMode.value = true
     
     // Prellenar businessId desde el contenido
     if (content.business?._id) {
@@ -548,6 +573,7 @@ export function useWizard() {
     currentContentId,
     prefilledFields,
     wizardSteps,
+    isEditMode,
     
     // Computed
     currentStepData,
@@ -567,6 +593,7 @@ export function useWizard() {
     goToResults,
     regenerateContent,
     getButtonText,
+    getGenerationMessage,
     prefillBusinessData,
     prefillContentData
   }
