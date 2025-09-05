@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { IBusinessQuestions } from '@/types/content.types'
+import GenerationProgress from '@/components/shared/GenerationProgress.vue'
 
 interface WizardStep {
   id: number
@@ -17,6 +18,8 @@ interface Props {
   canProceed: boolean
   isSubmitting: boolean
   getButtonText: () => string
+  isGenerating?: boolean
+  generationMessage?: string
 }
 
 interface Emits {
@@ -163,10 +166,22 @@ function isTextarea(fieldName: string): boolean {
           class="btn btn-primary btn-submit"
           type="button"
         >
-          {{ getButtonText() }}
+          <span v-if="!isSubmitting">{{ getButtonText() }}</span>
+          <span v-else class="btn-loading">
+            <i class="fas fa-spinner fa-spin"></i>
+            Generando...
+          </span>
         </button>
       </div>
     </div>
+    
+    <!-- Componente de progreso de generación -->
+    <GenerationProgress 
+      v-if="isSubmitting && isLastStep"
+      :is-generating="isGenerating || false"
+      :message="generationMessage || 'Generando tu proyecto StoryBrand...'"
+      class="generation-overlay"
+    />
   </div>
 </template>
 
@@ -245,9 +260,9 @@ function isTextarea(fieldName: string): boolean {
 }
 
 .form-group {
-  margin-bottom: 2rem;
+    margin-bottom: 2rem;
 
-  &:last-child {
+    &:last-child {
     margin-bottom: 0;
   }
 
@@ -431,5 +446,29 @@ function isTextarea(fieldName: string): boolean {
       box-shadow: 0 8px 24px rgba($BAKANO-GREEN, 0.4);
     }
   }
+}
+
+.btn-loading {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  
+  i {
+    font-size: 0.875rem;
+  }
+}
+
+.generation-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba($white, 0.95);
+  backdrop-filter: blur(8px);
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 </style>
