@@ -455,11 +455,11 @@ export function useWizard() {
 
   function getGenerationMessage() {
     const messages = [
-      '🎯 Analizando tu información empresarial...',
-      '✨ Creando soundbites únicos para tu marca...',
-      '🚀 Generando taglines personalizados...',
-      '💡 Aplicando la metodología StoryBrand...',
-      '🎨 Puliendo soundbites y taglines finales...'
+      '<i class="fas fa-bullseye"></i> Analizando tu información empresarial...',
+      '<i class="fas fa-sparkles"></i> Creando soundbites únicos para tu marca...',
+      '<i class="fas fa-rocket"></i> Generando taglines personalizados...',
+      '<i class="fas fa-lightbulb"></i> Aplicando la metodología StoryBrand...',
+      '<i class="fas fa-palette"></i> Puliendo soundbites y taglines finales...'
     ]
     
     if (isGenerating.value) {
