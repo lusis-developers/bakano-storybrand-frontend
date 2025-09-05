@@ -61,7 +61,7 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresVerified: true },
     },
     {
-      path: '/content/wizard/:businessId',
+      path: '/content/wizard/:businessId?',
       name: 'content-wizard',
       component: () => import('../views/ContentWizardView.vue'),
       meta: { requiresAuth: true, requiresVerified: true },
