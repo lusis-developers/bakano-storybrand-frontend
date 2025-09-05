@@ -96,6 +96,22 @@ const canSubmitScript = computed(() => {
     newScript.value.selectedTagline
 })
 
+const getValidationMessage = () => {
+  if (!newScript.value.scriptType) {
+    return 'Por favor selecciona el tipo de script'
+  }
+  if (newScript.value.platform === undefined) {
+    return 'Por favor selecciona una plataforma'
+  }
+  if (!newScript.value.selectedSoundbite) {
+    return 'Por favor selecciona un soundbite'
+  }
+  if (!newScript.value.selectedTagline) {
+    return 'Por favor selecciona un tagline'
+  }
+  return ''
+}
+
 const soundbiteOptions = computed(() => {
   return currentContent.value?.soundbites?.map(sb => ({
     value: sb.text,
@@ -117,12 +133,12 @@ const scriptTypeOptions = [
 ]
 
 const platformOptions = [
-  { value: '', label: 'General' },
   { value: 'youtube', label: 'YouTube' },
   { value: 'instagram', label: 'Instagram' },
   { value: 'tiktok', label: 'TikTok' },
   { value: 'email', label: 'Email' },
-  { value: 'website', label: 'Sitio Web' }
+  { value: 'website', label: 'Sitio Web' },
+  { value: '', label: 'General' }
 ]
 
 const filterTypeOptions = [
@@ -244,7 +260,8 @@ const openGenerateModal = () => {
 
 const handleGenerateScript = async () => {
   if (!contentId.value || !canSubmitScript.value) {
-    triggerToast('Por favor completa todos los campos requeridos', 'error')
+    const validationMessage = getValidationMessage()
+    triggerToast(validationMessage || 'Por favor completa todos los campos requeridos', 'error')
     return
   }
 
@@ -719,7 +736,7 @@ onMounted(() => {
         
         <div class="modal-body">
           <div class="form-group">
-            <label>Tipo de Script</label>
+            <label class="required-field">Tipo de Script *</label>
             <CustomSelect
               v-model="newScript.scriptType"
               :options="scriptTypeOptions"
@@ -728,31 +745,33 @@ onMounted(() => {
           </div>
           
           <div class="form-group">
-            <label>Plataforma (Opcional)</label>
+            <label class="required-field">Plataforma *</label>
             <CustomSelect
               v-model="newScript.platform"
               :options="platformOptions"
-              placeholder="Seleccionar plataforma"
+              placeholder="Seleccionar plataforma de destino"
             />
           </div>
           
           <div class="form-group">
-            <label>Soundbite (Opcional)</label>
-            <CustomSelect
-              v-model="newScript.selectedSoundbite"
-              :options="[{ value: '', label: 'Seleccionar automáticamente' }, ...soundbiteOptions]"
-              placeholder="Seleccionar soundbite"
-            />
-          </div>
-          
-          <div class="form-group">
-            <label>Tagline (Opcional)</label>
-            <CustomSelect
-              v-model="newScript.selectedTagline"
-              :options="[{ value: '', label: 'Seleccionar automáticamente' }, ...taglineOptions]"
-              placeholder="Seleccionar tagline"
-            />
-          </div>
+              <label class="required-field">Soundbite *</label>
+              <CustomSelect
+                v-model="newScript.selectedSoundbite"
+                :options="soundbiteOptions"
+                placeholder="Seleccionar soundbite para el script"
+                class="custom-select"
+              />
+            </div>
+            
+            <div class="form-group">
+              <label class="required-field">Tagline *</label>
+              <CustomSelect
+                v-model="newScript.selectedTagline"
+                :options="taglineOptions"
+                placeholder="Seleccionar tagline para el script"
+                class="custom-select"
+              />
+            </div>
           
           <div class="form-group">
             <label>Tema Personalizado (Opcional)</label>
@@ -1143,6 +1162,16 @@ onMounted(() => {
           margin-bottom: 0.5rem;
           font-weight: 600;
           color: #2d3748;
+
+          &.required-field {
+            position: relative;
+            
+            &::after {
+              content: ' *';
+              color: #e53e3e;
+              margin-left: 2px;
+            }
+          }
         }
 
         .date-input {
@@ -1459,8 +1488,18 @@ onMounted(() => {
     max-height: 90vh;
     overflow-y: auto;
 
+    @media (max-width: 768px) {
+      margin: 0.5rem;
+      max-height: 95vh;
+      border-radius: 8px;
+    }
+
     &.large {
       max-width: 800px;
+
+      @media (max-width: 768px) {
+        max-width: calc(100vw - 1rem);
+      }
     }
 
     .modal-header {
@@ -1493,46 +1532,101 @@ onMounted(() => {
       padding: 1.5rem;
 
       .form-group {
-        margin-bottom: 1.5rem;
+          margin-bottom: 1.5rem;
 
-        label {
-          display: block;
-          margin-bottom: 0.5rem;
-          font-weight: 600;
-          color: #2d3748;
-        }
-
-
-
-        .form-textarea {
-          width: 90%;
-          padding: 0.75rem;
-          border: 2px solid #e2e8f0;
-          border-radius: 8px;
-          font-size: 1rem;
-          transition: border-color 0.3s ease;
-          resize: vertical;
-          min-height: 80px;
-          font-family: inherit;
-
-          &:focus {
-            outline: none;
-            border-color: #667eea;
+          @media (max-width: 768px) {
+            margin-bottom: 1.25rem;
           }
 
-          &::placeholder {
-            color: #9ca3af;
+          label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-weight: 600;
+            color: #2d3748;
+
+            @media (max-width: 768px) {
+              font-size: 0.9rem;
+            }
+
+            &.required-field::after {
+              @media (max-width: 768px) {
+                font-size: 0.875rem;
+              }
+            }
+          }
+
+          .form-textarea {
+            width: 90%;
+            padding: 0.75rem;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+            resize: vertical;
+            min-height: 80px;
+            font-family: inherit;
+
+            @media (max-width: 768px) {
+              width: 100%;
+              padding: 0.625rem;
+              font-size: 0.9rem;
+              min-height: 70px;
+            }
+
+            &:focus {
+              outline: none;
+              border-color: #667eea;
+            }
+
+            &::placeholder {
+              color: #9ca3af;
+            }
+          }
+
+          .validation-message {
+            margin-top: 8px;
+            padding: 12px 16px;
+            background: linear-gradient(135deg, #fef2f2 0%, #fee2e2 100%);
+            border: 1px solid #fecaca;
+            border-radius: 8px;
+            color: #dc2626;
+            font-size: 0.875rem;
+            line-height: 1.4;
+            display: flex;
+            align-items: flex-start;
+            gap: 8px;
+            
+            @media (max-width: 768px) {
+              margin-top: 6px;
+              padding: 10px 14px;
+              font-size: 0.8125rem;
+              line-height: 1.3;
+              gap: 6px;
+            }
+            
+            i {
+              margin-top: 2px;
+              flex-shrink: 0;
+
+              @media (max-width: 768px) {
+                margin-top: 1px;
+              }
+            }
+          }
+
+          .form-help {
+            display: block;
+            margin-top: 0.25rem;
+            font-size: 0.875rem;
+            color: #6b7280;
+            line-height: 1.4;
+
+            @media (max-width: 768px) {
+              font-size: 0.8125rem;
+              margin-top: 0.375rem;
+            }
           }
         }
-
-        .form-help {
-          display: block;
-          margin-top: 0.25rem;
-          font-size: 0.875rem;
-          color: #6b7280;
-          line-height: 1.4;
-        }
-      }
 
       .script-meta-info {
         display: grid;
