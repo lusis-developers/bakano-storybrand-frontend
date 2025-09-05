@@ -28,6 +28,7 @@ const {
   isSubmitting,
   generatedContent,
   wizardSteps,
+  isEditMode,
 
   // Computed
   currentStepData,
@@ -42,6 +43,7 @@ const {
   goToStep,
   submitWizard,
   getButtonText,
+  getGenerationMessage,
   prefillBusinessData,
   prefillContentData
 } = useWizard()
@@ -74,11 +76,11 @@ function handleSubmitWizard() {
 
   submitWizard()
     .then(() => {
-      triggerToast('¡Contenido generado exitosamente!', 'success')
+      triggerToast('¡Soundbites y taglines generados exitosamente!', 'success')
     })
     .catch((err) => {
-      error.value = err.message || 'Error al generar contenido'
-      triggerToast('Error al generar contenido', 'error')
+      error.value = err.message || 'Error al generar soundbites y taglines'
+      triggerToast('Error al generar soundbites y taglines', 'error')
     })
     .finally(() => {
       isGenerating.value = false
@@ -213,6 +215,8 @@ onMounted(async () => {
       :can-proceed="canProceed"
       :is-submitting="isSubmitting || isGenerating"
       :get-button-text="getButtonText"
+      :is-generating="isGenerating"
+      :generation-message="getGenerationMessage()"
       @update:questions="(newQuestions) => questions = newQuestions"
       @prev-step="prevStep"
       @next-step="nextStep"
