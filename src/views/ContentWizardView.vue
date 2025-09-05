@@ -2,6 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useBusinessStore } from '@/stores/business.store'
+import { useContentStore } from '@/stores/content.store'
 import { useToast } from '@/composables/useToast'
 import { useWizard } from '@/composables/useWizard'
 import WizardHeader from '@/components/content/WizardHeader.vue'
@@ -14,6 +15,7 @@ import type { IBusiness } from '@/types/business.types'
 const route = useRoute()
 const router = useRouter()
 const businessStore = useBusinessStore()
+const contentStore = useContentStore()
 const { triggerToast } = useToast()
 
 // Usar el composable del wizard
@@ -40,7 +42,8 @@ const {
   goToStep,
   submitWizard,
   getButtonText,
-  prefillBusinessData
+  prefillBusinessData,
+  prefillContentData
 } = useWizard()
 
 // Estado local
@@ -80,6 +83,48 @@ function handleSubmitWizard() {
     .finally(() => {
       isGenerating.value = false
     })
+}
+
+// Función para cargar contenido existente para edición
+async function loadContentData() {
+  const contentId = route.query.contentId as string
+  
+  if (!contentId) return false
+
+  try {
+    console.log('🔍 Buscando contenido para editar:', contentId)
+    
+    // Cargar proyectos de contenido si no están en el store
+    if (!contentStore.hasContentProjects) {
+      await contentStore.fetchUserContentProjects()
+    }
+
+    // Buscar el contenido por ID
+    const existingContent = contentStore.contentProjects.find(p => p._id === contentId)
+    
+    if (existingContent) {
+      console.log('✅ Contenido encontrado para edición:', existingContent)
+      
+      // Prellenar datos del contenido
+      prefillContentData(existingContent)
+      
+      triggerToast(
+        'Datos del proyecto cargados para edición',
+        'success'
+      )
+      
+      return true
+    } else {
+      console.warn('⚠️ Contenido no encontrado:', contentId)
+      triggerToast('Proyecto no encontrado', 'error')
+      router.push('/dashboard')
+      return false
+    }
+  } catch (err) {
+    console.error('Error loading content data:', err)
+    triggerToast('Error al cargar el proyecto', 'error')
+    return false
+  }
 }
 
 // Función para cargar y prellenar datos del negocio
@@ -131,7 +176,13 @@ const wizardResults = computed(() => {
 
 // Inicialización
 onMounted(async () => {
-  await loadBusinessData()
+  // Primero intentar cargar contenido existente para edición
+  const contentLoaded = await loadContentData()
+  
+  // Si no hay contenido para editar, cargar datos del negocio
+  if (!contentLoaded) {
+    await loadBusinessData()
+  }
 })
 </script>
 
