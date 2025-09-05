@@ -100,13 +100,13 @@ const loadUserStatistics = async () => {
 }
 
 /**
- * Maneja la navegación al wizard de creación de contenido o a los resultados existentes
+ * Maneja la navegación al wizard de creación de soundbites o a los resultados existentes
  */
 function handleCreateContent() {
   try {
     // Verificar que el usuario tenga al menos un negocio
     if (!businessStore.businesses || businessStore.businesses.length === 0) {
-      triggerToast('Primero debes crear un negocio antes de generar contenido', 'error')
+      triggerToast('Primero debes crear un negocio antes de generar soundbites', 'error')
       router.push('/business')
       return
     }
@@ -123,7 +123,7 @@ function handleCreateContent() {
 
   } catch (error: any) {
     console.error('Error al navegar:', error)
-    triggerToast('Error al acceder al contenido', 'error')
+    triggerToast('Error al acceder a los soundbites', 'error')
   }
 }
 
@@ -149,7 +149,7 @@ function logout() {
           <section class="welcome-section">
             <div class="welcome-card">
               <h2>¡Bienvenido, {{ authStore.userFirstName }}!</h2>
-              <p>Tu configuración inicial ha sido completada exitosamente. Ahora puedes comenzar a crear contenido increíble para tu marca.</p>
+              <p>Tu configuración inicial ha sido completada exitosamente. Ahora puedes comenzar a crear soundbites increíbles para tu marca.</p>
               
               <div class="quick-actions">
                 <button 
@@ -160,8 +160,8 @@ function logout() {
                     <i :class="hasExistingContent ? 'fas fa-eye' : 'fas fa-edit'"></i>
                   </div>
                   <div class="action-content">
-                    <h3>{{ hasExistingContent ? 'Ver Contenido' : 'Crear Contenido' }}</h3>
-                    <p>{{ hasExistingContent ? 'Revisa tu contenido generado' : 'Genera contenido para tu marca' }}</p>
+                    <h3>{{ hasExistingContent ? 'Ver Soundbites' : 'Crear Soundbites' }}</h3>
+                    <p>{{ hasExistingContent ? 'Revisa tus soundbites generados' : 'Genera soundbites para tu marca' }}</p>
                   </div>
                 </button>
                 
@@ -231,31 +231,31 @@ function logout() {
               <div v-if="!hasExistingContent" class="empty-state">
                 <div class="empty-icon"><i class="fas fa-rocket"></i></div>
                 <h3>¡Todo listo para comenzar!</h3>
-                <p>Has completado tu configuración inicial. Comienza creando tu primer contenido.</p>
+                <p>Has completado tu configuración inicial. Comienza creando tus primeros soundbites.</p>
                 <button 
                   @click="handleCreateContent" 
                   class="btn btn-primary"
                 >
-                  Crear Primer Contenido
+                  Crear Primeros Soundbites
                 </button>
               </div>
               
               <div v-else class="existing-content-state">
                 <div class="content-icon"><i class="fas fa-check-circle"></i></div>
-                <h3>¡Contenido generado!</h3>
-                <p>Ya tienes contenido creado para tu marca. Puedes revisarlo o generar nuevo contenido.</p>
+                <h3>¡Soundbites generados!</h3>
+                <p>Ya tienes soundbites creados para tu marca. Puedes revisarlos o generar nuevos soundbites.</p>
                 <div class="content-actions">
                   <button 
                     @click="handleCreateContent" 
                     class="btn btn-primary"
                   >
-                    Ver Contenido Actual
+                    Ver Soundbites Actuales
                   </button>
                   <button 
                      @click="router.push(`/content/wizard/${businessStore.businesses[0]?.id}`)"
                      class="btn btn-outline"
                    >
-                     Generar Nuevo Contenido
+                     Generar Nuevos Soundbites
                    </button>
                 </div>
               </div>
