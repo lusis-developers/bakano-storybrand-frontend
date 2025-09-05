@@ -7,11 +7,11 @@ const props = defineProps({
 })
 
 const emit = defineEmits<{
-  generate: []
+  'generate-content': []
 }>()
 
 const handleGenerate = () => {
-  emit('generate')
+  emit('generate-content')
 }
 </script>
 
