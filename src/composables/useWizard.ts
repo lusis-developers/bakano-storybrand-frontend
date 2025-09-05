@@ -447,6 +447,94 @@ export function useWizard() {
     return 'Crear Proyecto StoryBrand'
   }
 
+  /**
+   * Prellenar datos desde contenido existente
+   */
+  function prefillContentData(content: any) {
+    if (!content) {
+      console.warn('⚠️ No se proporcionó contenido para prellenar')
+      return
+    }
+
+    console.log('🔄 Iniciando prellenado desde contenido existente:', content)
+    
+    // Prellenar businessId desde el contenido
+    if (content.business?._id) {
+      businessId.value = content.business._id
+      console.log('✅ BusinessId prellenado:', businessId.value)
+    }
+
+    // Prellenar preguntas desde el contenido
+    if (content.questions) {
+      const contentQuestions = content.questions
+      let fieldsPrefilledCount = 0
+      const fieldsPrefilledList: string[] = []
+
+      // Mapear cada campo de las preguntas
+      if (contentQuestions.companyName) {
+        questions.value.companyName = contentQuestions.companyName
+        fieldsPrefilledCount++
+        fieldsPrefilledList.push('companyName')
+      }
+      
+      if (contentQuestions.productsServices) {
+        questions.value.productsServices = contentQuestions.productsServices
+        fieldsPrefilledCount++
+        fieldsPrefilledList.push('productsServices')
+      }
+      
+      if (contentQuestions.targetAudience) {
+        questions.value.targetAudience = contentQuestions.targetAudience
+        fieldsPrefilledCount++
+        fieldsPrefilledList.push('targetAudience')
+      }
+      
+      if (contentQuestions.mainProblem) {
+        questions.value.mainProblem = contentQuestions.mainProblem
+        fieldsPrefilledCount++
+        fieldsPrefilledList.push('mainProblem')
+      }
+      
+      if (contentQuestions.solution) {
+        questions.value.solution = contentQuestions.solution
+        fieldsPrefilledCount++
+        fieldsPrefilledList.push('solution')
+      }
+      
+      if (contentQuestions.uniqueCharacteristics) {
+        questions.value.uniqueCharacteristics = contentQuestions.uniqueCharacteristics
+        fieldsPrefilledCount++
+        fieldsPrefilledList.push('uniqueCharacteristics')
+      }
+      
+      if (contentQuestions.authority) {
+        questions.value.authority = contentQuestions.authority
+        fieldsPrefilledCount++
+        fieldsPrefilledList.push('authority')
+      }
+      
+      if (contentQuestions.steps) {
+        questions.value.steps = contentQuestions.steps
+        fieldsPrefilledCount++
+        fieldsPrefilledList.push('steps')
+      }
+
+      // Actualizar campos prellenados
+      prefilledFields.value = fieldsPrefilledList
+      
+      console.log(`✅ Prellenado completado: ${fieldsPrefilledCount} campos`, {
+        campos: fieldsPrefilledList,
+        questions: questions.value
+      })
+    }
+
+    // Establecer el ID del contenido actual para modo edición
+    if (content._id) {
+      currentContentId.value = content._id
+      console.log('✅ ContentId establecido para edición:', currentContentId.value)
+    }
+  }
+
   return {
     // Estado
     currentStep,
@@ -479,6 +567,7 @@ export function useWizard() {
     goToResults,
     regenerateContent,
     getButtonText,
-    prefillBusinessData
+    prefillBusinessData,
+    prefillContentData
   }
 }
