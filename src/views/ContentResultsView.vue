@@ -116,10 +116,9 @@ const regenerateContent = async () => {
  * Navegar al wizard para editar preguntas
  */
 const editQuestions = () => {
-  if (currentContent.value?.business) {
-    const businessId = currentContent.value.business
-    console.log('Navigating to wizard with businessId:', businessId)
-    router.push(`/content/wizard/${businessId}`)
+  if (currentContent.value?._id) {
+    // Usar el contentId para navegar al wizard en modo edición
+    router.push({ path: '/content/wizard', query: { contentId: currentContent.value._id } })
   }
 }
 
