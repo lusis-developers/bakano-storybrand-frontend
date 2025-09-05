@@ -19,11 +19,11 @@ let progressInterval: number | null = null
 let messageInterval: number | null = null
 
 const generationMessages = [
-  '🎯 Analizando tu información empresarial...',
-  '✨ Creando soundbites únicos para tu marca...',
-  '🚀 Generando taglines personalizados...',
-  '💡 Aplicando la metodología StoryBrand...',
-  '🎨 Puliendo soundbites y taglines finales...'
+  '<i class="fas fa-bullseye"></i> Analizando tu información empresarial...',
+  '<i class="fas fa-sparkles"></i> Creando soundbites únicos para tu marca...',
+  '<i class="fas fa-rocket"></i> Generando taglines personalizados...',
+  '<i class="fas fa-lightbulb"></i> Aplicando la metodología StoryBrand...',
+  '<i class="fas fa-palette"></i> Puliendo soundbites y taglines finales...'
 ]
 
 let messageIndex = 0
@@ -58,7 +58,7 @@ function stopProgress() {
     messageInterval = null
   }
   progress.value = 100
-  currentMessage.value = '✅ ¡Soundbites y taglines generados exitosamente!'
+  currentMessage.value = '<i class="fas fa-check-circle"></i> ¡Soundbites y taglines generados exitosamente!'
 }
 
 onMounted(() => {
@@ -102,8 +102,7 @@ watch(() => props.message, (newMessage: string) => {
       
       <!-- Mensaje dinámico -->
       <div class="generation-progress__message">
-        <h3 class="generation-progress__title">
-          {{ currentMessage }}
+        <h3 class="generation-progress__title" v-html="currentMessage">
         </h3>
         <p class="generation-progress__subtitle">
           Esto puede tomar unos momentos. ¡Estamos creando algo increíble para ti!
@@ -135,7 +134,7 @@ watch(() => props.message, (newMessage: string) => {
           }"
         >
           <div class="step-indicator__dot"></div>
-          <span class="step-indicator__label">{{ step.replace(/🎯|✨|🚀|💡|🎨/g, '').trim() }}</span>
+          <span class="step-indicator__label" v-html="step.replace(/<i[^>]*><\/i>\s*/g, '')"></span>
         </div>
       </div>
     </div>
