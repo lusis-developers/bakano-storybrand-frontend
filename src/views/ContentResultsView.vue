@@ -12,6 +12,7 @@ import ProgressIndicator from '@/components/content/ProgressIndicator.vue'
 import SoundbitesSection from '@/components/content/SoundbitesSection.vue'
 import TaglinesSection from '@/components/content/TaglinesSection.vue'
 import ScriptsHero from '@/components/content/ScriptsHero.vue'
+import GenerationProgress from '@/components/shared/GenerationProgress.vue'
 
 // Composables
 const router = useRouter()
@@ -99,7 +100,6 @@ const generateContent = async () => {
 const regenerateContent = async () => {
   try {
     isRegenerating.value = true
-    triggerToast('Regenerando soundbites y taglines...', 'info')
 
     await contentStore.generateSoundbitesAndTaglines(contentId.value, true)
 
@@ -280,6 +280,12 @@ const scrollToScripts = () => {
         </button>
       </div>
     </div>
+
+    <!-- Generation Progress Overlay -->
+    <GenerationProgress 
+      :is-generating="isRegenerating"
+      message="Regenerando soundbites y taglines..."
+    />
   </div>
 </template>
 
