@@ -27,8 +27,8 @@ const handleScrollToScripts = () => {
         <i class="fas fa-file-alt"></i>
       </div>
       <div class="step-label">
-        <h4>Crear Scripts</h4>
-        <p>Siguiente paso recomendado</p>
+        <h4>Ver Sección de Scripts <i class="fas fa-arrow-down click-indicator"></i></h4>
+        <p>Gestionar y crear nuevos scripts</p>
       </div>
     </div>
     
@@ -103,6 +103,21 @@ const handleScrollToScripts = () => {
       color: #667eea;
       font-weight: 700;
     }
+
+    &:hover {
+      transform: translateY(-2px);
+      
+      .step-circle {
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+      }
+      
+      .step-label h4 {
+        color: #5a67d8;
+      }
+    }
+
+    transition: all 0.3s ease;
   }
 
   &.disabled {
@@ -195,6 +210,29 @@ const handleScrollToScripts = () => {
   }
   100% {
     box-shadow: 0 0 0 0 rgba(102, 126, 234, 0);
+  }
+}
+
+.click-indicator {
+  font-size: 0.75rem;
+  margin-left: 0.5rem;
+  opacity: 0.7;
+  animation: bounce 2s infinite;
+  
+  @media (max-width: 768px) {
+    font-size: 0.625rem;
+  }
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {
+    transform: translateY(0);
+  }
+  40% {
+    transform: translateY(-3px);
+  }
+  60% {
+    transform: translateY(-2px);
   }
 }
 </style>
