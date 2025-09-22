@@ -87,14 +87,20 @@ const handleGenerate = () => {
 
 const confirmCloseModal = async () => {
   if (hasFormChanges.value) {
-    const confirmed = await showConfirmationDialog({
-      title: 'Confirmar cierre',
-      message: '¿Estás seguro de que quieres cerrar? Se perderán los cambios no guardados.'
-    })
-    
-    if (confirmed) {
-      resetForm()
-      emit('close')
+    try {
+      const confirmed = await showConfirmationDialog({
+        title: 'Confirmar cierre',
+        message: '¿Estás seguro de que quieres cerrar? Se perderán los cambios no guardados.'
+      })
+      
+      if (confirmed) {
+        resetForm()
+        emit('close')
+      }
+    } catch (error) {
+      // El usuario canceló el diálogo, no hacemos nada
+      // Esto previene el error "Uncaught (in promise)"
+      return
     }
   } else {
     emit('close')
