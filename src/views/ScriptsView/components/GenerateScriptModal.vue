@@ -195,70 +195,110 @@ watch(() => props.showModal, (newValue) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: rgba($BAKANO-DARK, 0.6);
+  backdrop-filter: blur(8px);
   display: flex;
   align-items: center;
   justify-content: center;
   z-index: 1000;
-  padding: var(--spacing-lg);
+  padding: 2rem;
+  animation: fadeIn 0.3s ease-out;
 
   @media (max-width: 768px) {
-    padding: var(--spacing-md);
+    padding: 1rem;
   }
 
   .modal-content {
-    background: var(--color-white);
-    border-radius: var(--border-radius-lg);
+    background: $white;
+    border-radius: 24px;
     width: 100%;
-    max-width: 600px;
+    max-width: 650px;
     max-height: 90vh;
     overflow-y: auto;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+    box-shadow: 0 25px 80px rgba($BAKANO-PURPLE, 0.2);
+    border: 1px solid rgba($BAKANO-PURPLE, 0.1);
+    animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 6px;
+      background: linear-gradient(90deg, $BAKANO-PURPLE, $BAKANO-PINK);
+      border-radius: 24px 24px 0 0;
+    }
 
     .modal-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      padding: var(--spacing-lg);
-      border-bottom: 1px solid var(--color-border-light);
+      padding: 2.5rem 2.5rem 1.5rem;
+      border-bottom: 1px solid rgba($BAKANO-PURPLE, 0.08);
+      background: linear-gradient(135deg, rgba($BAKANO-LIGHT, 0.05) 0%, rgba($white, 0.9) 100%);
 
       h3 {
-        font-size: var(--font-size-xl);
-        font-weight: var(--font-weight-semibold);
-        color: var(--color-text-primary);
+        font-size: 1.75rem;
+        font-weight: 700;
+        color: $BAKANO-DARK;
         margin: 0;
+        font-family: $font-principal;
+        background: linear-gradient(135deg, $BAKANO-PURPLE, $BAKANO-PINK);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+        background-clip: text;
       }
 
       .close-button {
-        width: 40px;
-        height: 40px;
+        width: 44px;
+        height: 44px;
         border: none;
-        background: var(--color-background-light);
-        border-radius: var(--border-radius-md);
-        color: var(--color-text-secondary);
+        background: rgba($BAKANO-PURPLE, 0.05);
+        border-radius: 12px;
+        color: rgba($BAKANO-PURPLE, 0.6);
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         align-items: center;
         justify-content: center;
+        position: relative;
+        overflow: hidden;
+
+        &::before {
+          content: '';
+          position: absolute;
+          inset: 0;
+          border-radius: 12px;
+          background: linear-gradient(135deg, rgba($alert-error, 0.1), rgba($alert-error, 0.05));
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
 
         &:hover {
-          background: var(--color-danger);
-          color: var(--color-white);
+          background: rgba($alert-error, 0.1);
+          color: $alert-error;
           transform: scale(1.05);
+
+          &::before {
+            opacity: 1;
+          }
         }
 
         i {
-          font-size: 16px;
+          font-size: 18px;
+          position: relative;
+          z-index: 2;
         }
       }
     }
 
     .modal-body {
-      padding: var(--spacing-lg);
+      padding: 2rem 2.5rem;
 
       .form-group {
-        margin-bottom: var(--spacing-lg);
+        margin-bottom: 2rem;
 
         &:last-child {
           margin-bottom: 0;
@@ -266,45 +306,54 @@ watch(() => props.showModal, (newValue) => {
 
         label {
           display: block;
-          font-size: var(--font-size-sm);
-          font-weight: var(--font-weight-medium);
-          color: var(--color-text-primary);
-          margin-bottom: var(--spacing-sm);
+          font-size: 0.875rem;
+          font-weight: 600;
+          color: $BAKANO-DARK;
+          margin-bottom: 0.75rem;
+          font-family: $font-principal;
 
           &.required-field::after {
             content: ' *';
-            color: var(--color-danger);
+            color: $alert-error;
+            font-weight: 700;
           }
         }
 
         .form-textarea {
           width: 100%;
-          padding: var(--spacing-md);
-          border: 1px solid var(--color-border);
-          border-radius: var(--border-radius-md);
-          font-size: var(--font-size-sm);
-          font-family: inherit;
+          padding: 1.25rem;
+          border: 2px solid rgba($BAKANO-PURPLE, 0.1);
+          border-radius: 16px;
+          font-size: 0.875rem;
+          font-family: $font-secondary;
           resize: vertical;
-          min-height: 80px;
-          transition: all 0.2s ease;
+          min-height: 100px;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          background: rgba($BAKANO-LIGHT, 0.02);
+          color: $BAKANO-DARK;
 
           &:focus {
             outline: none;
-            border-color: var(--color-primary);
-            box-shadow: 0 0 0 3px rgba(var(--color-primary-rgb), 0.1);
+            border-color: $BAKANO-PURPLE;
+            box-shadow: 0 0 0 4px rgba($BAKANO-PURPLE, 0.1);
+            background: $white;
+            transform: translateY(-2px);
           }
 
           &::placeholder {
-            color: var(--color-text-tertiary);
+            color: rgba($BAKANO-DARK, 0.4);
+            font-style: italic;
           }
         }
 
         .form-help {
           display: block;
-          font-size: var(--font-size-xs);
-          color: var(--color-text-tertiary);
-          margin-top: var(--spacing-xs);
-          line-height: 1.4;
+          font-size: 0.75rem;
+          color: rgba($BAKANO-DARK, 0.5);
+          margin-top: 0.75rem;
+          line-height: 1.5;
+          font-family: $font-secondary;
+          font-style: italic;
         }
       }
     }
@@ -312,67 +361,97 @@ watch(() => props.showModal, (newValue) => {
     .modal-footer {
       display: flex;
       justify-content: flex-end;
-      gap: var(--spacing-sm);
-      padding: var(--spacing-lg);
-      border-top: 1px solid var(--color-border-light);
+      gap: 1rem;
+      padding: 1.5rem 2.5rem 2.5rem;
+      border-top: 1px solid rgba($BAKANO-PURPLE, 0.08);
+      background: linear-gradient(135deg, rgba($BAKANO-LIGHT, 0.02) 0%, rgba($white, 0.9) 100%);
 
       @media (max-width: 480px) {
         flex-direction: column;
+        gap: 1rem;
       }
 
       .cancel-button,
       .generate-script-button {
-        padding: var(--spacing-sm) var(--spacing-lg);
-        border-radius: var(--border-radius-md);
-        font-size: var(--font-size-sm);
-        font-weight: var(--font-weight-medium);
+        padding: 1rem 2rem;
+        border-radius: 14px;
+        font-size: 0.875rem;
+        font-weight: 600;
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         display: flex;
         align-items: center;
-        gap: var(--spacing-xs);
+        gap: 0.75rem;
         white-space: nowrap;
+        font-family: $font-principal;
+        position: relative;
+        overflow: hidden;
 
         @media (max-width: 480px) {
           justify-content: center;
-          padding: var(--spacing-md);
+          padding: 1.25rem;
+        }
+
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba($white, 0.2), transparent);
+          transition: left 0.5s;
+        }
+
+        &:hover:not(:disabled)::before {
+          left: 100%;
         }
       }
 
       .cancel-button {
-        background: var(--color-white);
-        border: 1px solid var(--color-border);
-        color: var(--color-text-secondary);
+        background: $white;
+        border: 2px solid rgba($BAKANO-PURPLE, 0.2);
+        color: rgba($BAKANO-DARK, 0.7);
 
         &:hover {
-          background: var(--color-background-light);
-          border-color: var(--color-text-secondary);
+          background: rgba($BAKANO-PURPLE, 0.05);
+          border-color: rgba($BAKANO-PURPLE, 0.3);
+          color: $BAKANO-PURPLE;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba($BAKANO-PURPLE, 0.15);
         }
       }
 
       .generate-script-button {
-        background: var(--color-primary);
-        border: 1px solid var(--color-primary);
-        color: var(--color-white);
+        background: linear-gradient(135deg, $BAKANO-PURPLE 0%, $BAKANO-PINK 100%);
+        border: 2px solid transparent;
+        color: $white;
+        box-shadow: 0 4px 20px rgba($BAKANO-PURPLE, 0.3);
 
         &:hover:not(:disabled) {
-          background: var(--color-primary-dark);
-          border-color: var(--color-primary-dark);
+          transform: translateY(-3px);
+          box-shadow: 0 12px 35px rgba($BAKANO-PURPLE, 0.4);
+        }
+
+        &:active:not(:disabled) {
           transform: translateY(-1px);
-          box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);
         }
 
         &:disabled {
-          background: var(--color-border);
-          border-color: var(--color-border);
-          color: var(--color-text-tertiary);
+          background: rgba($BAKANO-PURPLE, 0.2);
+          border-color: transparent;
+          color: rgba($BAKANO-DARK, 0.4);
           cursor: not-allowed;
           transform: none;
           box-shadow: none;
+
+          &::before {
+            display: none;
+          }
         }
 
         i {
-          font-size: 14px;
+          font-size: 16px;
 
           &.fa-spin {
             animation: spin 1s linear infinite;
@@ -380,6 +459,26 @@ watch(() => props.showModal, (newValue) => {
         }
       }
     }
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
   }
 }
 

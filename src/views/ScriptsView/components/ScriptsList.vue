@@ -276,22 +276,25 @@ const handleGenerateScript = () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-xl) var(--spacing-lg);
+  padding: 4rem 2rem;
   text-align: center;
+  background: linear-gradient(135deg, rgba($BAKANO-LIGHT, 0.1) 0%, rgba($white, 0.8) 100%);
 
   .loading-spinner {
-    width: 40px;
-    height: 40px;
-    border: 3px solid var(--color-border-light);
-    border-top: 3px solid var(--color-primary);
+    width: 48px;
+    height: 48px;
+    border: 3px solid rgba($BAKANO-PURPLE, 0.1);
+    border-top: 3px solid $BAKANO-PURPLE;
     border-radius: 50%;
     animation: spin 1s linear infinite;
-    margin-bottom: var(--spacing-md);
+    margin-bottom: 1.5rem;
   }
 
   p {
-    color: var(--color-text-secondary);
-    font-size: var(--font-size-md);
+    color: rgba($BAKANO-DARK, 0.6);
+    font-size: 1rem;
+    font-family: $font-secondary;
+    font-weight: 500;
   }
 
   @keyframes spin {
@@ -301,45 +304,78 @@ const handleGenerateScript = () => {
 }
 
 .scripts-section {
-  padding: var(--spacing-lg);
+  padding: 2rem;
+  background: linear-gradient(135deg, rgba($BAKANO-LIGHT, 0.05) 0%, rgba($white, 0.9) 100%);
+  min-height: 60vh;
 
   @media (max-width: 768px) {
-    padding: var(--spacing-md);
+    padding: 1rem;
   }
 
   .scripts-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-    gap: var(--spacing-lg);
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 2rem;
     max-width: 1200px;
     margin: 0 auto;
 
     @media (max-width: 768px) {
       grid-template-columns: 1fr;
-      gap: var(--spacing-md);
+      gap: 1.5rem;
     }
 
     .script-card {
-      background: var(--color-white);
-      border: 1px solid var(--color-border);
-      border-radius: var(--border-radius-lg);
-      padding: var(--spacing-lg);
-      transition: all 0.3s ease;
+      background: $white;
+      border: 1px solid rgba($BAKANO-PURPLE, 0.08);
+      border-radius: 20px;
+      padding: 2rem;
+      transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
       position: relative;
       overflow: hidden;
+      box-shadow: 0 4px 20px rgba($BAKANO-PURPLE, 0.08);
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 4px;
+        background: linear-gradient(90deg, $BAKANO-PURPLE, $BAKANO-PINK);
+        transform: scaleX(0);
+        transition: transform 0.3s ease;
+      }
 
       &:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba(0, 0, 0, 0.1);
-        border-color: var(--color-primary-light);
+        transform: translateY(-8px);
+        box-shadow: 0 20px 40px rgba($BAKANO-PURPLE, 0.15);
+        border-color: rgba($BAKANO-PURPLE, 0.2);
+
+        &::before {
+          transform: scaleX(1);
+        }
+
+        .script-actions button {
+          opacity: 1;
+          transform: scale(1);
+        }
       }
 
       &.completed {
-        border-left: 4px solid var(--color-success);
-        background: linear-gradient(135deg, var(--color-white) 0%, rgba(var(--color-success-rgb), 0.02) 100%);
+        border-left: 4px solid $BAKANO-GREEN;
+        background: linear-gradient(135deg, $white 0%, rgba($BAKANO-GREEN, 0.02) 100%);
+
+        &::before {
+          background: linear-gradient(90deg, $BAKANO-GREEN, $BAKANO-PURPLE);
+        }
 
         .script-header .completion-button.completed {
-          color: var(--color-success);
+          color: $BAKANO-GREEN;
+          background: rgba($BAKANO-GREEN, 0.1);
+        }
+
+        .script-title {
+          color: rgba($BAKANO-DARK, 0.8);
         }
       }
 
@@ -347,87 +383,118 @@ const handleGenerateScript = () => {
         display: flex;
         justify-content: space-between;
         align-items: flex-start;
-        margin-bottom: var(--spacing-md);
+        margin-bottom: 1.5rem;
 
         .script-meta {
           display: flex;
           flex-wrap: wrap;
-          gap: var(--spacing-xs);
+          gap: 0.75rem;
 
           .script-type,
           .script-platform {
-            padding: var(--spacing-xs) var(--spacing-sm);
-            border-radius: var(--border-radius-sm);
-            font-size: var(--font-size-xs);
-            font-weight: var(--font-weight-medium);
+            padding: 0.5rem 1rem;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            font-family: $font-principal;
           }
 
           .script-type {
             &.content {
-              background: rgba(var(--color-primary-rgb), 0.1);
-              color: var(--color-primary);
+              background: linear-gradient(135deg, rgba($BAKANO-PURPLE, 0.1), rgba($BAKANO-PURPLE, 0.05));
+              color: $BAKANO-PURPLE;
+              border: 1px solid rgba($BAKANO-PURPLE, 0.2);
             }
 
             &.ad {
-              background: rgba(var(--color-warning-rgb), 0.1);
-              color: var(--color-warning);
+              background: linear-gradient(135deg, rgba($alert-warning, 0.1), rgba($alert-warning, 0.05));
+              color: $alert-warning;
+              border: 1px solid rgba($alert-warning, 0.2);
             }
           }
 
           .script-platform {
-            background: var(--color-background-light);
-            color: var(--color-text-secondary);
+            background: rgba($BAKANO-LIGHT, 0.3);
+            color: rgba($BAKANO-DARK, 0.7);
+            border: 1px solid rgba($BAKANO-PURPLE, 0.1);
           }
         }
 
         .script-actions {
           display: flex;
-          gap: var(--spacing-xs);
+          gap: 0.5rem;
 
           button {
-            width: 32px;
-            height: 32px;
+            width: 40px;
+            height: 40px;
             border: none;
-            border-radius: var(--border-radius-sm);
-            background: var(--color-background-light);
-            color: var(--color-text-secondary);
+            border-radius: 12px;
+            background: rgba($BAKANO-PURPLE, 0.05);
+            color: rgba($BAKANO-PURPLE, 0.6);
             cursor: pointer;
-            transition: all 0.2s ease;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             display: flex;
             align-items: center;
             justify-content: center;
+            opacity: 0.7;
+            transform: scale(0.9);
+            position: relative;
+            overflow: hidden;
+
+            &::before {
+              content: '';
+              position: absolute;
+              inset: 0;
+              border-radius: 12px;
+              background: linear-gradient(135deg, rgba($BAKANO-PURPLE, 0.1), rgba($BAKANO-PINK, 0.1));
+              opacity: 0;
+              transition: opacity 0.3s ease;
+            }
+
+            &:hover::before {
+              opacity: 1;
+            }
+
+            i {
+              position: relative;
+              z-index: 2;
+              font-size: 16px;
+            }
 
             &:hover {
               transform: scale(1.1);
+              opacity: 1;
             }
 
             &.completion-button {
               &:hover {
-                background: rgba(var(--color-success-rgb), 0.1);
-                color: var(--color-success);
+                background: rgba($BAKANO-GREEN, 0.1);
+                color: $BAKANO-GREEN;
               }
 
               &.completed {
-                background: rgba(var(--color-success-rgb), 0.1);
-                color: var(--color-success);
+                background: rgba($BAKANO-GREEN, 0.1);
+                color: $BAKANO-GREEN;
+                opacity: 1;
+                transform: scale(1);
               }
             }
 
             &.view-button:hover {
-              background: rgba(var(--color-info-rgb), 0.1);
-              color: var(--color-info);
+              background: rgba($BAKANO-PURPLE, 0.1);
+              color: $BAKANO-PURPLE;
             }
 
             &.copy-button:hover {
-              background: rgba(var(--color-primary-rgb), 0.1);
-              color: var(--color-primary);
+              background: rgba($BAKANO-PINK, 0.1);
+              color: $BAKANO-PINK;
             }
 
             &.delete-button:hover {
-              background: rgba(var(--color-danger-rgb), 0.1);
-              color: var(--color-danger);
+              background: rgba($alert-error, 0.1);
+              color: $alert-error;
             }
           }
         }
@@ -435,42 +502,52 @@ const handleGenerateScript = () => {
 
       .script-content {
         .script-title {
-          font-size: var(--font-size-lg);
-          font-weight: var(--font-weight-semibold);
-          color: var(--color-text-primary);
-          margin-bottom: var(--spacing-sm);
-          line-height: 1.4;
+          font-size: 1.25rem;
+          font-weight: 700;
+          color: $BAKANO-DARK;
+          margin-bottom: 1rem;
+          line-height: 1.3;
+          font-family: $font-principal;
+          transition: color 0.3s ease;
         }
 
         .script-preview {
-          color: var(--color-text-secondary);
-          font-size: var(--font-size-sm);
+          color: rgba($BAKANO-DARK, 0.6);
+          font-size: 0.875rem;
           line-height: 1.6;
-          margin-bottom: var(--spacing-md);
+          margin-bottom: 1.5rem;
           display: -webkit-box;
           -webkit-line-clamp: 3;
           -webkit-box-orient: vertical;
           overflow: hidden;
+          font-family: $font-secondary;
         }
 
         .script-details {
           display: flex;
-          gap: var(--spacing-md);
-          font-size: var(--font-size-xs);
-          color: var(--color-text-tertiary);
+          gap: 1.5rem;
+          font-size: 0.75rem;
+          color: rgba($BAKANO-DARK, 0.5);
+          font-family: $font-secondary;
+          font-weight: 600;
 
           @media (max-width: 480px) {
             flex-direction: column;
-            gap: var(--spacing-xs);
+            gap: 0.5rem;
           }
 
           span {
             display: flex;
             align-items: center;
-            gap: var(--spacing-xs);
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba($BAKANO-LIGHT, 0.2);
+            border-radius: 20px;
+            border: 1px solid rgba($BAKANO-PURPLE, 0.08);
 
             i {
               font-size: 12px;
+              color: $BAKANO-PURPLE;
             }
           }
         }
@@ -484,68 +561,112 @@ const handleGenerateScript = () => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: var(--spacing-xl) var(--spacing-lg);
+  padding: 4rem 2rem;
   text-align: center;
-  min-height: 400px;
+  min-height: 500px;
+  background: linear-gradient(135deg, rgba($BAKANO-LIGHT, 0.1) 0%, rgba($white, 0.8) 100%);
 
   .empty-icon {
-    width: 80px;
-    height: 80px;
+    width: 120px;
+    height: 120px;
     border-radius: 50%;
-    background: var(--color-background-light);
+    background: linear-gradient(135deg, rgba($BAKANO-PURPLE, 0.1), rgba($BAKANO-PINK, 0.05));
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: var(--spacing-lg);
+    margin-bottom: 2rem;
+    border: 1px solid rgba($BAKANO-PURPLE, 0.1);
+    position: relative;
+
+    &::before {
+      content: '';
+      position: absolute;
+      inset: -2px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, $BAKANO-PURPLE, $BAKANO-PINK);
+      z-index: -1;
+      opacity: 0.1;
+    }
 
     i {
-      font-size: 32px;
-      color: var(--color-text-tertiary);
+      font-size: 48px;
+      color: $BAKANO-PURPLE;
     }
   }
 
   h3 {
-    font-size: var(--font-size-xl);
-    font-weight: var(--font-weight-semibold);
-    color: var(--color-text-primary);
-    margin-bottom: var(--spacing-sm);
+    font-size: 1.75rem;
+    font-weight: 700;
+    color: $BAKANO-DARK;
+    margin-bottom: 1rem;
+    font-family: $font-principal;
   }
 
   p {
-    color: var(--color-text-secondary);
-    font-size: var(--font-size-md);
-    margin-bottom: var(--spacing-lg);
+    color: rgba($BAKANO-DARK, 0.6);
+    font-size: 1rem;
+    margin-bottom: 2rem;
     max-width: 400px;
+    line-height: 1.6;
+    font-family: $font-secondary;
   }
 
   .generate-first-button {
     display: flex;
     align-items: center;
-    gap: var(--spacing-sm);
-    padding: var(--spacing-md) var(--spacing-xl);
-    background: var(--color-primary);
-    color: var(--color-white);
+    gap: 0.75rem;
+    padding: 1.25rem 2.5rem;
+    background: linear-gradient(135deg, $BAKANO-PURPLE 0%, $BAKANO-PINK 100%);
+    color: $white;
     border: none;
-    border-radius: var(--border-radius-md);
-    font-size: var(--font-size-md);
-    font-weight: var(--font-weight-medium);
+    border-radius: 16px;
+    font-size: 1rem;
+    font-weight: 600;
     cursor: pointer;
-    transition: all 0.2s ease;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    font-family: $font-principal;
+    box-shadow: 0 4px 20px rgba($BAKANO-PURPLE, 0.3);
+    position: relative;
+    overflow: hidden;
+
+    &::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba($white, 0.2), transparent);
+      transition: left 0.5s;
+    }
 
     &:hover:not(:disabled) {
-      background: var(--color-primary-dark);
+      transform: translateY(-3px);
+      box-shadow: 0 12px 35px rgba($BAKANO-PURPLE, 0.4);
+
+      &::before {
+        left: 100%;
+      }
+    }
+
+    &:active:not(:disabled) {
       transform: translateY(-1px);
-      box-shadow: 0 4px 12px rgba(var(--color-primary-rgb), 0.3);
     }
 
     &:disabled {
-      background: var(--color-border);
-      color: var(--color-text-tertiary);
+      background: rgba($BAKANO-PURPLE, 0.2);
+      color: rgba($BAKANO-DARK, 0.4);
       cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+
+      &::before {
+        display: none;
+      }
     }
 
     i {
-      font-size: 16px;
+      font-size: 18px;
     }
   }
 }
