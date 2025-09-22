@@ -112,6 +112,38 @@ const getValidationMessage = () => {
   return ''
 }
 
+const hasFormChanges = computed(() => {
+  return newScript.value.scriptType !== 'content' ||
+    newScript.value.platform !== undefined ||
+    newScript.value.selectedSoundbite !== undefined ||
+    newScript.value.selectedTagline !== undefined ||
+    (newScript.value.customText && newScript.value.customText.trim() !== '')
+})
+
+const confirmCloseModal = async () => {
+  if (!hasFormChanges.value) {
+    showGenerateModal.value = false
+    return
+  }
+
+  const confirmed = await reveal({
+    title: '¿Cerrar sin guardar?',
+    message: 'Tienes cambios sin guardar en el formulario. ¿Estás seguro de que quieres cerrar? Se perderán todos los datos ingresados.'
+  })
+
+  if (confirmed) {
+    // Resetear formulario
+    newScript.value = {
+      scriptType: 'content',
+      platform: undefined,
+      selectedSoundbite: undefined,
+      selectedTagline: undefined,
+      customText: undefined
+    }
+    showGenerateModal.value = false
+  }
+}
+
 const soundbiteOptions = computed(() => {
   return currentContent.value?.soundbites?.map(sb => ({
     value: sb.text,
@@ -725,11 +757,11 @@ onMounted(() => {
     </div>
 
     <!-- Generate Script Modal -->
-    <div class="modal-overlay" v-if="showGenerateModal" @click="showGenerateModal = false">
+    <div class="modal-overlay" v-if="showGenerateModal" @click="confirmCloseModal">
       <div class="modal-content" @click.stop>
         <div class="modal-header">
           <h3>Generar Nuevo Script</h3>
-          <button @click="showGenerateModal = false" class="close-button">
+          <button @click="confirmCloseModal" class="close-button">
             <i class="fas fa-times"></i>
           </button>
         </div>
@@ -786,7 +818,7 @@ onMounted(() => {
         </div>
         
         <div class="modal-footer">
-          <button @click="showGenerateModal = false" class="cancel-button">
+          <button @click="confirmCloseModal" class="cancel-button">
             Cancelar
           </button>
           <button 
