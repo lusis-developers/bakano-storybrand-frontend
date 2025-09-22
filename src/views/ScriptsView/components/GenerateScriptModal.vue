@@ -54,18 +54,18 @@ const platformOptions = [
 
 // Computed properties
 const canSubmitScript = computed(() => {
-  return newScript.value.scriptType && 
-         newScript.value.platform && 
-         newScript.value.selectedSoundbite && 
-         newScript.value.selectedTagline
+  return newScript.value.scriptType &&
+    newScript.value.platform &&
+    newScript.value.selectedSoundbite &&
+    newScript.value.selectedTagline
 })
 
 const hasFormChanges = computed(() => {
   return newScript.value.scriptType !== '' ||
-         newScript.value.platform !== '' ||
-         newScript.value.selectedSoundbite !== '' ||
-         newScript.value.selectedTagline !== '' ||
-         newScript.value.customText.trim() !== ''
+    newScript.value.platform !== '' ||
+    newScript.value.selectedSoundbite !== '' ||
+    newScript.value.selectedTagline !== '' ||
+    newScript.value.customText.trim() !== ''
 })
 
 // Methods
@@ -81,7 +81,7 @@ const resetForm = () => {
 
 const handleGenerate = () => {
   if (!canSubmitScript.value) return
-  
+
   emit('generate', { ...newScript.value })
 }
 
@@ -90,9 +90,9 @@ const confirmCloseModal = async () => {
     try {
       const confirmed = await showConfirmationDialog({
         title: 'Confirmar cierre',
-        message: '¿Estás seguro de que quieres cerrar? Se perderán los cambios no guardados.'
+        message: '¿Estás seguro de que quieres cerrar? Se perderán los cambios no generados.'
       })
-      
+
       if (confirmed) {
         resetForm()
         emit('close')
@@ -479,6 +479,7 @@ watch(() => props.showModal, (newValue) => {
   from {
     opacity: 0;
   }
+
   to {
     opacity: 1;
   }
@@ -489,6 +490,7 @@ watch(() => props.showModal, (newValue) => {
     opacity: 0;
     transform: translateY(30px) scale(0.95);
   }
+
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
@@ -496,7 +498,12 @@ watch(() => props.showModal, (newValue) => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>
