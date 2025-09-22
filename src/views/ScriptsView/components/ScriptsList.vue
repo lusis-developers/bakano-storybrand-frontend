@@ -172,14 +172,8 @@ const handleGenerateScript = () => {
 </script>
 
 <template>
-  <!-- Loading State -->
-  <div class="loading-section" v-if="isLoading || isInitializing">
-    <div class="loading-spinner"></div>
-    <p>Cargando scripts...</p>
-  </div>
-
-  <!-- Scripts List -->
-  <div class="scripts-section" v-else-if="hasScripts">
+  <!-- Scripts List - Mostrar cuando hay scripts y no está cargando -->
+  <div class="scripts-section" v-if="hasScripts && !isInitializing && !isLoading">
     <div class="scripts-grid">
       <div 
         v-for="(script, index) in scripts" 
@@ -252,8 +246,8 @@ const handleGenerateScript = () => {
     </div>
   </div>
 
-  <!-- Empty State -->
-  <div class="empty-state" v-else-if="!isInitializing">
+  <!-- Empty State - Solo cuando no hay scripts y no está cargando -->
+  <div class="empty-state" v-else-if="!hasScripts && !isInitializing && !isLoading">
     <div class="empty-icon">
       <i class="fas fa-file-alt"></i>
     </div>
@@ -268,6 +262,12 @@ const handleGenerateScript = () => {
       Generar Primer Script
     </button>
   </div>
+
+  <!-- Loading State - Estado por defecto cuando está inicializando o cargando -->
+  <div class="loading-section" v-else>
+    <div class="loading-spinner"></div>
+    <p>Cargando tus scripts...</p>
+  </div>
 </template>
 
 <style lang="scss" scoped>
@@ -281,20 +281,23 @@ const handleGenerateScript = () => {
   background: transparent;
 
   .loading-spinner {
-    width: 48px;
-    height: 48px;
-    border: 3px solid rgba($BAKANO-PURPLE, 0.1);
-    border-top: 3px solid $BAKANO-PURPLE;
+    width: 52px;
+    height: 52px;
+    border: 4px solid rgba($white, 0.2);
+    border-top: 4px solid $white;
     border-radius: 50%;
     animation: spin 1s linear infinite;
     margin-bottom: 1.5rem;
+    filter: drop-shadow(0 2px 8px rgba($BAKANO-DARK, 0.2));
   }
 
   p {
-    color: rgba($BAKANO-DARK, 0.6);
-    font-size: 1rem;
+    color: $white;
+    font-size: 1.1rem;
     font-family: $font-secondary;
-    font-weight: 500;
+    font-weight: 600;
+    text-shadow: 0 2px 8px rgba($BAKANO-DARK, 0.3);
+    opacity: 0.95;
   }
 
   @keyframes spin {
