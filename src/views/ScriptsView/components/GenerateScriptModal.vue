@@ -2,6 +2,7 @@
 import { ref, computed, watch } from 'vue'
 import CustomSelect from '../../../components/shared/CustomSelect.vue'
 import { useConfirmationDialog } from '../../../composables/useConfirmationDialog'
+import { useToast } from '../../../composables/useToast'
 
 interface NewScript {
   scriptType: 'content' | 'ad' | ''
@@ -27,6 +28,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const { reveal: showConfirmationDialog } = useConfirmationDialog()
+const { triggerToast } = useToast()
 
 // Form data
 const newScript = ref<NewScript>({
@@ -117,14 +119,19 @@ const confirmCloseModal = async () => {
       if (confirmed) {
         resetForm()
         emit('close')
+        triggerToast('Generación de script cancelada. Los cambios se han descartado.', 'info', 2500)
+      } else {
+        // El usuario decidió no cerrar el modal
+        triggerToast('Continúa editando tu script. Los cambios se mantienen.', 'info', 2000)
       }
     } catch (error) {
-      // El usuario canceló el diálogo, no hacemos nada
-      // Esto previene el error "Uncaught (in promise)"
+      // El usuario canceló el diálogo (cerró el modal o presionó escape)
+      triggerToast('Generación de script cancelada. Los cambios se han descartado.', 'info', 2500)
       return
     }
   } else {
     emit('close')
+    triggerToast('Generación de script cancelada.', 'info', 2000)
   }
 }
 
