@@ -5,13 +5,10 @@ import type { IContent } from '../../../types/content.types'
 
 interface Props {
   currentContent: IContent | null
-  hasActiveFilters: boolean
-  activeFiltersCount: number
   canGenerateNewScript: boolean
 }
 
 interface Emits {
-  (e: 'toggle-filters'): void
   (e: 'open-generate-modal'): void
 }
 
@@ -29,10 +26,6 @@ const pageTitle = computed(() => {
 
 const handleBack = () => {
   router.back()
-}
-
-const handleToggleFilters = () => {
-  emit('toggle-filters')
 }
 
 const handleOpenGenerateModal = () => {
@@ -60,16 +53,6 @@ const handleOpenGenerateModal = () => {
       </div>
       
       <div class="header-actions">
-        <button 
-          @click="handleToggleFilters"
-          class="filter-button"
-          :class="{ active: hasActiveFilters }"
-        >
-          <i class="fas fa-filter"></i>
-          Filtros
-          <span v-if="hasActiveFilters" class="filter-count">{{ activeFiltersCount }}</span>
-        </button>
-        
         <button 
           @click="handleOpenGenerateModal"
           class="generate-button"
@@ -181,7 +164,6 @@ const handleOpenGenerateModal = () => {
       justify-content: space-between;
     }
 
-    .filter-button,
     .generate-button {
       display: flex;
       align-items: center;
@@ -217,51 +199,9 @@ const handleOpenGenerateModal = () => {
       }
 
       @media (max-width: 768px) {
-        flex: 1;
+        width: 100%;
         justify-content: center;
         padding: 1rem;
-      }
-    }
-
-    .filter-button {
-      border: 1px solid rgba($BAKANO-PURPLE, 0.2);
-      background: $white;
-      color: $BAKANO-PURPLE;
-      position: relative;
-      box-shadow: 0 2px 8px rgba($BAKANO-PURPLE, 0.08);
-
-      &:hover {
-        background: rgba($BAKANO-PURPLE, 0.05);
-        border-color: $BAKANO-PURPLE;
-        transform: translateY(-2px);
-        box-shadow: 0 8px 25px rgba($BAKANO-PURPLE, 0.15);
-      }
-
-      &.active {
-        background: $BAKANO-PURPLE;
-        border-color: $BAKANO-PURPLE;
-        color: $white;
-        box-shadow: 0 8px 25px rgba($BAKANO-PURPLE, 0.3);
-      }
-
-      .filter-count {
-        background: $BAKANO-PINK;
-        color: $white;
-        font-size: 0.75rem;
-        font-weight: 700;
-        padding: 0.25rem 0.5rem;
-        border-radius: 20px;
-        min-width: 20px;
-        height: 20px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        animation: pulse 2s infinite;
-      }
-
-      &.active .filter-count {
-        background: $white;
-        color: $BAKANO-PURPLE;
       }
     }
 
@@ -296,15 +236,5 @@ const handleOpenGenerateModal = () => {
   }
 }
 
-@keyframes pulse {
 
-  0%,
-  100% {
-    transform: scale(1);
-  }
-
-  50% {
-    transform: scale(1.1);
-  }
-}
 </style>
