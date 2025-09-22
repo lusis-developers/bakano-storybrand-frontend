@@ -260,7 +260,7 @@ onMounted(() => {
       <ScriptsList
         :scripts="transformedScripts"
         :is-loading="isLoading"
-        :is-initializing="false"
+        :is-initializing="isInitializing"
         :can-generate-new-script="Boolean(canGenerateNewScript)"
         @toggle-completion="handleToggleComplete"
         @view-script="handleViewScript"
