@@ -32,8 +32,8 @@ const handleNavigateToScripts = () => {
   <section id="scripts-section" class="scripts-hero">
     <div class="scripts-hero-content">
       <div class="scripts-hero-header">
-        <h2><i class="fas fa-video"></i> ¡Ahora Crea Scripts Poderosos!</h2>
-        <p>Usa tus soundbites y taglines para generar scripts de video, anuncios y contenido optimizado para diferentes plataformas</p>
+        <h2><i class="fas fa-video"></i> ¡Gestiona tus Scripts de Contenido!</h2>
+        <p>Crea, edita y organiza scripts de video, anuncios y contenido usando tus soundbites y taglines para diferentes plataformas</p>
       </div>
       
       <div class="scripts-features">
@@ -78,8 +78,8 @@ const handleNavigateToScripts = () => {
           class="btn btn-primary btn-large"
           :disabled="!hasSoundbites || !hasTaglines"
         >
-          <i class="fas fa-magic"></i>
-          Crear Scripts Ahora
+          <i class="fas fa-cogs"></i>
+          Ir a Gestión de Scripts
         </button>
         
         <p v-if="!hasSoundbites || !hasTaglines" class="requirement-note">

@@ -16,7 +16,7 @@ export const useScripts = () => {
   // Estado reactivo del store
   const scripts = computed(() => scriptsStore.scripts)
   const filteredScripts = computed(() => scriptsStore.filteredScripts)
-  const currentContentId = computed(() => scriptsStore.currentContentId)
+  const currentContentId = computed(() => scriptsStore.currentContentId || '')
   const isLoading = computed(() => scriptsStore.isLoading)
   const isGenerating = computed(() => scriptsStore.isGenerating)
   const error = computed(() => scriptsStore.error)
@@ -24,21 +24,34 @@ export const useScripts = () => {
   const total = computed(() => scriptsStore.total)
 
   // Getters computados
-  const scriptStats = computed(() => scriptsStore.scriptStats)
-  const hasScripts = computed(() => scriptsStore.hasScripts)
-  const hasCompletedScripts = computed(() => scriptsStore.hasCompletedScripts)
-  const hasPendingScripts = computed(() => scriptsStore.hasPendingScripts)
+  const scriptStats = computed(() => {
+    const allScripts = scripts.value
+    return {
+      total: allScripts.length,
+      completed: allScripts.filter(s => s.completed).length,
+      pending: allScripts.filter(s => !s.completed).length,
+      content: allScripts.filter(s => s.type === 'content').length,
+      ad: allScripts.filter(s => s.type === 'ad').length,
+      byType: {
+        content: allScripts.filter(s => s.type === 'content').length,
+        ad: allScripts.filter(s => s.type === 'ad').length
+      }
+    }
+  })
+  const hasScripts = computed(() => filteredScripts.value.length > 0)
+  const hasCompletedScripts = computed(() => scripts.value.some(s => s.completed))
+  const hasPendingScripts = computed(() => scripts.value.some(s => !s.completed))
 
   // Acciones del store
   const setContentId = (contentId: string) => {
     scriptsStore.setContentId(contentId)
   }
 
-  const setFilters = (newFilters: IScriptFilters) => {
+  const setFilters = async (newFilters: IScriptFilters) => {
     scriptsStore.setFilters(newFilters)
   }
 
-  const clearFilters = () => {
+  const clearFilters = async () => {
     scriptsStore.clearFilters()
   }
 
@@ -78,23 +91,24 @@ export const useScripts = () => {
 
   // Funciones de utilidad
   const getScriptByIndex = (index: number): IScript | null => {
-    return scriptsStore.getScriptByIndex(index)
+    const allScripts = scripts.value
+    return allScripts[index] || null
   }
 
   const getScriptsByType = (type: 'content' | 'ad'): IScript[] => {
-    return scriptsStore.getScriptsByType(type)
+    return scripts.value.filter(script => script.type === type)
   }
 
   const getScriptsByPlatform = (platform: string): IScript[] => {
-    return scriptsStore.getScriptsByPlatform(platform)
+    return scripts.value.filter(script => script.platform === platform)
   }
 
   const getCompletedScripts = (): IScript[] => {
-    return scriptsStore.getCompletedScripts()
+    return scripts.value.filter(script => script.completed)
   }
 
   const getPendingScripts = (): IScript[] => {
-    return scriptsStore.getPendingScripts()
+    return scripts.value.filter(script => !script.completed)
   }
 
   // Funciones de conveniencia
@@ -105,15 +119,12 @@ export const useScripts = () => {
   }
 
   const applyFilters = async (newFilters: IScriptFilters) => {
-    setFilters(newFilters)
-    if (currentContentId.value) {
-      await loadScripts(currentContentId.value, newFilters)
-    }
+    await setFilters(newFilters)
   }
 
   const resetAndLoad = async (contentId: string) => {
     clearScripts()
-    clearFilters()
+    await clearFilters()
     await loadScripts(contentId)
   }
 
