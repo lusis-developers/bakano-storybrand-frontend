@@ -11,6 +11,8 @@ import type {
   ISoundbite,
   ITagline,
   IScript,
+  IScriptFilters,
+  IScriptsResponse,
 } from '@/types/content.types'
 
 /**
@@ -23,6 +25,7 @@ export const useContentStore = defineStore('content', () => {
   const isLoading = ref(false)
   const isGeneratingContent = ref(false)
   const isGeneratingScript = ref(false)
+  const isLoadingScripts = ref(false)
   const error = ref<string | null>(null)
   const pagination = ref({
     page: 1,
@@ -30,6 +33,9 @@ export const useContentStore = defineStore('content', () => {
     total: 0,
     pages: 0,
   })
+  const scriptFilters = ref<IScriptFilters>({})
+  const filteredScripts = ref<IScript[]>([])
+  const scriptsTotal = ref(0)
 
   // Getters computados
   const hasContentProjects = computed(() => contentProjects.value.length > 0)
@@ -37,12 +43,28 @@ export const useContentStore = defineStore('content', () => {
   const isContentLoading = computed(() => isLoading.value)
   const isContentGenerating = computed(() => isGeneratingContent.value)
   const isScriptGenerating = computed(() => isGeneratingScript.value)
+  const isScriptsLoading = computed(() => isLoadingScripts.value)
   const contentError = computed(() => error.value)
   const currentContentId = computed(() => currentContent.value?._id || null)
   const currentContentStatus = computed(() => currentContent.value?.status || 'draft')
   const hasSoundbites = computed(() => (currentContent.value?.soundbites?.length || 0) > 0)
   const hasTaglines = computed(() => (currentContent.value?.taglines?.length || 0) > 0)
   const hasScripts = computed(() => (currentContent.value?.scripts?.length || 0) > 0)
+  const hasFilteredScripts = computed(() => filteredScripts.value.length > 0)
+  const hasActiveFilters = computed(() => {
+    const filters = scriptFilters.value
+    return !!(filters.type || filters.platform || filters.completed !== undefined || filters.startDate || filters.endDate)
+  })
+  const activeFiltersCount = computed(() => {
+    const filters = scriptFilters.value
+    let count = 0
+    if (filters.type) count++
+    if (filters.platform) count++
+    if (filters.completed !== undefined) count++
+    if (filters.startDate) count++
+    if (filters.endDate) count++
+    return count
+  })
   const isQuestionsComplete = computed(() => {
     if (!currentContent.value?.questions) return false
     const q = currentContent.value.questions
@@ -251,6 +273,11 @@ export const useContentStore = defineStore('content', () => {
           contentProjects.value[index].scripts.push(response.script)
         }
 
+        // Refrescar scripts filtrados si hay filtros activos
+        if (hasActiveFilters.value) {
+          await fetchScripts(contentId, scriptFilters.value)
+        }
+
         return response.script
       }
 
@@ -260,6 +287,40 @@ export const useContentStore = defineStore('content', () => {
       throw err
     } finally {
       isGeneratingScript.value = false
+    }
+  }
+
+  /**
+   * Obtener scripts con filtros aplicados
+   */
+  const fetchScripts = async (
+    contentId: string,
+    filters?: IScriptFilters,
+  ): Promise<IScript[]> => {
+    try {
+      isLoadingScripts.value = true
+      error.value = null
+
+      const response = await ContentService.getScripts(contentId, filters)
+
+      if (response.scripts) {
+        filteredScripts.value = response.scripts
+        scriptsTotal.value = response.total || response.scripts.length
+        
+        // Actualizar filtros actuales
+        if (filters) {
+          scriptFilters.value = { ...filters }
+        }
+
+        return response.scripts
+      }
+
+      return []
+    } catch (err: any) {
+      error.value = err.response?.data?.message || 'Error al obtener scripts'
+      throw err
+    } finally {
+      isLoadingScripts.value = false
     }
   }
 
@@ -292,6 +353,24 @@ export const useContentStore = defineStore('content', () => {
   }
 
   /**
+   * Aplicar filtros a scripts
+   */
+  const applyScriptFilters = async (
+    contentId: string,
+    filters: IScriptFilters,
+  ): Promise<IScript[]> => {
+    return await fetchScripts(contentId, filters)
+  }
+
+  /**
+   * Limpiar filtros de scripts
+   */
+  const clearScriptFilters = async (contentId: string): Promise<IScript[]> => {
+    scriptFilters.value = {}
+    return await fetchScripts(contentId)
+  }
+
+  /**
    * Limpiar estado
    */
   const clearState = (): void => {
@@ -301,6 +380,10 @@ export const useContentStore = defineStore('content', () => {
     isLoading.value = false
     isGeneratingContent.value = false
     isGeneratingScript.value = false
+    isLoadingScripts.value = false
+    filteredScripts.value.splice(0)
+    scriptFilters.value = {}
+    scriptsTotal.value = 0
     pagination.value = {
       page: 1,
       limit: 10,
@@ -330,8 +413,12 @@ export const useContentStore = defineStore('content', () => {
     isLoading,
     isGeneratingContent,
     isGeneratingScript,
+    isLoadingScripts,
     error,
     pagination,
+    scriptFilters,
+    filteredScripts,
+    scriptsTotal,
 
     // Getters
     hasContentProjects,
@@ -339,12 +426,16 @@ export const useContentStore = defineStore('content', () => {
     isContentLoading,
     isContentGenerating,
     isScriptGenerating,
+    isScriptsLoading,
     contentError,
     currentContentId,
     currentContentStatus,
     hasSoundbites,
     hasTaglines,
     hasScripts,
+    hasFilteredScripts,
+    hasActiveFilters,
+    activeFiltersCount,
     isQuestionsComplete,
 
     // Acciones
@@ -354,6 +445,9 @@ export const useContentStore = defineStore('content', () => {
     updateQuestions,
     generateSoundbitesAndTaglines,
     generateScript,
+    fetchScripts,
+    applyScriptFilters,
+    clearScriptFilters,
     deleteContentProject,
     clearState,
     clearError,
