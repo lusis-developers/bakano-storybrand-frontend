@@ -278,7 +278,7 @@ const handleGenerateScript = () => {
   justify-content: center;
   padding: 4rem 2rem;
   text-align: center;
-  background: linear-gradient(135deg, rgba($BAKANO-LIGHT, 0.1) 0%, rgba($white, 0.8) 100%);
+  background: transparent;
 
   .loading-spinner {
     width: 48px;
@@ -305,7 +305,7 @@ const handleGenerateScript = () => {
 
 .scripts-section {
   padding: 2rem;
-  background: linear-gradient(135deg, rgba($BAKANO-LIGHT, 0.05) 0%, rgba($white, 0.9) 100%);
+  background: transparent;
   min-height: 60vh;
 
   @media (max-width: 768px) {
@@ -564,7 +564,7 @@ const handleGenerateScript = () => {
   padding: 4rem 2rem;
   text-align: center;
   min-height: 500px;
-  background: linear-gradient(135deg, rgba($BAKANO-LIGHT, 0.1) 0%, rgba($white, 0.8) 100%);
+  background: transparent;
 
   .empty-icon {
     width: 120px;

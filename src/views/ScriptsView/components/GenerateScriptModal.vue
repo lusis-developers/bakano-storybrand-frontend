@@ -215,10 +215,12 @@ watch(() => props.showModal, (newValue) => {
     max-width: 650px;
     max-height: 90vh;
     overflow-y: auto;
+    overflow-x: hidden;
     box-shadow: 0 25px 80px rgba($BAKANO-PURPLE, 0.2);
     border: 1px solid rgba($BAKANO-PURPLE, 0.1);
     animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
     position: relative;
+    box-sizing: border-box;
 
     &::before {
       content: '';
@@ -238,6 +240,7 @@ watch(() => props.showModal, (newValue) => {
       padding: 2.5rem 2.5rem 1.5rem;
       border-bottom: 1px solid rgba($BAKANO-PURPLE, 0.08);
       background: linear-gradient(135deg, rgba($BAKANO-LIGHT, 0.05) 0%, rgba($white, 0.9) 100%);
+      box-sizing: border-box;
 
       h3 {
         font-size: 1.75rem;
@@ -296,6 +299,7 @@ watch(() => props.showModal, (newValue) => {
 
     .modal-body {
       padding: 2rem 2.5rem;
+      box-sizing: border-box;
 
       .form-group {
         margin-bottom: 2rem;
@@ -321,6 +325,7 @@ watch(() => props.showModal, (newValue) => {
 
         .form-textarea {
           width: 100%;
+          max-width: 100%;
           padding: 1.25rem;
           border: 2px solid rgba($BAKANO-PURPLE, 0.1);
           border-radius: 16px;
@@ -331,6 +336,7 @@ watch(() => props.showModal, (newValue) => {
           transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
           background: rgba($BAKANO-LIGHT, 0.02);
           color: $BAKANO-DARK;
+          box-sizing: border-box;
 
           &:focus {
             outline: none;
@@ -365,6 +371,7 @@ watch(() => props.showModal, (newValue) => {
       padding: 1.5rem 2.5rem 2.5rem;
       border-top: 1px solid rgba($BAKANO-PURPLE, 0.08);
       background: linear-gradient(135deg, rgba($BAKANO-LIGHT, 0.02) 0%, rgba($white, 0.9) 100%);
+      box-sizing: border-box;
 
       @media (max-width: 480px) {
         flex-direction: column;

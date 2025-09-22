@@ -85,7 +85,7 @@ const handleOpenGenerateModal = () => {
 
 <style lang="scss" scoped>
 .scripts-header {
-  background: linear-gradient(135deg, $white 0%, rgba($BAKANO-LIGHT, 0.3) 100%);
+  background: transparent;
   border-bottom: 1px solid rgba($BAKANO-PURPLE, 0.08);
   padding: 2rem 0;
   position: sticky;
@@ -153,14 +153,10 @@ const handleOpenGenerateModal = () => {
       .page-title {
         font-size: 2.25rem;
         font-weight: 700;
-        color: $BAKANO-DARK;
+        color: $white;
         margin: 0 0 0.5rem 0;
         line-height: 1.1;
         font-family: $font-principal;
-        background: linear-gradient(135deg, $BAKANO-DARK 0%, $BAKANO-PURPLE 100%);
-        -webkit-background-clip: text;
-        -webkit-text-fill-color: transparent;
-        background-clip: text;
 
         @media (max-width: 768px) {
           font-size: 1.875rem;
@@ -169,7 +165,7 @@ const handleOpenGenerateModal = () => {
 
       .page-subtitle {
         font-size: 1rem;
-        color: rgba($BAKANO-DARK, 0.6);
+        color: $white;
         margin: 0;
         line-height: 1.5;
         font-family: $font-secondary;
@@ -304,9 +300,12 @@ const handleOpenGenerateModal = () => {
 }
 
 @keyframes pulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: scale(1);
   }
+
   50% {
     transform: scale(1.1);
   }

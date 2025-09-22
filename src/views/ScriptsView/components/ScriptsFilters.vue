@@ -145,7 +145,7 @@ const handleClearFilters = () => {
 
 <style lang="scss" scoped>
 .filters-panel {
-  background: $white;
+  background: transparent;
   border-bottom: 1px solid rgba($BAKANO-PURPLE, 0.08);
   padding: 2rem 0;
   box-shadow: 0 2px 20px rgba($BAKANO-PURPLE, 0.05);

@@ -66,7 +66,6 @@ defineProps<Props>()
 <style lang="scss" scoped>
 .stats-section {
   padding: 2rem 0;
-  background: linear-gradient(135deg, rgba($BAKANO-LIGHT, 0.1) 0%, rgba($white, 0.8) 100%);
 
   .stats-grid {
     display: grid;
@@ -189,7 +188,7 @@ defineProps<Props>()
       &.completed {
         background: linear-gradient(135deg, rgba($BAKANO-GREEN, 0.1), rgba($BAKANO-GREEN, 0.05));
         color: $BAKANO-GREEN;
-        
+
         &::after {
           background: linear-gradient(135deg, rgba($BAKANO-GREEN, 0.2), rgba($BAKANO-GREEN, 0.1));
         }
@@ -198,7 +197,7 @@ defineProps<Props>()
       &.pending {
         background: linear-gradient(135deg, rgba($alert-warning, 0.1), rgba($alert-warning, 0.05));
         color: $alert-warning;
-        
+
         &::after {
           background: linear-gradient(135deg, rgba($alert-warning, 0.2), rgba($alert-warning, 0.1));
         }
@@ -207,7 +206,7 @@ defineProps<Props>()
       &.content {
         background: linear-gradient(135deg, rgba($BAKANO-PURPLE, 0.1), rgba($BAKANO-PINK, 0.05));
         color: $BAKANO-PURPLE;
-        
+
         &::after {
           background: linear-gradient(135deg, rgba($BAKANO-PURPLE, 0.2), rgba($BAKANO-PINK, 0.1));
         }
