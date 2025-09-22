@@ -1,8 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import CustomSelect from '../../../components/shared/CustomSelect.vue'
-import { useConfirmationDialog } from '../../../composables/useConfirmationDialog'
-import { useToast } from '../../../composables/useToast'
+import CustomSelect from '@/components/shared/CustomSelect.vue'
+import { useConfirmationDialog } from '@/composables/useConfirmationDialog'
+import { useToast } from '@/composables/useToast'
 
 interface NewScript {
   scriptType: 'content' | 'ad' | ''
