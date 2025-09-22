@@ -11,7 +11,6 @@ import GenerationProgress from '../components/shared/GenerationProgress.vue'
 import {
   ScriptsHeader,
   ScriptsStats,
-  ScriptsFilters,
   ScriptsList,
   GenerateScriptModal,
   ScriptViewModal
@@ -50,7 +49,6 @@ const { triggerToast } = useToast()
 // Estado local
 const contentId = ref<string>('')
 const showGenerateModal = ref(false)
-const showFiltersPanel = ref(false)
 const selectedScript = ref<any>(null)
 const showScriptModal = ref(false)
 const isInitializing = ref(true)
@@ -72,11 +70,7 @@ const canGenerateNewScript = computed(() => {
     !isGenerating.value
 })
 
-const hasActiveFilters = computed(() => {
-  // Verificar si hay filtros activos basándose en el estado del store
-  // Esto debería coincidir con la lógica de filtros del composable useScripts
-  return filteredScripts.value.length !== scripts.value.length
-})
+
 
 // Transform IScript to Script interface for components
 const transformedScripts = computed(() => {
@@ -160,10 +154,6 @@ const handleGoBack = () => {
   router.push('/dashboard')
 }
 
-const handleToggleFilters = () => {
-  showFiltersPanel.value = !showFiltersPanel.value
-}
-
 const handleOpenGenerateModal = () => {
   if (!canGenerateNewScript.value) {
     triggerToast('No se puede generar un script en este momento', 'error')
@@ -193,22 +183,6 @@ const handleGenerateScript = async (scriptData: any) => {
     console.error('Error generando script:', error)
     triggerToast('Error al generar el script', 'error')
   }
-}
-
-const handleApplyFilters = (filters: any) => {
-  // Transform component filters to IScriptFilters
-  const scriptFilters: IScriptFilters = {
-    type: filters.filterType === '' ? undefined : filters.filterType,
-    platform: filters.filterPlatform === '' ? undefined : filters.filterPlatform,
-    completed: filters.filterCompleted === '' ? undefined : filters.filterCompleted === 'true',
-    startDate: filters.filterDateFrom || undefined,
-    endDate: filters.filterDateTo || undefined
-  }
-  setFilters(scriptFilters)
-}
-
-const handleClearFilters = () => {
-  clearFilters()
 }
 
 const handleToggleComplete = async (script: any, index: number) => {
@@ -269,11 +243,8 @@ onMounted(() => {
       <!-- Header -->
       <ScriptsHeader
         :current-content="currentContent"
-        :has-active-filters="hasActiveFilters"
-        :active-filters-count="0"
         :can-generate-new-script="Boolean(canGenerateNewScript)"
         @go-back="handleGoBack"
-        @toggle-filters="handleToggleFilters"
         @open-generate-modal="handleOpenGenerateModal"
       />
 
@@ -283,14 +254,7 @@ onMounted(() => {
         :has-scripts="hasScripts"
       />
 
-      <!-- Filters Panel -->
-      <ScriptsFilters
-        v-if="showFiltersPanel"
-        :show-filters-panel="showFiltersPanel"
-        :has-active-filters="false"
-        @apply-filters="handleApplyFilters"
-        @clear-filters="handleClearFilters"
-      />
+
 
       <!-- Scripts List -->
       <ScriptsList
