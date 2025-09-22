@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useConfirmationDialog } from '@/composables/useConfirmationDialog'
+import { useToast } from '@/composables/useToast'
 
 interface Script {
   id?: string
@@ -33,6 +34,7 @@ const emit = defineEmits<Emits>()
 
 // Composables
 const { reveal: showConfirmationDialog } = useConfirmationDialog()
+const { triggerToast } = useToast()
 
 const hasScripts = computed(() => props.scripts.length > 0)
 
@@ -172,13 +174,16 @@ const handleDeleteScript = async (script: Script, index: number) => {
       title: 'Confirmar eliminación',
       message: `¿Estás seguro de que quieres eliminar el script "<strong>${script.title}</strong>"?<br><br>Esta acción no se puede deshacer.`
     })
-    
+
     if (confirmed) {
       emit('delete-script', script, index)
+    } else {
+      // El usuario decidió no eliminar el script
+      triggerToast('Eliminación cancelada. El script se mantiene seguro.', 'info', 2500)
     }
   } catch (error) {
-    // El usuario canceló la acción
-    console.log('Eliminación cancelada por el usuario')
+    // El usuario canceló la acción (cerró el modal o presionó escape)
+    triggerToast('Eliminación cancelada. El script se mantiene seguro.', 'info', 2500)
   }
 }
 
@@ -317,8 +322,13 @@ const handleGenerateScript = () => {
   }
 
   @keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
+    0% {
+      transform: rotate(0deg);
+    }
+
+    100% {
+      transform: rotate(360deg);
+    }
   }
 }
 
