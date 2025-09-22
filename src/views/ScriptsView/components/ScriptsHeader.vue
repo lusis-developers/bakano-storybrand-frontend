@@ -88,10 +88,7 @@ const handleOpenGenerateModal = () => {
   background: transparent;
   border-bottom: 1px solid rgba($BAKANO-PURPLE, 0.08);
   padding: 2rem 0;
-  position: sticky;
-  top: 0;
-  z-index: 100;
-  backdrop-filter: blur(10px);
+  position: relative;
   box-shadow: 0 1px 20px rgba($BAKANO-PURPLE, 0.05);
 
   .header-content {
