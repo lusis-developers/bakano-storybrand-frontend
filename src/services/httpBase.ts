@@ -54,7 +54,7 @@ class APIBase {
   private axiosInstance = axios.create()
 
   constructor() {
-    this.baseUrl = import.meta.env.VITE_BAKANO_API || 'http://localhost:8100/api'
+    this.baseUrl = import.meta.env.VITE_BAKANO_API || 'http://localhost:8101/api'
     this.setupInterceptors()
   }
 
