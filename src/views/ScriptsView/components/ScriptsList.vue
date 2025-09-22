@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { computed } from 'vue'
+import { useConfirmationDialog } from '@/composables/useConfirmationDialog'
 
 interface Script {
   id?: string
@@ -29,6 +30,9 @@ interface Emits {
 
 const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
+
+// Composables
+const { reveal: showConfirmationDialog } = useConfirmationDialog()
 
 const hasScripts = computed(() => props.scripts.length > 0)
 
@@ -162,8 +166,20 @@ const handleCopyScript = (content: string) => {
   emit('copy-script', content)
 }
 
-const handleDeleteScript = (script: Script, index: number) => {
-  emit('delete-script', script, index)
+const handleDeleteScript = async (script: Script, index: number) => {
+  try {
+    const confirmed = await showConfirmationDialog({
+      title: 'Confirmar eliminación',
+      message: `¿Estás seguro de que quieres eliminar el script "<strong>${script.title}</strong>"?<br><br>Esta acción no se puede deshacer.`
+    })
+    
+    if (confirmed) {
+      emit('delete-script', script, index)
+    }
+  } catch (error) {
+    // El usuario canceló la acción
+    console.log('Eliminación cancelada por el usuario')
+  }
 }
 
 const handleGenerateScript = () => {
