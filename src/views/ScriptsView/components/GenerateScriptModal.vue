@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, watch } from 'vue'
-import CustomSelect from '../../../components/shared/CustomSelect.vue'
-import { useConfirmationDialog } from '../../../composables/useConfirmationDialog'
+import CustomSelect from '@/components/shared/CustomSelect.vue'
+import { useConfirmationDialog } from '@/composables/useConfirmationDialog'
+import { useToast } from '@/composables/useToast'
 
 interface NewScript {
   scriptType: 'content' | 'ad' | ''
@@ -27,6 +28,7 @@ const props = defineProps<Props>()
 const emit = defineEmits<Emits>()
 
 const { reveal: showConfirmationDialog } = useConfirmationDialog()
+const { triggerToast } = useToast()
 
 // Form data
 const newScript = ref<NewScript>({
@@ -58,6 +60,27 @@ const canSubmitScript = computed(() => {
     newScript.value.platform &&
     newScript.value.selectedSoundbite &&
     newScript.value.selectedTagline
+})
+
+const missingFields = computed(() => {
+  const missing = []
+  if (!newScript.value.scriptType) missing.push('Tipo de Script')
+  if (!newScript.value.platform) missing.push('Plataforma')
+  if (!newScript.value.selectedSoundbite) missing.push('Soundbite')
+  if (!newScript.value.selectedTagline) missing.push('Tagline')
+  return missing
+})
+
+const validationMessage = computed(() => {
+  if (missingFields.value.length === 0) return ''
+  if (missingFields.value.length === 1) {
+    return `Selecciona ${missingFields.value[0]} para continuar`
+  }
+  if (missingFields.value.length === 2) {
+    return `Selecciona ${missingFields.value.join(' y ')} para continuar`
+  }
+  const lastField = missingFields.value.pop()
+  return `Selecciona ${missingFields.value.join(', ')} y ${lastField} para continuar`
 })
 
 const hasFormChanges = computed(() => {
@@ -96,14 +119,19 @@ const confirmCloseModal = async () => {
       if (confirmed) {
         resetForm()
         emit('close')
+        triggerToast('Generación de script cancelada. Los cambios se han descartado.', 'info', 2500)
+      } else {
+        // El usuario decidió no cerrar el modal
+        triggerToast('Continúa editando tu script. Los cambios se mantienen.', 'info', 2000)
       }
     } catch (error) {
-      // El usuario canceló el diálogo, no hacemos nada
-      // Esto previene el error "Uncaught (in promise)"
+      // El usuario canceló el diálogo (cerró el modal o presionó escape)
+      triggerToast('Generación de script cancelada. Los cambios se han descartado.', 'info', 2500)
       return
     }
   } else {
     emit('close')
+    triggerToast('Generación de script cancelada.', 'info', 2000)
   }
 }
 
@@ -126,25 +154,33 @@ watch(() => props.showModal, (newValue) => {
       </div>
       
       <div class="modal-body">
-        <div class="form-group">
+        <div class="form-group" :class="{ 'field-required-empty': !newScript.scriptType }">
           <label class="required-field">Tipo de Script *</label>
           <CustomSelect
             v-model="newScript.scriptType"
             :options="scriptTypeOptions"
             placeholder="Seleccionar tipo de script"
           />
+          <div v-if="!newScript.scriptType" class="field-hint">
+            <i class="fas fa-exclamation-circle"></i>
+            Este campo es obligatorio
+          </div>
         </div>
         
-        <div class="form-group">
+        <div class="form-group" :class="{ 'field-required-empty': !newScript.platform }">
           <label class="required-field">Plataforma *</label>
           <CustomSelect
             v-model="newScript.platform"
             :options="platformOptions"
             placeholder="Seleccionar plataforma de destino"
           />
+          <div v-if="!newScript.platform" class="field-hint">
+            <i class="fas fa-exclamation-circle"></i>
+            Este campo es obligatorio
+          </div>
         </div>
         
-        <div class="form-group">
+        <div class="form-group" :class="{ 'field-required-empty': !newScript.selectedSoundbite }">
           <label class="required-field">Soundbite *</label>
           <CustomSelect
             v-model="newScript.selectedSoundbite"
@@ -152,9 +188,13 @@ watch(() => props.showModal, (newValue) => {
             placeholder="Seleccionar soundbite para el script"
             class="custom-select"
           />
+          <div v-if="!newScript.selectedSoundbite" class="field-hint">
+            <i class="fas fa-exclamation-circle"></i>
+            Selecciona un soundbite de tu contenido generado
+          </div>
         </div>
         
-        <div class="form-group">
+        <div class="form-group" :class="{ 'field-required-empty': !newScript.selectedTagline }">
           <label class="required-field">Tagline *</label>
           <CustomSelect
             v-model="newScript.selectedTagline"
@@ -162,6 +202,10 @@ watch(() => props.showModal, (newValue) => {
             placeholder="Seleccionar tagline para el script"
             class="custom-select"
           />
+          <div v-if="!newScript.selectedTagline" class="field-hint">
+            <i class="fas fa-exclamation-circle"></i>
+            Selecciona un tagline de tu contenido generado
+          </div>
         </div>
         
         <div class="form-group">
@@ -177,18 +221,26 @@ watch(() => props.showModal, (newValue) => {
       </div>
       
       <div class="modal-footer">
-        <button @click="confirmCloseModal" class="cancel-button">
-          Cancelar
-        </button>
-        <button 
-          @click="handleGenerate"
-          class="generate-script-button"
-          :disabled="isGenerating || !canSubmitScript"
-        >
-          <i v-if="isGenerating" class="fas fa-spinner fa-spin"></i>
-          <i v-else class="fas fa-magic"></i>
-          {{ isGenerating ? 'Generando...' : 'Generar Script' }}
-        </button>
+        <div v-if="!canSubmitScript && !isGenerating" class="validation-message">
+          <i class="fas fa-info-circle"></i>
+          {{ validationMessage }}
+        </div>
+        
+        <div class="footer-actions">
+          <button @click="confirmCloseModal" class="cancel-button">
+            Cancelar
+          </button>
+          <button 
+            @click="handleGenerate"
+            class="generate-script-button"
+            :disabled="isGenerating || !canSubmitScript"
+            :title="!canSubmitScript ? validationMessage : ''"
+          >
+            <i v-if="isGenerating" class="fas fa-spinner fa-spin"></i>
+            <i v-else class="fas fa-magic"></i>
+            {{ isGenerating ? 'Generando...' : 'Generar Script' }}
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -309,10 +361,12 @@ watch(() => props.showModal, (newValue) => {
 
       .form-group {
         margin-bottom: 2rem;
+        transition: all 0.3s ease;
 
         &:last-child {
           margin-bottom: 0;
         }
+
 
         label {
           display: block;
@@ -321,11 +375,32 @@ watch(() => props.showModal, (newValue) => {
           color: $BAKANO-DARK;
           margin-bottom: 0.75rem;
           font-family: $font-principal;
+          transition: color 0.3s ease;
 
           &.required-field::after {
             content: ' *';
             color: $alert-error;
             font-weight: 700;
+          }
+        }
+
+        .field-hint {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+          margin-top: 0.5rem;
+          padding: 0.5rem 0.75rem;
+          background-color: #f8d7da;
+          border: 1px solid #f5c6cb;
+          border-radius: 0.375rem;
+          color: #721c24;
+          font-size: 0.75rem;
+          font-weight: 500;
+          animation: slideIn 0.3s ease;
+
+          i {
+            color: #dc3545;
+            font-size: 0.875rem;
           }
         }
 
@@ -371,17 +446,38 @@ watch(() => props.showModal, (newValue) => {
     }
 
     .modal-footer {
-      display: flex;
-      justify-content: flex-end;
-      gap: 1rem;
       padding: 1.5rem 2.5rem 2.5rem;
       border-top: 1px solid rgba($BAKANO-PURPLE, 0.08);
       background: linear-gradient(135deg, rgba($BAKANO-LIGHT, 0.02) 0%, rgba($white, 0.9) 100%);
       box-sizing: border-box;
 
-      @media (max-width: 480px) {
-        flex-direction: column;
+      .footer-actions {
+        display: flex;
+        justify-content: flex-end;
         gap: 1rem;
+        margin-top: 1rem;
+
+        @media (max-width: 480px) {
+          flex-direction: column;
+          gap: 1rem;
+        }
+      }
+
+      .validation-message {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        padding: 0.75rem 1rem;
+        background-color: #fff3cd;
+        border: 1px solid #ffeaa7;
+        border-radius: 0.5rem;
+        color: #856404;
+        font-size: 0.875rem;
+        font-weight: 500;
+
+        i {
+          color: #f39c12;
+        }
       }
 
       .cancel-button,
@@ -451,15 +547,32 @@ watch(() => props.showModal, (newValue) => {
         }
 
         &:disabled {
-          background: rgba($BAKANO-PURPLE, 0.2);
+          background: linear-gradient(135deg, #9ca3af 0%, #6b7280 100%);
           border-color: transparent;
-          color: rgba($BAKANO-DARK, 0.4);
+          color: rgba($white, 0.7);
           cursor: not-allowed;
           transform: none;
           box-shadow: none;
+          position: relative;
 
           &::before {
             display: none;
+          }
+
+          &::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: repeating-linear-gradient(45deg,
+                transparent,
+                transparent 2px,
+                rgba(255, 255, 255, 0.1) 2px,
+                rgba(255, 255, 255, 0.1) 4px);
+            border-radius: 14px;
+            pointer-events: none;
           }
         }
 
@@ -504,6 +617,18 @@ watch(() => props.showModal, (newValue) => {
 
   100% {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 </style>

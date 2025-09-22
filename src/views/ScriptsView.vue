@@ -104,7 +104,6 @@ const taglineOptions = computed(() => {
 
 // Métodos
 const initializeView = async () => {
-  console.log('Inicializando vista de scripts con ID:', route.params.contentId)
   
   try {
     isInitializing.value = true
@@ -140,7 +139,6 @@ const initializeView = async () => {
     // Cargar scripts
     await loadScripts(contentId.value)
     
-    console.log('Vista inicializada correctamente')
   } catch (error) {
     console.error('Error inicializando vista:', error)
     triggerToast('Error al cargar los datos', 'error')
