@@ -329,57 +329,110 @@ export function useWizard() {
       showResults.value = false
       generatedContent.value = null
 
-      console.log('🚀 Iniciando creación de proyecto con datos:', {
-        businessId: businessId.value,
-        questions: questions.value
-      })
+      // Verificar si estamos en modo edición
+      if (isEditMode.value && currentContentId.value) {
+        console.log('🔄 Actualizando preguntas del proyecto existente:', {
+          contentId: currentContentId.value,
+          questions: questions.value
+        })
 
-      // Crear proyecto de contenido
-      generationStep.value = 'Creando proyecto...'
-      const content = await createContentProject(businessId.value, {
-        questions: questions.value,
-        tone: 'professional',
-        aiProvider: 'gemini'
-      })
+        // Actualizar solo las preguntas del proyecto existente
+         generationStep.value = 'Actualizando preguntas...'
+         const { updateQuestions } = useContent()
+         const updatedContent = await updateQuestions(currentContentId.value, questions.value)
 
-      console.log('✅ Respuesta del createContentProject:', content)
+        console.log('✅ Respuesta del updateQuestions:', updatedContent)
 
-      if (content && content._id) {
-        currentContentId.value = content._id
-        triggerToast('Proyecto creado exitosamente', 'success')
+        if (updatedContent && updatedContent._id) {
+          triggerToast('Preguntas actualizadas exitosamente. Scripts y contenido existente preservados.', 'success', 3000)
 
-        // Generar automáticamente soundbites y taglines
-        try {
-          isGenerating.value = true
-          generationStep.value = 'Generando soundbites y taglines con IA...'
+          // Generar automáticamente soundbites y taglines actualizados
+          try {
+            isGenerating.value = true
+            generationStep.value = 'Regenerando soundbites y taglines con IA...'
 
-          const result = await generateContent(content._id, false)
+            const result = await generateContent(updatedContent._id, true) // true para regenerar
 
-          if (result) {
-            generatedContent.value = {
-              soundbites: result.soundbites || [],
-              taglines: result.taglines || []
+            if (result) {
+              generatedContent.value = {
+                soundbites: result.soundbites || [],
+                taglines: result.taglines || []
+              }
+              showResults.value = true
+              triggerToast('¡Soundbites y taglines actualizados exitosamente!', 'success')
+              
+              // Navegar a la vista de resultados
+              setTimeout(() => {
+                router.push(`/content/results/${updatedContent._id}`)
+              }, 1500)
             }
-            showResults.value = true
-            triggerToast('¡Soundbites y taglines generados exitosamente!', 'success')
-            
-            // Navegar a la vista de resultados
-            setTimeout(() => {
-              router.push(`/content/results/${content._id}`)
-            }, 1500)
-          }
 
-        } catch (error) {
-          console.error('Error al generar contenido:', error)
-          triggerToast('Error al generar soundbites y taglines', 'error')
-          // Navegar a resultados aunque falle la generación
-          router.push(`/content/results/${content._id}`)
-        } finally {
-          isGenerating.value = false
+          } catch (error) {
+             console.error('Error al regenerar contenido:', error)
+             triggerToast('Preguntas actualizadas, pero error al regenerar contenido', 'error')
+             // Navegar a resultados aunque falle la regeneración
+             router.push(`/content/results/${updatedContent._id}`)
+           } finally {
+            isGenerating.value = false
+          }
+        } else {
+          console.error('❌ No se recibió contenido válido al actualizar:', updatedContent)
+          triggerToast('Error: No se pudieron actualizar las preguntas', 'error')
         }
       } else {
-        console.error('❌ No se recibió contenido válido:', content)
-        triggerToast('Error: No se pudo crear el proyecto', 'error')
+        // Modo creación (flujo original)
+        console.log('🚀 Iniciando creación de proyecto con datos:', {
+          businessId: businessId.value,
+          questions: questions.value
+        })
+
+        // Crear proyecto de contenido
+        generationStep.value = 'Creando proyecto...'
+        const content = await createContentProject(businessId.value, {
+          questions: questions.value,
+          tone: 'professional',
+          aiProvider: 'gemini'
+        })
+
+        console.log('✅ Respuesta del createContentProject:', content)
+
+        if (content && content._id) {
+          currentContentId.value = content._id
+          triggerToast('Proyecto creado exitosamente', 'success')
+
+          // Generar automáticamente soundbites y taglines
+          try {
+            isGenerating.value = true
+            generationStep.value = 'Generando soundbites y taglines con IA...'
+
+            const result = await generateContent(content._id, false)
+
+            if (result) {
+              generatedContent.value = {
+                soundbites: result.soundbites || [],
+                taglines: result.taglines || []
+              }
+              showResults.value = true
+              triggerToast('¡Soundbites y taglines generados exitosamente!', 'success')
+              
+              // Navegar a la vista de resultados
+              setTimeout(() => {
+                router.push(`/content/results/${content._id}`)
+              }, 1500)
+            }
+
+          } catch (error) {
+            console.error('Error al generar contenido:', error)
+            triggerToast('Error al generar soundbites y taglines', 'error')
+            // Navegar a resultados aunque falle la generación
+            router.push(`/content/results/${content._id}`)
+          } finally {
+            isGenerating.value = false
+          }
+        } else {
+          console.error('❌ No se recibió contenido válido:', content)
+          triggerToast('Error: No se pudo crear el proyecto', 'error')
+        }
       }
 
     } catch (error: any) {
