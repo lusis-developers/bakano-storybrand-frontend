@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { IBusiness } from '@/types/business.types'
+import IntegrationsStatus from './IntegrationsStatus.vue'
 
 interface Props {
   business: IBusiness
@@ -10,6 +11,7 @@ interface Props {
 interface Emits {
   (e: 'edit', business: IBusiness): void
   (e: 'delete', business: IBusiness): void
+  (e: 'connect-facebook'): void
 }
 
 const props = defineProps<Props>()
@@ -148,6 +150,11 @@ const callPhone = () => {
       <div v-if="hasAddress" class="address-info">
         <span class="address-icon"><i class="fas fa-map-marker-alt"></i></span>
         <span class="address-text">{{ addressText }}</span>
+      </div>
+      
+      <!-- Integrations Status -->
+      <div class="integrations-wrapper">
+        <IntegrationsStatus @connect-facebook="$emit('connect-facebook')" />
       </div>
     </div>
 
@@ -555,5 +562,12 @@ const callPhone = () => {
     background: #dc2626;
     border-color: #dc2626;
   }
+}
+
+// Integrations wrapper
+.integrations-wrapper {
+  margin-top: 1.5rem;
+  border-top: 1px solid #f1f5f9;
+  padding-top: 1.5rem;
 }
 </style>
