@@ -154,7 +154,7 @@ const callPhone = () => {
       
       <!-- Integrations Status -->
       <div class="integrations-wrapper">
-        <IntegrationsStatus @connect-facebook="$emit('connect-facebook')" />
+        <IntegrationsStatus :business="business" @connect-facebook="$emit('connect-facebook')" />
       </div>
     </div>
 
