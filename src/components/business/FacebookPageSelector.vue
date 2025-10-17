@@ -105,7 +105,7 @@ const confirm = () => emit('confirm')
   &:hover:not(:disabled) {
     background: darken(colors.$BAKANO-GREEN, 8%);
     border-color: darken(colors.$BAKANO-GREEN, 8%);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    box-shadow: 0 4px 12px rgba(0,0,0,0.12);
   }
 }
 
@@ -125,7 +125,7 @@ const confirm = () => emit('confirm')
   width: 92vw;
   max-width: 640px;
   padding: 1rem;
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
 }
 
 .modal-title {
