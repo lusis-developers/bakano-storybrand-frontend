@@ -2,6 +2,10 @@
 import { computed, ref } from 'vue'
 import { useBusinessStore } from '@/stores/business.store'
 import { useFacebookSDK } from '@/composables/useFacebookSDK' // <-- 1. Importamos nuestro composable
+import integrationService from '@/services/integration.service'
+import type { IBusiness } from '@/types/business.types'
+import type { IIntegrationPage } from '@/types/integration.types'
+import FacebookPageSelector from './FacebookPageSelector.vue'
 
 const businessStore = useBusinessStore()
 // 2. Usamos el composable. Renombramos 'error' para evitar conflictos.
@@ -9,10 +13,21 @@ const { isLoading: isSDKLoading, error: sdkError, login } = useFacebookSDK()
 
 const isConnecting = ref(false)
 const connectionError = ref<string | null>(null)
+const userPages = ref<IIntegrationPage[] | null>(null)
+const isPageModalOpen = ref(false)
+const selectedPageId = ref<string | null>(null)
+
+// Recibimos el negocio de la tarjeta como prop (opcional para mantener compatibilidad)
+const props = defineProps<{ business?: IBusiness }>()
+
 
 const facebookConnected = computed(() => {
-  const list = businessStore.currentBusiness?.integrations ?? []
+  const list = props.business?.integrations ?? businessStore.currentBusiness?.integrations ?? []
   return Array.isArray(list) && list.includes('facebook')
+})
+
+const facebookPending = computed(() => {
+  return !!userPages.value && !facebookConnected.value && !selectedPageId.value
 })
 
 const emit = defineEmits<{
@@ -30,17 +45,52 @@ const handleConnectFacebook = async () => {
     // La lógica de obtener el token ya está encapsulada. ¡Mucho más limpio!
     const token = await login(['business_management', 'pages_show_list'])
 
-    console.log('Facebook token obtenido:', token)
     emit('connect-facebook', token)
+
+    // 4. Conectar con el backend inmediatamente después de obtener el token del SDK
+    const businessId =
+      props.business?._id ||
+      props.business?.id ||
+      businessStore.currentBusiness?._id ||
+      businessStore.currentBusiness?.id
+    if (!businessId) {
+      throw new Error('No hay negocio seleccionado para conectar Facebook')
+    }
+
+    const response = await integrationService.facebookConnect(businessId, token)
+    userPages.value = response.pages || []
+    // Abrimos el modal para que el usuario seleccione una página
+    isPageModalOpen.value = true
 
   } catch (err) {
     // El error ya es manejado y formateado por nuestro composable.
     // Podemos usar el error del SDK o el que viene del catch.
     connectionError.value = sdkError.value || (err instanceof Error ? err.message : 'Error al conectar con Facebook')
-    console.error('Error al conectar con Facebook:', err)
   } finally {
     isConnecting.value = false
   }
+}
+
+const openPageModal = () => {
+  if (userPages.value && userPages.value.length > 0) {
+    isPageModalOpen.value = true
+  }
+}
+
+const closePageModal = () => {
+  isPageModalOpen.value = false
+}
+
+const selectPage = (pageId: string) => {
+  selectedPageId.value = pageId
+}
+
+const confirmSelection = async () => {
+  if (!selectedPageId.value) return
+  const page = userPages.value?.find(p => p.id === selectedPageId.value) || null
+  // Aquí podríamos llamar a un servicio para guardar la página seleccionada en backend.
+  // Por ahora, cerramos el modal y mantenemos el estado como pendiente hasta implementar el flujo completo.
+  isPageModalOpen.value = false
 }
 </script>
 
@@ -53,23 +103,44 @@ const handleConnectFacebook = async () => {
       <div class="details">
         <strong>Facebook</strong>
         <span
-          :class="['status', facebookConnected ? 'connected' : 'disconnected']"
+          :class="[
+            'status',
+            facebookConnected ? 'connected' : facebookPending ? 'pending' : 'disconnected'
+          ]"
         >
-          {{ facebookConnected ? 'Conectado' : 'No conectado' }}
+          {{ facebookConnected ? 'Conectado' : facebookPending ? 'Pendiente de agendar' : 'No conectado' }}
         </span>
         <span v-if="connectionError" class="error-message">{{ connectionError }}</span>
       </div>
-      <button
-        v-if="!facebookConnected"
-        type="button"
-        class="btn btn-primary"
-        @click="handleConnectFacebook"
-        :disabled="isSDKLoading || isConnecting"
-      >
-        <span v-if="isConnecting || isSDKLoading">Conectando...</span>
-        <span v-else>Conectar</span>
-      </button>
+      <template v-if="!facebookConnected">
+        <button
+          v-if="!facebookPending"
+          type="button"
+          class="btn btn-primary"
+          @click="handleConnectFacebook"
+          :disabled="isSDKLoading || isConnecting"
+        >
+          <span v-if="isConnecting || isSDKLoading">Conectando...</span>
+          <span v-else>Conectar</span>
+        </button>
+        <button
+          v-else
+          type="button"
+          class="btn btn-primary"
+          @click="openPageModal"
+        >
+          Seleccionar página
+        </button>
+      </template>
     </div>
+
+    <FacebookPageSelector
+      :open="isPageModalOpen"
+      :pages="userPages || []"
+      v-model:selectedPageId="selectedPageId"
+      @cancel="closePageModal"
+      @confirm="confirmSelection"
+    />
   </div>
 </template>
 
@@ -112,6 +183,10 @@ const handleConnectFacebook = async () => {
   color: #166534;
 }
 
+.status.pending {
+  color: #1d4ed8;
+}
+
 .status.disconnected {
   color: #92400e;
 }
@@ -141,4 +216,5 @@ const handleConnectFacebook = async () => {
   opacity: 0.7;
   cursor: not-allowed;
 }
+
 </style>
