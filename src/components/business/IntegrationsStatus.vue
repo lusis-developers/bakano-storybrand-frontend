@@ -43,7 +43,7 @@ const handleConnectFacebook = async () => {
   try {
     // 3. Llamamos a nuestro método `login` con los permisos profesionales solicitados.
     // La lógica de obtener el token ya está encapsulada. ¡Mucho más limpio!
-    const token = await login(['business_management', 'pages_show_list'])
+    const token = await login(['business_management', 'pages_show_list', 'pages_read_engagement'])
 
     emit('connect-facebook', token)
 
@@ -216,5 +216,4 @@ const confirmSelection = async () => {
   opacity: 0.7;
   cursor: not-allowed;
 }
-
 </style>
