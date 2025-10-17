@@ -17,7 +17,7 @@ class IntegrationService extends APIBase {
   ): Promise<IFacebookConnectResponse> {
     try {
       const response: AxiosResponse<IFacebookConnectResponse> = await this.post(
-        `${this.endpoint}/facebook-connect`,
+        `${this.endpoint}/facebook/connect`,
         {
           business: businessId,
           accessToken: userAccessToken,
