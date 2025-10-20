@@ -17,3 +17,11 @@ export interface IIntegrationError {
   status?: number
   message: string
 }
+
+export interface IInstagramConnectResponse {
+  message: string
+  instagramUser?: {
+    id: string
+    username?: string
+  }
+}
