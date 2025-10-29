@@ -16,6 +16,11 @@ const connectionError = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 const userPages = ref<IIntegrationPage[]>([])
 
+// Emitir eventos al padre (mantener compatibilidad con BusinessCard.vue)
+const emit = defineEmits<{
+  (e: 'connect-facebook', page?: IIntegrationPage): void
+}>()
+
 // Recibimos el negocio de la tarjeta como prop (opcional para mantener compatibilidad)
 const props = defineProps<{ business?: IBusiness }>()
 
@@ -65,6 +70,19 @@ const connectFacebook = async () => {
     isConnecting.value = false
   }
 }
+
+// Helper para limpiar URLs que puedan venir con backticks o espacios
+const sanitizeUrl = (url?: string): string => {
+  if (!url) return ''
+  return url.replace(/`/g, '').trim()
+}
+
+// Acción al seleccionar una página específica para vincular
+const selectPage = (page: IIntegrationPage) => {
+  // Emitimos al padre por si quiere manejar el enlace real en backend
+  emit('connect-facebook', page)
+  successMessage.value = `Página "${page.name}" seleccionada para conectar.`
+}
 </script>
 
 <template>
@@ -88,7 +106,8 @@ const connectFacebook = async () => {
           </div>
 
           <div class="modal-body">
-            <div class="step">
+            <!-- Paso 1: Conectar Facebook (solo mientras aún no hay páginas) -->
+            <div class="step" v-if="!userPages.length">
               <span class="step-badge"><i class="fa-solid fa-hashtag"></i> Paso 1</span>
               <h4><i class="fab fa-facebook"></i> Conectar Facebook</h4>
               <p class="helper">
@@ -108,19 +127,43 @@ const connectFacebook = async () => {
                 @click="connectFacebook"
               >
                 <span v-if="isConnecting || isSDKLoading"><i class="fa-solid fa-spinner fa-spin"></i> Conectando...</span>
-                <span v-else><i class="fab fa-facebook"></i> Conectar Facebook</span>
+                <span v-else><i class="fab fa-facebook"></i> Conectar</span>
               </button>
             </div>
 
-            <div v-if="userPages.length" class="pages-box">
-              <strong><i class="fa-solid fa-list"></i> Páginas encontradas</strong>
-              <ul>
-                <li v-for="p in userPages" :key="p.id">
-                  <i class="fa-solid fa-flag"></i>
-                  <span class="page-name">{{ p.name }}</span>
-                  <span class="page-id">ID: {{ p.id }}</span>
-                </li>
-              </ul>
+            <!-- Paso 1 (post conexión): Seleccionar una página -->
+            <div class="step" v-else>
+              <span class="step-badge"><i class="fa-solid fa-hashtag"></i> Paso 1</span>
+              <h4><i class="fab fa-facebook"></i> Selecciona una página de Facebook</h4>
+              <p class="helper">Elige la página que deseas vincular a tu negocio.</p>
+
+              <div class="feedback" v-if="connectionError || successMessage">
+                <p v-if="connectionError" class="error"><i class="fa-solid fa-circle-exclamation"></i> {{ connectionError }}</p>
+                <p v-else-if="successMessage" class="success"><i class="fa-solid fa-circle-check"></i> {{ successMessage }}</p>
+              </div>
+
+              <div class="pages-box">
+                <strong><i class="fa-solid fa-list"></i> Páginas encontradas</strong>
+                <ul>
+                  <li v-for="p in userPages" :key="p.id" class="page-item">
+                    <div class="left">
+                      <img v-if="p.pictureUrl" :src="sanitizeUrl(p.pictureUrl)" alt="Logo de la página" class="avatar" />
+                      <i v-else class="fa-solid fa-flag placeholder"></i>
+                      <div class="info">
+                        <span class="page-name">{{ p.name }}</span>
+                        <span v-if="p.category" class="category">{{ p.category }}</span>
+                        <span class="page-id">ID: {{ p.id }}</span>
+                      </div>
+                    </div>
+                    <div class="actions">
+                      <button type="button" class="btn btn-primary btn-connect" @click="selectPage(p)">
+                        <i class="fa-solid fa-link"></i>
+                        <span>Conectar</span>
+                      </button>
+                    </div>
+                  </li>
+                </ul>
+              </div>
             </div>
           </div>
 
@@ -232,6 +275,10 @@ const connectFacebook = async () => {
   overflow: hidden;
   transform: translateY(-6px);
   animation: popIn 220ms ease-out;
+  // Mobile-safe: constrain height and enable internal scroll
+  max-height: 92vh;
+  display: flex;
+  flex-direction: column;
 }
 
 .modal-header {
@@ -264,6 +311,10 @@ const connectFacebook = async () => {
 
 .modal-body {
   padding: 1.25rem 1.25rem 1rem;
+  // Allow vertical scrolling for long content (mobile-safe)
+  flex: 1 1 auto;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch; // smooth scrolling on iOS
 }
 
 /* Modal body heading (Paso 1: Conectar Facebook) */
@@ -362,22 +413,57 @@ const connectFacebook = async () => {
   gap: 0.5rem;
 }
 
-.pages-box li {
+.pages-box li.page-item {
   display: flex;
   align-items: center;
-  gap: 0.5rem;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.25rem;
+}
+
+.pages-box .left {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.pages-box .avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid lighten($BAKANO-DARK, 82%);
+}
+
+.pages-box .placeholder {
+  color: lighten($BAKANO-DARK, 24%);
+}
+
+.pages-box .info {
+  display: flex;
+  flex-direction: column;
 }
 
 .page-name {
   font-weight: 800;
   color: $BAKANO-DARK;
   font-size: 1rem;
+  overflow-wrap: anywhere;
 }
 
 .page-id {
   font-size: 0.85rem;
   color: lighten($BAKANO-DARK, 24%);
   margin-left: 0.25rem;
+}
+
+.pages-box .category {
+  font-size: 0.85rem;
+  color: lighten($BAKANO-DARK, 24%);
+}
+
+.pages-box .actions .btn-connect {
+  min-width: 120px;
 }
 
 @keyframes fadeIn {
@@ -399,6 +485,24 @@ const connectFacebook = async () => {
   to {
     opacity: 1;
     transform: translateY(0) scale(1);
+  }
+}
+
+// Responsive tweaks for very small screens
+@media (max-width: 480px) {
+  .pages-box .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+  }
+
+  .pages-box li.page-item {
+    gap: 0.5rem;
+    padding: 0.4rem 0.2rem;
+  }
+
+  .pages-box .actions .btn-connect {
+    min-width: 100px;
   }
 }
 </style>
