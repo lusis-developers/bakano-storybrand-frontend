@@ -78,6 +78,12 @@ const router = createRouter({
       component: () => import('../views/ScriptsView.vue'),
       meta: { requiresAuth: true, requiresVerified: true },
     },
+    {
+      path: '/instagram-connect',
+      name: 'instagram-connect',
+      component: () => import('../views/Integrations/InstagramConnection.vue'),
+      meta: { requiresAuth: true, requiresVerified: true },
+    },
   ],
 })
 
