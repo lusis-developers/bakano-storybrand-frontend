@@ -25,3 +25,36 @@ export interface IInstagramConnectResponse {
     username?: string
   }
 }
+
+// ----- Nuevos tipos para listado de integraciones -----
+export type IntegrationType =
+  | 'facebook'
+  | 'instagram'
+  | 'google'
+  | 'mailchimp'
+  | 'stripe'
+  | 'zapier'
+  | 'hubspot'
+  | 'salesforce'
+  | 'other'
+
+export interface IIntegrationRecord {
+  _id: string
+  name: string
+  type: IntegrationType
+  description?: string
+  business: string
+  isActive: boolean
+  isConnected: boolean
+  lastSyncAt?: string | Date
+  metadata?: Record<string, any>
+  createdAt: string | Date
+  updatedAt: string | Date
+  // Virtual recibido desde backend
+  connectionStatus?: 'inactive' | 'disconnected' | 'error' | 'connected' | 'pending'
+}
+
+export interface IGetIntegrationsResponse {
+  count: number
+  data: IIntegrationRecord[]
+}
