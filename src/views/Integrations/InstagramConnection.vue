@@ -2,6 +2,7 @@
 import { onMounted, ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import integrationService from '@/services/integration.service'
+import instagramService from '@/services/instagram.service'
 import { useBusinessStore } from '@/stores/business.store'
 import { useInstagramSDK } from '@/composables/useInstagramSDK'
 
@@ -39,7 +40,7 @@ const connectInstagram = async () => {
     const userAccessToken = await loginForInstagram()
 
     // 2) Registrar conexión en backend
-    await integrationService.instagramConnect(businessId.value, userAccessToken)
+    await instagramService.instagramConnect(businessId.value, userAccessToken)
 
     success.value = true
     // 3) Redirigir suavemente de vuelta a la gestión de negocio
