@@ -22,6 +22,7 @@ const IG_BUSINESS_SCOPES = [
   'instagram_business_content_publish',
   'instagram_business_manage_messages',
   'instagram_business_manage_comments',
+  'instagram_content_publish',
 ] as const
 
 type InstagramBusinessScope = (typeof IG_BUSINESS_SCOPES)[number]
@@ -57,10 +58,9 @@ export function useInstagramSDK() {
       : [
           'instagram_basic', // permiso base en Facebook Graph (no confundir con instagram_business_basic del Instagram Login)
           'pages_show_list',
-          // Agrega según necesidades y revisión de app:
-          // 'pages_read_engagement',
-          // 'read_insights',
-          // 'business_management',
+          'pages_read_engagement',
+          'instagram_manage_insights',
+          'instagram_content_publish',
         ]
     try {
       const token = await login(perms)
@@ -72,7 +72,9 @@ export function useInstagramSDK() {
   }
 
   // Business Login for Instagram (Instagram Login) → inicia OAuth con scopes nuevos
-  const startInstagramLogin = (scopes: InstagramBusinessScope[] = [...IG_BUSINESS_SCOPES]): void => {
+  const startInstagramLogin = (
+    scopes: InstagramBusinessScope[] = [...IG_BUSINESS_SCOPES],
+  ): void => {
     error.value = null
     if (!IG_CLIENT_ID || !IG_REDIRECT_URI) {
       error.value = 'Faltan variables: VITE_INSTAGRAM_CLIENT_ID y VITE_INSTAGRAM_REDIRECT_URI'
