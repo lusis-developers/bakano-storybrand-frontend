@@ -3,6 +3,8 @@ import { computed, ref } from 'vue'
 import { useBusinessStore } from '@/stores/business.store'
 import { useFacebookSDK } from '@/composables/useFacebookSDK' // <-- 1. Importamos nuestro composable
 import integrationService from '@/services/integration.service'
+import facebookService from '@/services/facebook.service'
+import instagramService from '@/services/instagram.service'
 import type { IBusiness } from '@/types/business.types'
 import type { IIntegrationPage } from '@/types/integration.types'
 import FacebookPageSelector from './FacebookPageSelector.vue'
@@ -69,7 +71,7 @@ const handleConnectFacebook = async () => {
       throw new Error('No hay negocio seleccionado para conectar Facebook')
     }
 
-    const response = await integrationService.facebookConnect(businessId, token)
+    const response = await facebookService.facebookConnect(businessId, token)
     userPages.value = response.pages || []
     // Abrimos el modal para que el usuario seleccione una página
     isPageModalOpen.value = true
@@ -101,7 +103,7 @@ const handleConnectInstagram = async () => {
       throw new Error('No hay negocio seleccionado para conectar Instagram')
     }
 
-    await integrationService.instagramConnect(businessId, token)
+    await instagramService.instagramConnect(businessId, token)
     emit('connect-instagram', token)
   } catch (err) {
     instagramError.value = igError.value || (err instanceof Error ? err.message : 'Error al conectar con Instagram')
