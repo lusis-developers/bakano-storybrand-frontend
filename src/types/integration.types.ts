@@ -69,6 +69,12 @@ export interface IIntegrationRecord {
   updatedAt: string | Date
   // Virtual recibido desde backend
   connectionStatus?: 'inactive' | 'disconnected' | 'error' | 'connected' | 'pending'
+  // Nuevo: algunos backends envían config y followers en el nivel raíz
+  config?: IIntegrationConfig
+  followers?: number
+  // El backend puede enviar picture a nivel raíz; el servicio lo normaliza a metadata.picture,
+  // pero mantenemos el tipo para compatibilidad cuando se lea crudo.
+  picture?: IFacebookPagePicture
 }
 
 export interface IGetIntegrationsResponse {
@@ -105,4 +111,10 @@ export interface IInstagramFinalizeResponse {
   message: string
   integration: IIntegrationRecord
   instagram?: IInstagramProfile
+}
+
+// ===== Configuración extendida de integraciones =====
+export interface IIntegrationConfig {
+  customFields?: Record<string, any>
+  tokenExpiresAt?: string | Date | null
 }
