@@ -31,6 +31,9 @@ const instagramErrorMessage = ref<string | null>(null)
 const instagramAccounts = ref<IInstagramLinkedAccount[]>([])
 const savingInstagramId = ref<string | null>(null)
 const connectedInstagram = ref<IInstagramProfile | null>(null)
+const isRelinkingInstagram = ref(false)
+// Estado para permitir revincular página de Facebook cuando ya existe una conexión
+const isRelinkingFacebook = ref(false)
 
 // Estado derivado: ¿todo conectado? (Facebook + Instagram)
 const allConnected = computed<boolean>(() => {
@@ -133,6 +136,8 @@ const openWizard = async () => {
   userPages.value = []
   instagramSuccessMessage.value = null
   instagramErrorMessage.value = null
+  isRelinkingFacebook.value = false
+  isRelinkingInstagram.value = false
 
   // Sincronizar por si hubo cambios antes de abrir el modal
   await refreshIntegrations()
@@ -140,6 +145,8 @@ const openWizard = async () => {
 
 const closeWizard = () => {
   isWizardOpen.value = false
+  isRelinkingFacebook.value = false
+  isRelinkingInstagram.value = false
 }
 
 const connectFacebook = async () => {
@@ -219,6 +226,7 @@ const selectPage = async (page: IIntegrationPage) => {
     successMessage.value = message || `Integración finalizada para la página "${page.name}".`
     facebookConnectedIntegration.value = integration || null
     connectedFacebookPage.value = selectedPage || null
+    isRelinkingFacebook.value = false
   } catch (err: any) {
     connectionError.value = err?.message || 'Error al finalizar la integración con la página'
   } finally {
@@ -286,6 +294,7 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
         followersCount: account.followersCount,
       }
     instagramAccounts.value = []
+    isRelinkingInstagram.value = false
   } catch (err: any) {
     instagramErrorMessage.value = err?.message || 'Error al vincular la cuenta de Instagram'
   } finally {
@@ -367,15 +376,23 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
                 <!-- Paso 1 (post conexión o pendiente): Seleccionar una página -->
                 <div class="step" v-else>
                   <span class="step-badge"><i class="fa-solid fa-hashtag"></i> Paso 1</span>
-                  <h4><i class="fab fa-facebook"></i> Selecciona una página de Facebook</h4>
-                  <p class="helper">Elige la página que deseas vincular a tu negocio.</p>
+                  <h4>
+                    <i class="fab fa-facebook"></i>
+                    {{ facebookConnectedIntegration && !isRelinkingFacebook ? 'Página de Facebook conectada' : 'Selecciona una página de Facebook' }}
+                  </h4>
+                  <p class="helper">
+                    {{ facebookConnectedIntegration && !isRelinkingFacebook
+                      ? 'Ya tienes una página conectada. Si quieres cambiarla, puedes revincular.'
+                      : 'Elige la página que deseas vincular a tu negocio.'
+                    }}
+                  </p>
 
                   <div class="feedback" v-if="connectionError || successMessage">
                     <p v-if="connectionError" class="error"><i class="fa-solid fa-circle-exclamation"></i> {{ connectionError }}</p>
                     <p v-else-if="successMessage" class="success"><i class="fa-solid fa-circle-check"></i> {{ successMessage }}</p>
                   </div>
 
-                  <div class="pages-box" v-if="!facebookConnectedIntegration">
+                  <div class="pages-box" v-if="!facebookConnectedIntegration || isRelinkingFacebook">
                     <template v-if="userPages.length">
                       <strong><i class="fa-solid fa-list"></i> Páginas encontradas</strong>
                       <ul>
@@ -442,9 +459,23 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
                             <span>
                               Facebook conectado a: <strong>{{ facebookConnectedIntegration?.metadata?.pageName }}</strong>
                               <span v-if="facebookConnectedIntegration?.metadata?.pageId">(ID: {{ facebookConnectedIntegration?.metadata?.pageId }})</span>
+                              <span v-if="typeof facebookConnectedIntegration?.metadata?.followersCount === 'number'" class="page-id">
+                                · Seguidores: {{ facebookConnectedIntegration?.metadata?.followersCount }}
+                              </span>
                             </span>
                           </p>
                         </div>
+                      </div>
+                      <div class="actions">
+                        <button
+                          type="button"
+                          class="btn btn-secondary"
+                          :disabled="isSDKLoading || isConnecting"
+                          @click="() => { isRelinkingFacebook = true; connectFacebook() }"
+                        >
+                          <i class="fa-solid fa-rotate"></i>
+                          <span>Revincular página</span>
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -463,7 +494,7 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
                     </div>
 
                     <!-- Resumen de Instagram conectado -->
-                    <div v-if="connectedInstagram" class="connected-summary">
+                    <div v-if="connectedInstagram && !isRelinkingInstagram" class="connected-summary">
                       <div class="summary-box">
                         <div class="left">
                           <img
@@ -485,10 +516,21 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
                             </p>
                           </div>
                         </div>
+                        <div class="actions">
+                          <button
+                            type="button"
+                            class="btn btn-secondary"
+                            :disabled="isConnectingInstagram"
+                            @click="() => { isRelinkingInstagram = true; connectInstagramFlow() }"
+                          >
+                            <i class="fa-solid fa-rotate"></i>
+                            <span>Revincular cuenta</span>
+                          </button>
+                        </div>
                       </div>
                     </div>
 
-                    <!-- Si aún no cargamos cuentas de IG y no hay cuenta conectada, mostrar botón para traerlas -->
+                    <!-- Si aún no cargamos cuentas de IG (incl. revincular), mostrar botón para traerlas -->
                     <div v-else-if="!instagramAccounts.length">
                       <button
                         type="button"
@@ -702,6 +744,25 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
   }
 }
 
+/* Utilidades compartidas dentro del componente (refactor para evitar duplicados) */
+.left {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid lighten($BAKANO-DARK, 82%);
+}
+
+.placeholder {
+  color: lighten($BAKANO-DARK, 24%);
+}
+
 /* Modal */
 .modal {
   position: fixed;
@@ -732,6 +793,17 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
   max-height: 92vh;
   display: flex;
   flex-direction: column;
+}
+
+/* Accesibilidad: reducir motion si el usuario lo prefiere */
+@media (prefers-reduced-motion: reduce) {
+  .modal {
+    animation: none;
+  }
+  .modal-content {
+    animation: none;
+    transform: none;
+  }
 }
 
 .modal-header {
@@ -873,24 +945,6 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
   padding: 0.5rem 0.25rem;
 }
 
-.pages-box .left {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.pages-box .avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  object-fit: cover;
-  border: 1px solid lighten($BAKANO-DARK, 82%);
-}
-
-.pages-box .placeholder {
-  color: lighten($BAKANO-DARK, 24%);
-}
-
 .pages-box .info {
   display: flex;
   flex-direction: column;
@@ -942,7 +996,7 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
 
 // Responsive tweaks for very small screens
 @media (max-width: 480px) {
-  .pages-box .avatar {
+  .avatar {
     width: 32px;
     height: 32px;
     border-radius: 6px;
@@ -965,24 +1019,10 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
   border-radius: 14px;
   padding: 0.75rem;
   background: $BAKANO-LIGHT;
-}
-
-.connected-summary .left {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.6rem;
-}
-
-.connected-summary .avatar {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  object-fit: cover;
-  border: 1px solid lighten($BAKANO-DARK, 82%);
-}
-
-.connected-summary .placeholder {
-  color: lighten($BAKANO-DARK, 24%);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
 }
 
 /* Banner de estado de integraciones */
