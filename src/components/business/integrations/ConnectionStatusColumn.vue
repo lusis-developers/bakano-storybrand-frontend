@@ -11,7 +11,7 @@ const props = defineProps<{
 
 <template>
   <div class="status-column">
-    <h6><i class="fa-solid fa-circle-nodes"></i> Estado de la Conexión</h6>
+    <h5><i class="fa-solid fa-circle-nodes"></i> Estado de la Conexión</h5>
     <ul class="status-list">
       <li :class="props.hasFacebookIntegrationRecord ? (props.facebookConnectedIntegration ? 'connected' : (props.isFacebookPending ? 'pending' : 'disconnected')) : 'disconnected'">
         <i :class="props.facebookConnectedIntegration ? 'fa-solid fa-check-circle' : (props.isFacebookPending ? 'fa-solid fa-hourglass-half' : 'fa-regular fa-circle-xmark')"></i>
