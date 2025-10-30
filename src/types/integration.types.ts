@@ -6,11 +6,28 @@ export interface IIntegrationPage {
   category?: string
   accessToken: string
   pictureUrl?: string
+  // Nuevo: estructura completa de imagen (cuando esté disponible)
+  picture?: IFacebookPagePicture
 }
 
 export interface IFacebookConnectResponse {
   message: string
   pages: IIntegrationPage[]
+}
+
+// ---- Nuevos tipos para respuesta de página seleccionada (connect-page)
+export interface IFacebookPagePicture {
+  url?: string
+  small?: string
+  normal?: string
+  large?: string
+  size150?: string
+}
+
+export interface IFacebookPageInfo {
+  id: string
+  name: string
+  picture?: IFacebookPagePicture
 }
 
 export interface IIntegrationError {
