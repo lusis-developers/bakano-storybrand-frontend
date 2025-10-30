@@ -799,6 +799,7 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
   .modal {
     animation: none;
   }
+
   .modal-content {
     animation: none;
     transform: none;
@@ -871,6 +872,12 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
   display: grid;
   gap: 0.5rem;
   margin-bottom: 1.25rem;
+
+  &-ig {
+    margin-top: 20px;
+    border-top: 1px solid #eee9e9;
+    padding-top: 20px;
+  }
 }
 
 .step-badge {
