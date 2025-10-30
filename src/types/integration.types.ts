@@ -37,10 +37,10 @@ export interface IIntegrationError {
 
 export interface IInstagramConnectResponse {
   message: string
-  instagramUser?: {
-    id: string
-    username?: string
-  }
+  // Nuevo: el backend devuelve las cuentas de Instagram Business vinculadas a las páginas
+  accounts?: IInstagramLinkedAccount[]
+  count?: number
+  token?: IInstagramTokenInfo
 }
 
 // ----- Nuevos tipos para listado de integraciones -----
@@ -74,4 +74,27 @@ export interface IIntegrationRecord {
 export interface IGetIntegrationsResponse {
   count: number
   data: IIntegrationRecord[]
+}
+
+// ===== Nuevos tipos para Instagram (Business Accounts vinculadas) =====
+export interface IInstagramLinkedAccount {
+  pageId: string
+  pageName: string
+  pageAccessToken: string
+  instagramAccountId: string
+  instagramUsername: string
+  instagramProfilePictureUrl?: string
+  followersCount?: number
+}
+
+export interface IInstagramTokenInfo {
+  type: 'user_long_lived' | 'page' | string
+  accessToken: string
+  expiresIn?: number
+  expiresAt?: string
+}
+
+export interface IInstagramFinalizeResponse {
+  message: string
+  integration: IIntegrationRecord
 }
