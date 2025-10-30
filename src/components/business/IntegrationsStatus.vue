@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useBusinessStore } from '@/stores/business.store'
 import { useFacebookSDK } from '@/composables/useFacebookSDK'
 import useIntegrationStore from '@/stores/integration.store'
@@ -10,6 +10,7 @@ import type {
   IIntegrationRecord,
   IFacebookPageInfo,
   IInstagramLinkedAccount,
+  IInstagramProfile,
 } from '@/types/integration.types'
 
 // Estado base
@@ -29,6 +30,19 @@ const instagramSuccessMessage = ref<string | null>(null)
 const instagramErrorMessage = ref<string | null>(null)
 const instagramAccounts = ref<IInstagramLinkedAccount[]>([])
 const savingInstagramId = ref<string | null>(null)
+const connectedInstagram = ref<IInstagramProfile | null>(null)
+
+// Derivados: sugeridos vs otros (según la página de Facebook vinculada)
+const suggestedInstagramAccounts = computed<IInstagramLinkedAccount[]>(() => {
+  const connectedPageId = facebookConnectedIntegration.value?.metadata?.pageId
+  if (!connectedPageId) return []
+  return instagramAccounts.value.filter((a) => a.pageId === connectedPageId)
+})
+
+const otherInstagramAccounts = computed<IInstagramLinkedAccount[]>(() => {
+  const suggestedIds = new Set(suggestedInstagramAccounts.value.map((a) => a.instagramAccountId))
+  return instagramAccounts.value.filter((a) => !suggestedIds.has(a.instagramAccountId))
+})
 
 // Store de integraciones
 const integrationStore = useIntegrationStore()
@@ -142,12 +156,8 @@ const connectInstagramFlow = async () => {
     if (!businessId) throw new Error('No hay negocio seleccionado para conectar Instagram')
 
     const { message, accounts } = await integrationStore.connectInstagram(businessId)
-    // Guardamos las cuentas devueltas por backend (filtrando por la página FB conectada si existe)
-    const connectedPageId = facebookConnectedIntegration.value?.metadata?.pageId
-    const list = accounts || []
-    instagramAccounts.value = connectedPageId
-      ? list.filter((a) => a.pageId === connectedPageId)
-      : list
+    // Mostramos todas las cuentas devueltas; en la UI se seccionan en "Sugerido" y "Otras"
+    instagramAccounts.value = accounts || []
 
     instagramSuccessMessage.value = message || '¡Listo! Selecciona tu cuenta de Instagram a vincular.'
   } catch (err: any) {
@@ -171,7 +181,7 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
       businessStore.currentBusiness?.id
     if (!businessId) throw new Error('No hay negocio seleccionado para finalizar la integración de Instagram')
 
-    const { message, integration } = await integrationStore.finalizeInstagramAccount(
+    const { message, integration, instagram } = await integrationStore.finalizeInstagramAccount(
       businessId,
       account,
     )
@@ -181,6 +191,15 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
     if (integration) {
       // Nada extra por ahora; el store ya se actualiza internamente
     }
+    // Guardar el perfil de Instagram conectado y ocultar el listado
+    connectedInstagram.value =
+      instagram || {
+        id: account.instagramAccountId,
+        username: account.instagramUsername,
+        profilePictureUrl: account.instagramProfilePictureUrl,
+        followersCount: account.followersCount,
+      }
+    instagramAccounts.value = []
   } catch (err: any) {
     instagramErrorMessage.value = err?.message || 'Error al vincular la cuenta de Instagram'
   } finally {
@@ -317,8 +336,34 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
                   <p v-else-if="instagramSuccessMessage" class="success"><i class="fa-solid fa-circle-check"></i> {{ instagramSuccessMessage }}</p>
                 </div>
 
-                <!-- Si aún no cargamos cuentas de IG, mostrar botón para traerlas -->
-                <div v-if="!instagramAccounts.length">
+                <!-- Resumen de Instagram conectado -->
+                <div v-if="connectedInstagram" class="connected-summary">
+                  <div class="summary-box">
+                    <div class="left">
+                      <img
+                        v-if="connectedInstagram?.profilePictureUrl"
+                        :src="sanitizeUrl(connectedInstagram?.profilePictureUrl)"
+                        alt="Avatar de la cuenta de Instagram"
+                        class="avatar"
+                      />
+                      <i v-else class="fa-brands fa-instagram placeholder"></i>
+                      <div class="info">
+                        <p class="success">
+                          <i class="fa-solid fa-circle-check"></i>
+                          <span>
+                            Instagram conectado: <strong>@{{ connectedInstagram?.username }}</strong>
+                            <span v-if="typeof connectedInstagram?.followersCount === 'number'" class="page-id">
+                              · Seguidores: {{ connectedInstagram?.followersCount }}
+                            </span>
+                          </span>
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Si aún no cargamos cuentas de IG y no hay cuenta conectada, mostrar botón para traerlas -->
+                <div v-else-if="!instagramAccounts.length">
                   <button
                     type="button"
                     class="btn btn-primary"
@@ -330,11 +375,69 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
                   </button>
                 </div>
 
-                <!-- Listado de cuentas de Instagram encontradas para la página -->
+                <!-- Listado de cuentas de Instagram: Sugerido y Otros -->
                 <div class="pages-box" v-else>
-                  <strong><i class="fa-solid fa-list"></i> Cuentas de Instagram encontradas</strong>
+                  <!-- Sugerido (si hay página de FB conectada que coincida con alguna cuenta) -->
+                  <template v-if="suggestedInstagramAccounts.length">
+                    <strong>
+                      <i class="fa-solid fa-thumbtack"></i>
+                      Sugerido para la página conectada
+                      <span class="count">({{ suggestedInstagramAccounts.length }})</span>
+                    </strong>
+                    <ul>
+                      <li v-for="acc in suggestedInstagramAccounts" :key="acc.instagramAccountId" class="page-item">
+                        <div class="left">
+                          <img
+                            v-if="acc.instagramProfilePictureUrl"
+                            :src="sanitizeUrl(acc.instagramProfilePictureUrl)"
+                            alt="Avatar Instagram"
+                            class="avatar"
+                          />
+                          <i v-else class="fa-brands fa-instagram placeholder"></i>
+                          <div class="info">
+                            <span class="page-name">@{{ acc.instagramUsername }}</span>
+                            <span class="category">{{ acc.pageName }}</span>
+                            <span v-if="typeof acc.followersCount === 'number'" class="page-id">Seguidores: {{ acc.followersCount }}</span>
+                          </div>
+                        </div>
+                        <div class="actions">
+                          <button
+                            type="button"
+                            class="btn btn-primary btn-connect"
+                            :disabled="savingInstagramId === acc.instagramAccountId"
+                            @click="selectInstagramAccount(acc)"
+                          >
+                            <template v-if="savingInstagramId === acc.instagramAccountId">
+                              <i class="fa-solid fa-spinner fa-spin"></i>
+                              <span>Vinculando...</span>
+                            </template>
+                            <template v-else>
+                              <i class="fa-solid fa-link"></i>
+                              <span>Vincular</span>
+                            </template>
+                          </button>
+                        </div>
+                      </li>
+                    </ul>
+                  </template>
+
+                  <!-- Otras cuentas disponibles (si no es la sugerida o si no hay sugeridas) -->
+                  <strong>
+                    <i class="fa-solid fa-list"></i>
+                    <template v-if="suggestedInstagramAccounts.length">Otras cuentas disponibles</template>
+                    <template v-else>Cuentas de Instagram encontradas</template>
+                    <span class="count">
+                      (
+                      {{ (suggestedInstagramAccounts.length ? otherInstagramAccounts.length : instagramAccounts.length) }}
+                      )
+                    </span>
+                  </strong>
                   <ul>
-                    <li v-for="acc in instagramAccounts" :key="acc.instagramAccountId" class="page-item">
+                    <li
+                      v-for="acc in (suggestedInstagramAccounts.length ? otherInstagramAccounts : instagramAccounts)"
+                      :key="acc.instagramAccountId"
+                      class="page-item"
+                    >
                       <div class="left">
                         <img
                           v-if="acc.instagramProfilePictureUrl"
