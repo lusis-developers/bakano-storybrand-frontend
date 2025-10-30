@@ -175,13 +175,12 @@ const connectFacebook = async () => {
     const response = await facebookService.facebookConnect(businessId, token)
     userPages.value = response.pages || []
 
-    // Si el backend reporta que la integración de Facebook está pendiente y ya conocemos la pageId
-    // intenta auto-seleccionar esa página para evitar un click extra del usuario.
+    // Evitar vinculación automática cuando el usuario desea elegir manualmente (p. ej. al revincular)
+    // Solo auto-seleccionar si el backend indica un estado pendiente explícito y NO estamos revinculando.
     const pendingPageId = fbRecord.value?.metadata?.pageId || fbRecord.value?.metadata?.page_id
-    if (pendingPageId && userPages.value.length) {
+    if (!isRelinkingFacebook.value && isFacebookPending.value && pendingPageId && userPages.value.length) {
       const match = userPages.value.find((p) => String(p.id) === String(pendingPageId))
       if (match) {
-        // Auto-finaliza con la página detectada (para mejorar UX)
         await selectPage(match)
         successMessage.value = `¡Listo! Detectamos tu página pendiente y la vinculamos automáticamente.`
         return
