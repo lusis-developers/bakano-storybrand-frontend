@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useBusinessStore } from '@/stores/business.store'
 import { useFacebookSDK } from '@/composables/useFacebookSDK'
 import useIntegrationStore from '@/stores/integration.store'
@@ -32,6 +32,11 @@ const instagramAccounts = ref<IInstagramLinkedAccount[]>([])
 const savingInstagramId = ref<string | null>(null)
 const connectedInstagram = ref<IInstagramProfile | null>(null)
 
+// Estado derivado: ¿todo conectado? (Facebook + Instagram)
+const allConnected = computed<boolean>(() => {
+  return Boolean(facebookConnectedIntegration.value && connectedInstagram.value)
+})
+
 // Derivados: sugeridos vs otros (según la página de Facebook vinculada)
 const suggestedInstagramAccounts = computed<IInstagramLinkedAccount[]>(() => {
   const connectedPageId = facebookConnectedIntegration.value?.metadata?.pageId
@@ -47,6 +52,71 @@ const otherInstagramAccounts = computed<IInstagramLinkedAccount[]>(() => {
 // Store de integraciones
 const integrationStore = useIntegrationStore()
 
+// Estados derivados desde el store para reflejar UI según backend
+const fbRecord = computed(() => integrationStore.getIntegrationByType('facebook'))
+const fbConnectionStatus = computed(() => integrationStore.connectionStatusByType('facebook'))
+const hasFacebookIntegrationRecord = computed(() => !!fbRecord.value)
+const isFacebookPending = computed(() =>
+  fbConnectionStatus.value === 'pending' || (fbRecord.value?.metadata?.status === 'pending_page_selection'),
+)
+const igIsConnectedFromStore = computed(() => integrationStore.isInstagramConnected)
+
+// Cargar integraciones existentes al montar y cuando se abra el modal
+const refreshIntegrations = async () => {
+  try {
+    const businessId =
+      props.business?._id ||
+      props.business?.id ||
+      businessStore.currentBusiness?._id ||
+      businessStore.currentBusiness?.id
+    if (!businessId) return
+
+    await integrationStore.loadIntegrations(businessId)
+
+    // Reflejar Facebook conectado (si existe en el store)
+    const fb = integrationStore.facebookIntegration as IIntegrationRecord | null
+    if (fb && fb.isConnected) {
+      facebookConnectedIntegration.value = fb
+      const md = (fb.metadata || {}) as any
+      const picUrl = sanitizeUrl(
+        md?.picture?.size150 || md?.picture?.normal || md?.picture?.url || md?.pagePictureUrl,
+      )
+      connectedFacebookPage.value = {
+        id: md?.pageId || md?.page_id || '',
+        name: md?.pageName || md?.name || fb.name,
+        picture: picUrl
+          ? {
+              url: picUrl,
+              normal: sanitizeUrl(md?.picture?.normal),
+              size150: sanitizeUrl(md?.picture?.size150),
+            }
+          : undefined,
+      }
+    }
+
+    // Reflejar Instagram conectado (si existe en el store)
+    const ig = integrationStore.instagramIntegration as IIntegrationRecord | null
+    if (ig && ig.isConnected) {
+      const md = (ig.metadata || {}) as any
+      connectedInstagram.value = {
+        id: md?.instagramAccountId || md?.instagramId || ig._id,
+        username: md?.instagramUsername || md?.username || '',
+        profilePictureUrl: sanitizeUrl(
+          md?.instagramProfilePictureUrl || md?.profilePictureUrl || md?.picture?.url,
+        ),
+        followersCount: typeof md?.followersCount === 'number' ? md.followersCount : undefined,
+      }
+    }
+  } catch (e) {
+    console.error('[IntegrationsStatus] Error al cargar integraciones existentes:', e)
+  }
+}
+
+onMounted(() => {
+  // Al cargar el componente, intentamos traer el estado actual del backend
+  refreshIntegrations()
+})
+
 // Emitir eventos al padre (mantener compatibilidad con BusinessCard.vue)
 const emit = defineEmits<{
   (e: 'connect-facebook', page?: IIntegrationPage): void
@@ -55,15 +125,17 @@ const emit = defineEmits<{
 // Recibimos el negocio de la tarjeta como prop (opcional para mantener compatibilidad)
 const props = defineProps<{ business?: IBusiness }>()
 
-const openWizard = () => {
+const openWizard = async () => {
   isWizardOpen.value = true
   connectionError.value = null
   successMessage.value = null
+  // Limpiar listados transitorios, pero conservar el estado conectado si ya existe
   userPages.value = []
-  facebookConnectedIntegration.value = null
-  connectedFacebookPage.value = null
   instagramSuccessMessage.value = null
   instagramErrorMessage.value = null
+
+  // Sincronizar por si hubo cambios antes de abrir el modal
+  await refreshIntegrations()
 }
 
 const closeWizard = () => {
@@ -95,6 +167,20 @@ const connectFacebook = async () => {
 
     const response = await facebookService.facebookConnect(businessId, token)
     userPages.value = response.pages || []
+
+    // Si el backend reporta que la integración de Facebook está pendiente y ya conocemos la pageId
+    // intenta auto-seleccionar esa página para evitar un click extra del usuario.
+    const pendingPageId = fbRecord.value?.metadata?.pageId || fbRecord.value?.metadata?.page_id
+    if (pendingPageId && userPages.value.length) {
+      const match = userPages.value.find((p) => String(p.id) === String(pendingPageId))
+      if (match) {
+        // Auto-finaliza con la página detectada (para mejorar UX)
+        await selectPage(match)
+        successMessage.value = `¡Listo! Detectamos tu página pendiente y la vinculamos automáticamente.`
+        return
+      }
+    }
+
     successMessage.value =
       userPages.value.length > 0
         ? `¡Listo! Encontramos ${userPages.value.length} página(s) asociadas a tu cuenta.`
@@ -229,8 +315,25 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
           </div>
 
           <div class="modal-body">
-            <!-- Paso 1: Conectar Facebook (solo mientras aún no hay páginas) -->
-            <div class="step" v-if="!userPages.length">
+            <!-- Banner de estado general -->
+            <div class="integration-status-banner">
+              <div class="pill" :class="hasFacebookIntegrationRecord ? (facebookConnectedIntegration ? 'connected' : (isFacebookPending ? 'pending' : 'disconnected')) : 'disconnected'">
+                <i :class="facebookConnectedIntegration ? 'fa-solid fa-circle-check' : (isFacebookPending ? 'fa-solid fa-hourglass-half' : 'fa-regular fa-circle')"></i>
+                <span>
+                  Facebook ·
+                  <strong>
+                    {{ facebookConnectedIntegration ? 'Conectado' : (isFacebookPending ? 'Pendiente de seleccionar página' : 'No conectado') }}
+                  </strong>
+                </span>
+              </div>
+              <div class="pill" :class="(igIsConnectedFromStore || connectedInstagram) ? 'connected' : 'disconnected'">
+                <i :class="(igIsConnectedFromStore || connectedInstagram) ? 'fa-solid fa-circle-check' : 'fa-regular fa-circle'"></i>
+                <span>Instagram · <strong>{{ (igIsConnectedFromStore || connectedInstagram) ? 'Conectado' : 'No conectado' }}</strong></span>
+              </div>
+            </div>
+
+            <!-- Paso 1: Conectar Facebook (solo si no hay integración previa) -->
+            <div class="step" v-if="!hasFacebookIntegrationRecord && !facebookConnectedIntegration && !userPages.length">
               <span class="step-badge"><i class="fa-solid fa-hashtag"></i> Paso 1</span>
               <h4><i class="fab fa-facebook"></i> Conectar Facebook</h4>
               <p class="helper">
@@ -254,7 +357,7 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
               </button>
             </div>
 
-            <!-- Paso 1 (post conexión): Seleccionar una página -->
+            <!-- Paso 1 (post conexión o pendiente): Seleccionar una página -->
             <div class="step" v-else>
               <span class="step-badge"><i class="fa-solid fa-hashtag"></i> Paso 1</span>
               <h4><i class="fab fa-facebook"></i> Selecciona una página de Facebook</h4>
@@ -266,37 +369,54 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
               </div>
 
               <div class="pages-box" v-if="!facebookConnectedIntegration">
-                <strong><i class="fa-solid fa-list"></i> Páginas encontradas</strong>
-                <ul>
-                  <li v-for="p in userPages" :key="p.id" class="page-item">
-                    <div class="left">
-                      <img v-if="p.pictureUrl" :src="sanitizeUrl(p.pictureUrl)" alt="Logo de la página" class="avatar" />
-                      <i v-else class="fa-solid fa-flag placeholder"></i>
-                      <div class="info">
-                        <span class="page-name">{{ p.name }}</span>
-                        <span v-if="p.category" class="category">{{ p.category }}</span>
-                        <span class="page-id">ID: {{ p.id }}</span>
+                <template v-if="userPages.length">
+                  <strong><i class="fa-solid fa-list"></i> Páginas encontradas</strong>
+                  <ul>
+                    <li v-for="p in userPages" :key="p.id" class="page-item">
+                      <div class="left">
+                        <img v-if="p.pictureUrl" :src="sanitizeUrl(p.pictureUrl)" alt="Logo de la página" class="avatar" />
+                        <i v-else class="fa-solid fa-flag placeholder"></i>
+                        <div class="info">
+                          <span class="page-name">{{ p.name }}</span>
+                          <span v-if="p.category" class="category">{{ p.category }}</span>
+                          <span class="page-id">ID: {{ p.id }}</span>
+                        </div>
                       </div>
-                    </div>
-                    <div class="actions">
-                      <button
-                        type="button"
-                        class="btn btn-primary btn-connect"
-                        :disabled="savingPageId === p.id"
-                        @click="selectPage(p)"
-                      >
-                        <template v-if="savingPageId === p.id">
-                          <i class="fa-solid fa-spinner fa-spin"></i>
-                          <span>Conectando...</span>
-                        </template>
-                        <template v-else>
-                          <i class="fa-solid fa-link"></i>
-                          <span>Conectar</span>
-                        </template>
-                      </button>
-                    </div>
-                  </li>
-                </ul>
+                      <div class="actions">
+                        <button
+                          type="button"
+                          class="btn btn-primary btn-connect"
+                          :disabled="savingPageId === p.id"
+                          @click="selectPage(p)"
+                        >
+                          <template v-if="savingPageId === p.id">
+                            <i class="fa-solid fa-spinner fa-spin"></i>
+                            <span>Conectando...</span>
+                          </template>
+                          <template v-else>
+                            <i class="fa-solid fa-link"></i>
+                            <span>Conectar</span>
+                          </template>
+                        </button>
+                      </div>
+                    </li>
+                  </ul>
+                </template>
+                <template v-else>
+                  <div class="empty-state">
+                    <p>
+                      <i class="fa-solid fa-circle-info"></i>
+                      
+                      <span>
+                        {{ isFacebookPending ? 'Tu integración de Facebook está pendiente de seleccionar página.' : 'Aún no hemos cargado tus páginas de Facebook.' }}
+                      </span>
+                    </p>
+                    <button type="button" class="btn btn-secondary" :disabled="isSDKLoading || isConnecting" @click="connectFacebook">
+                      <i class="fa-solid fa-rotate"></i>
+                      <span>{{ isFacebookPending ? 'Cargar páginas' : 'Obtener páginas' }}</span>
+                    </button>
+                  </div>
+                </template>
               </div>
 
               <!-- Resumen de la página conectada -->
@@ -324,7 +444,7 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
               </div>
 
               <!-- Paso 2: Conectar Instagram -->
-              <div class="step step-ig" v-if="facebookConnectedIntegration">
+              <div class="step step-ig" v-if="facebookConnectedIntegration || igIsConnectedFromStore">
                 <span class="step-badge"><i class="fa-solid fa-hashtag"></i> Paso 2</span>
                 <h4><i class="fab fa-instagram"></i> Conectar Instagram</h4>
                 <p class="helper">
@@ -477,7 +597,23 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
           </div>
 
           <div class="modal-footer">
-            <button type="button" class="btn btn-outline" @click="closeWizard">Cerrar</button>
+            <button
+              v-if="allConnected"
+              type="button"
+              class="btn btn-primary"
+              @click="closeWizard"
+            >
+              <i class="fa-solid fa-circle-check"></i>
+              <span>Cerrar — todo fue un éxito</span>
+            </button>
+            <button
+              v-else
+              type="button"
+              class="btn btn-outline"
+              @click="closeWizard"
+            >
+              Cerrar
+            </button>
           </div>
         </div>
       </div>
@@ -840,5 +976,57 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
 
 .connected-summary .placeholder {
   color: lighten($BAKANO-DARK, 24%);
+}
+
+/* Banner de estado de integraciones */
+.integration-status-banner {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 12px;
+}
+.integration-status-banner .pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  border-radius: 999px;
+  padding: 6px 12px;
+  font-size: 13px;
+  border: 1px solid transparent;
+}
+.integration-status-banner .pill i {
+  font-size: 14px;
+}
+.integration-status-banner .pill.connected {
+  background: #ecfdf5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+.integration-status-banner .pill.pending {
+  background: #fffbeb;
+  color: #92400e;
+  border-color: #fde68a;
+}
+.integration-status-banner .pill.disconnected {
+  background: #f8fafc;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+.pages-box .empty-state {
+  padding: 12px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+.pages-box .empty-state p {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
 }
 </style>
