@@ -5,7 +5,7 @@ import { useFacebookSDK } from '@/composables/useFacebookSDK'
 import useIntegrationStore from '@/stores/integration.store'
 import facebookService from '@/services/facebook.service'
 import type { IBusiness } from '@/types/business.types'
-import type { IIntegrationPage, IIntegrationRecord } from '@/types/integration.types'
+import type { IIntegrationPage, IIntegrationRecord, IFacebookPageInfo } from '@/types/integration.types'
 
 // Estado base
 const businessStore = useBusinessStore()
@@ -18,6 +18,7 @@ const successMessage = ref<string | null>(null)
 const userPages = ref<IIntegrationPage[]>([])
 const savingPageId = ref<string | null>(null)
 const facebookConnectedIntegration = ref<IIntegrationRecord | null>(null)
+const connectedFacebookPage = ref<IFacebookPageInfo | null>(null)
 const isConnectingInstagram = ref(false)
 const instagramSuccessMessage = ref<string | null>(null)
 const instagramErrorMessage = ref<string | null>(null)
@@ -39,6 +40,7 @@ const openWizard = () => {
   successMessage.value = null
   userPages.value = []
   facebookConnectedIntegration.value = null
+  connectedFacebookPage.value = null
   instagramSuccessMessage.value = null
   instagramErrorMessage.value = null
 }
@@ -106,9 +108,10 @@ const selectPage = async (page: IIntegrationPage) => {
       businessStore.currentBusiness?.id
     if (!businessId) throw new Error('No hay negocio seleccionado para finalizar la integración')
 
-    const { message, integration } = await integrationStore.finalizeFacebookPage(businessId, page)
+    const { message, integration, page: selectedPage } = await integrationStore.finalizeFacebookPage(businessId, page)
     successMessage.value = message || `Integración finalizada para la página "${page.name}".`
     facebookConnectedIntegration.value = integration || null
+    connectedFacebookPage.value = selectedPage || null
   } catch (err: any) {
     connectionError.value = err?.message || 'Error al finalizar la integración con la página'
   } finally {
@@ -234,13 +237,26 @@ const connectInstagramFlow = async () => {
 
               <!-- Resumen de la página conectada -->
               <div v-else class="connected-summary">
-                <p class="success">
-                  <i class="fa-solid fa-circle-check"></i>
-                  <span>
-                    Facebook conectado a: <strong>{{ facebookConnectedIntegration?.metadata?.pageName }}</strong>
-                    <span v-if="facebookConnectedIntegration?.metadata?.pageId">(ID: {{ facebookConnectedIntegration?.metadata?.pageId }})</span>
-                  </span>
-                </p>
+                <div class="summary-box">
+                  <div class="left">
+                    <img
+                      v-if="connectedFacebookPage?.picture?.size150 || connectedFacebookPage?.picture?.normal || connectedFacebookPage?.picture?.url"
+                      :src="sanitizeUrl(connectedFacebookPage?.picture?.size150 || connectedFacebookPage?.picture?.normal || connectedFacebookPage?.picture?.url)"
+                      alt="Logo de la página conectada"
+                      class="avatar"
+                    />
+                    <i v-else class="fa-solid fa-flag placeholder"></i>
+                    <div class="info">
+                      <p class="success">
+                        <i class="fa-solid fa-circle-check"></i>
+                        <span>
+                          Facebook conectado a: <strong>{{ facebookConnectedIntegration?.metadata?.pageName }}</strong>
+                          <span v-if="facebookConnectedIntegration?.metadata?.pageId">(ID: {{ facebookConnectedIntegration?.metadata?.pageId }})</span>
+                        </span>
+                      </p>
+                    </div>
+                  </div>
+                </div>
               </div>
 
               <!-- Paso 2: Conectar Instagram -->
@@ -606,5 +622,32 @@ const connectInstagramFlow = async () => {
   .pages-box .actions .btn-connect {
     min-width: 100px;
   }
+}
+
+/* Resumen conectado */
+.connected-summary .summary-box {
+  margin-top: 0.5rem;
+  border: 1px solid lighten($BAKANO-DARK, 86%);
+  border-radius: 14px;
+  padding: 0.75rem;
+  background: $BAKANO-LIGHT;
+}
+
+.connected-summary .left {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.connected-summary .avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid lighten($BAKANO-DARK, 82%);
+}
+
+.connected-summary .placeholder {
+  color: lighten($BAKANO-DARK, 24%);
 }
 </style>
