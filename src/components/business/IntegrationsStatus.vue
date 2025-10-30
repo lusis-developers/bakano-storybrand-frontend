@@ -5,7 +5,7 @@ import { useFacebookSDK } from '@/composables/useFacebookSDK'
 import useIntegrationStore from '@/stores/integration.store'
 import facebookService from '@/services/facebook.service'
 import type { IBusiness } from '@/types/business.types'
-import type { IIntegrationPage } from '@/types/integration.types'
+import type { IIntegrationPage, IIntegrationRecord } from '@/types/integration.types'
 
 // Estado base
 const businessStore = useBusinessStore()
@@ -17,6 +17,10 @@ const connectionError = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 const userPages = ref<IIntegrationPage[]>([])
 const savingPageId = ref<string | null>(null)
+const facebookConnectedIntegration = ref<IIntegrationRecord | null>(null)
+const isConnectingInstagram = ref(false)
+const instagramSuccessMessage = ref<string | null>(null)
+const instagramErrorMessage = ref<string | null>(null)
 
 // Store de integraciones
 const integrationStore = useIntegrationStore()
@@ -34,6 +38,9 @@ const openWizard = () => {
   connectionError.value = null
   successMessage.value = null
   userPages.value = []
+  facebookConnectedIntegration.value = null
+  instagramSuccessMessage.value = null
+  instagramErrorMessage.value = null
 }
 
 const closeWizard = () => {
@@ -99,12 +106,37 @@ const selectPage = async (page: IIntegrationPage) => {
       businessStore.currentBusiness?.id
     if (!businessId) throw new Error('No hay negocio seleccionado para finalizar la integración')
 
-    const { message } = await integrationStore.finalizeFacebookPage(businessId, page)
+    const { message, integration } = await integrationStore.finalizeFacebookPage(businessId, page)
     successMessage.value = message || `Integración finalizada para la página "${page.name}".`
+    facebookConnectedIntegration.value = integration || null
   } catch (err: any) {
     connectionError.value = err?.message || 'Error al finalizar la integración con la página'
   } finally {
     savingPageId.value = null
+  }
+}
+
+// Paso 2: conectar Instagram
+const connectInstagramFlow = async () => {
+  if (isConnectingInstagram.value) return
+  isConnectingInstagram.value = true
+  instagramErrorMessage.value = null
+  instagramSuccessMessage.value = null
+
+  try {
+    const businessId =
+      props.business?._id ||
+      props.business?.id ||
+      businessStore.currentBusiness?._id ||
+      businessStore.currentBusiness?.id
+    if (!businessId) throw new Error('No hay negocio seleccionado para conectar Instagram')
+
+    const { message } = await integrationStore.connectInstagram(businessId)
+    instagramSuccessMessage.value = message || '¡Instagram conectado correctamente!'
+  } catch (err: any) {
+    instagramErrorMessage.value = err?.message || 'Error al conectar Instagram'
+  } finally {
+    isConnectingInstagram.value = false
   }
 }
 </script>
@@ -166,7 +198,7 @@ const selectPage = async (page: IIntegrationPage) => {
                 <p v-else-if="successMessage" class="success"><i class="fa-solid fa-circle-check"></i> {{ successMessage }}</p>
               </div>
 
-              <div class="pages-box">
+              <div class="pages-box" v-if="!facebookConnectedIntegration">
                 <strong><i class="fa-solid fa-list"></i> Páginas encontradas</strong>
                 <ul>
                   <li v-for="p in userPages" :key="p.id" class="page-item">
@@ -198,6 +230,41 @@ const selectPage = async (page: IIntegrationPage) => {
                     </div>
                   </li>
                 </ul>
+              </div>
+
+              <!-- Resumen de la página conectada -->
+              <div v-else class="connected-summary">
+                <p class="success">
+                  <i class="fa-solid fa-circle-check"></i>
+                  <span>
+                    Facebook conectado a: <strong>{{ facebookConnectedIntegration?.metadata?.pageName }}</strong>
+                    <span v-if="facebookConnectedIntegration?.metadata?.pageId">(ID: {{ facebookConnectedIntegration?.metadata?.pageId }})</span>
+                  </span>
+                </p>
+              </div>
+
+              <!-- Paso 2: Conectar Instagram -->
+              <div class="step step-ig" v-if="facebookConnectedIntegration">
+                <span class="step-badge"><i class="fa-solid fa-hashtag"></i> Paso 2</span>
+                <h4><i class="fab fa-instagram"></i> Conectar Instagram</h4>
+                <p class="helper">
+                  Conecta tu cuenta de Instagram para habilitar análisis y publicaciones vinculadas con la página seleccionada.
+                </p>
+
+                <div class="feedback" v-if="instagramErrorMessage || instagramSuccessMessage">
+                  <p v-if="instagramErrorMessage" class="error"><i class="fa-solid fa-circle-exclamation"></i> {{ instagramErrorMessage }}</p>
+                  <p v-else-if="instagramSuccessMessage" class="success"><i class="fa-solid fa-circle-check"></i> {{ instagramSuccessMessage }}</p>
+                </div>
+
+                <button
+                  type="button"
+                  class="btn btn-primary"
+                  :disabled="isConnectingInstagram"
+                  @click="connectInstagramFlow"
+                >
+                  <span v-if="isConnectingInstagram"><i class="fa-solid fa-spinner fa-spin"></i> Conectando Instagram...</span>
+                  <span v-else><i class="fab fa-instagram"></i> Conectar Instagram</span>
+                </button>
               </div>
             </div>
           </div>
