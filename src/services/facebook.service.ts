@@ -1,6 +1,6 @@
 import APIBase from './httpBase'
 import type { AxiosResponse } from 'axios'
-import type { IFacebookConnectResponse } from '@/types/integration.types'
+import type { IFacebookConnectResponse, IIntegrationRecord } from '@/types/integration.types'
 
 class FacebookService extends APIBase {
   private readonly endpoint = 'integrations'
@@ -26,6 +26,33 @@ class FacebookService extends APIBase {
       return response.data
     } catch (error: any) {
       const message = error?.message || 'Error al conectar con Facebook'
+      throw new Error(message)
+    }
+  }
+
+  /**
+   * Finaliza la integración seleccionando una página específica y guardando su token.
+   * Backend: POST /integrations/facebook/connect-page
+   */
+  async facebookConnectPage(
+    businessId: string,
+    pageId: string,
+    pageName: string,
+    pageAccessToken: string,
+  ): Promise<{ message: string; integration: IIntegrationRecord }> {
+    try {
+      const response: AxiosResponse<{ message: string; integration: IIntegrationRecord }> = await this.post(
+        `${this.endpoint}/facebook/connect-page`,
+        {
+          business: businessId,
+          pageId,
+          pageName,
+          pageAccessToken,
+        },
+      )
+      return response.data
+    } catch (error: any) {
+      const message = error?.message || 'Error al guardar la página de Facebook'
       throw new Error(message)
     }
   }
