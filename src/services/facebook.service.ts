@@ -1,6 +1,10 @@
 import APIBase from './httpBase'
 import type { AxiosResponse } from 'axios'
-import type { IFacebookConnectResponse, IIntegrationRecord } from '@/types/integration.types'
+import type {
+  IFacebookConnectResponse,
+  IIntegrationRecord,
+  IFacebookPageInfo,
+} from '@/types/integration.types'
 
 class FacebookService extends APIBase {
   private readonly endpoint = 'integrations'
@@ -39,9 +43,13 @@ class FacebookService extends APIBase {
     pageId: string,
     pageName: string,
     pageAccessToken: string,
-  ): Promise<{ message: string; integration: IIntegrationRecord }> {
+  ): Promise<{ message: string; integration: IIntegrationRecord; page?: IFacebookPageInfo }> {
     try {
-      const response: AxiosResponse<{ message: string; integration: IIntegrationRecord }> = await this.post(
+      const response: AxiosResponse<{
+        message: string
+        integration: IIntegrationRecord
+        page?: IFacebookPageInfo
+      }> = await this.post(
         `${this.endpoint}/facebook/connect-page`,
         {
           business: businessId,
