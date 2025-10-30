@@ -12,6 +12,7 @@ import type {
   IIntegrationRecord,
   IGetIntegrationsResponse,
   IFacebookPageInfo,
+  IInstagramLinkedAccount,
 } from '@/types/integration.types'
 import type { IntegrationType } from '@/types/integration.types'
 
@@ -25,6 +26,8 @@ export const useIntegrationStore = defineStore('integrations', () => {
   const error = ref<string | null>(null)
   const pages = ref<IIntegrationPage[]>([])
   const instagramError = ref<string | null>(null)
+  const instagramAccounts = ref<IInstagramConnectResponse['accounts']>([])
+  const instagramTokenInfo = ref<IInstagramConnectResponse['token'] | null>(null)
   const integrations = ref<IIntegrationRecord[]>([])
   const integrationsCount = ref<number>(0)
 
@@ -188,6 +191,8 @@ export const useIntegrationStore = defineStore('integrations', () => {
 
     isConnecting.value = true
     clearInstagramError()
+    instagramAccounts.value = []
+    instagramTokenInfo.value = null
 
     try {
       // 1) Login via SDK para obtener token del usuario
@@ -195,6 +200,9 @@ export const useIntegrationStore = defineStore('integrations', () => {
 
       // 2) Registrar en backend
       const response = await instagramService.instagramConnect(businessId, token)
+      // Guardamos cuentas y token si llegan desde el backend
+      instagramAccounts.value = response.accounts || []
+      instagramTokenInfo.value = response.token || null
       return response
     } catch (err: any) {
       const message = igSdkError.value || err?.message || 'Error al conectar Instagram'
@@ -203,6 +211,35 @@ export const useIntegrationStore = defineStore('integrations', () => {
       throw new Error(message)
     } finally {
       isConnecting.value = false
+    }
+  }
+
+  /**
+   * Finaliza la vinculación con una cuenta de Instagram específica (Business)
+   */
+  const finalizeInstagramAccount = async (
+    businessId: string,
+    account: IInstagramLinkedAccount,
+  ) => {
+    if (!businessId) {
+      throw new Error('Se requiere el ID del negocio para finalizar la conexión de Instagram')
+    }
+
+    if (!account?.instagramAccountId || !account?.pageId) {
+      throw new Error('Faltan datos de la cuenta de Instagram o de la página asociada')
+    }
+
+    try {
+      const response = await instagramService.instagramFinalizeAccount(businessId, account)
+      if (response?.integration) {
+        upsertIntegration(response.integration)
+      }
+      return response
+    } catch (err: any) {
+      const message = err?.message || 'Error al vincular la cuenta de Instagram'
+      instagramError.value = message
+      console.error('[IntegrationStore] ❌ Error en finalizeInstagramAccount:', err)
+      throw new Error(message)
     }
   }
 
@@ -250,6 +287,7 @@ export const useIntegrationStore = defineStore('integrations', () => {
     connectFacebook,
     finalizeFacebookPage,
     connectInstagram,
+    finalizeInstagramAccount,
     loadIntegrations,
     clearError,
     clearPages,
@@ -257,6 +295,8 @@ export const useIntegrationStore = defineStore('integrations', () => {
     clearIntegrations,
     // Estado Instagram
     instagramError,
+    instagramAccounts,
+    instagramTokenInfo,
     integrations,
   }
 })
