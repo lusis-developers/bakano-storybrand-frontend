@@ -579,10 +579,9 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
 
 .modal-body {
   padding: 1.25rem 1.25rem 1rem;
-  // Allow vertical scrolling for long content (mobile-safe)
   flex: 1 1 auto;
   overflow-y: auto;
-  -webkit-overflow-scrolling: touch; // smooth scrolling on iOS
+  -webkit-overflow-scrolling: touch;
 }
 
 /* Modal body heading (Paso 1: Conectar Facebook) */
