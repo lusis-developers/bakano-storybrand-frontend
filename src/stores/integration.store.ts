@@ -11,6 +11,7 @@ import type {
   IInstagramConnectResponse,
   IIntegrationRecord,
   IGetIntegrationsResponse,
+  IFacebookPageInfo,
 } from '@/types/integration.types'
 import type { IntegrationType } from '@/types/integration.types'
 
@@ -135,7 +136,7 @@ export const useIntegrationStore = defineStore('integrations', () => {
   const finalizeFacebookPage = async (
     businessId: string,
     page: IIntegrationPage,
-  ): Promise<{ message: string; integration: IIntegrationRecord }> => {
+  ): Promise<{ message: string; integration: IIntegrationRecord; page?: IFacebookPageInfo }> => {
     if (!businessId) {
       throw new Error('Se requiere el ID del negocio para finalizar la integración de Facebook')
     }
