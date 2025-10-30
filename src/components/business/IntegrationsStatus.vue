@@ -1,5 +1,8 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
+import ConnectionStatusColumn from './integrations/ConnectionStatusColumn.vue'
+import FacebookStep from './integrations/FacebookStep.vue'
+import InstagramStep from './integrations/InstagramStep.vue'
 import { useBusinessStore } from '@/stores/business.store'
 import { useFacebookSDK } from '@/composables/useFacebookSDK'
 import useIntegrationStore from '@/stores/integration.store'
@@ -147,6 +150,19 @@ const closeWizard = () => {
   isWizardOpen.value = false
   isRelinkingFacebook.value = false
   isRelinkingInstagram.value = false
+}
+
+// Iniciar flujos de revinculación desde componentes hijos
+const startRelinkingFacebook = () => {
+  if (isSDKLoading.value || isConnecting.value) return
+  isRelinkingFacebook.value = true
+  connectFacebook()
+}
+
+const startRelinkingInstagram = () => {
+  if (isConnectingInstagram.value) return
+  isRelinkingInstagram.value = true
+  connectInstagramFlow()
 }
 
 const connectFacebook = async () => {
@@ -325,326 +341,53 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
           <div class="modal-body">
             <div class="wizard-layout">
               <!-- Columna de estado de conexión -->
-              <div class="status-column">
-                <h6><i class="fa-solid fa-circle-nodes"></i> Estado de la Conexión</h6>
-                <ul class="status-list">
-                  <li :class="hasFacebookIntegrationRecord ? (facebookConnectedIntegration ? 'connected' : (isFacebookPending ? 'pending' : 'disconnected')) : 'disconnected'">
-                    <i :class="facebookConnectedIntegration ? 'fa-solid fa-check-circle' : (isFacebookPending ? 'fa-solid fa-hourglass-half' : 'fa-regular fa-circle-xmark')"></i>
-                    <div>
-                      <span>Facebook</span>
-                      <small>{{ facebookConnectedIntegration ? 'Conectado' : (isFacebookPending ? 'Pendiente' : 'No conectado') }}</small>
-                    </div>
-                  </li>
-                  <li :class="(igIsConnectedFromStore || connectedInstagram) ? 'connected' : 'disconnected'">
-                    <i :class="(igIsConnectedFromStore || connectedInstagram) ? 'fa-solid fa-check-circle' : 'fa-regular fa-circle-xmark'"></i>
-                    <div>
-                      <span>Instagram</span>
-                      <small>{{ (igIsConnectedFromStore || connectedInstagram) ? 'Conectado' : 'No conectado' }}</small>
-                    </div>
-                  </li>
-                </ul>
-              </div>
+              <ConnectionStatusColumn
+                :hasFacebookIntegrationRecord="hasFacebookIntegrationRecord"
+                :facebookConnectedIntegration="facebookConnectedIntegration"
+                :isFacebookPending="isFacebookPending"
+                :igConnected="Boolean(igIsConnectedFromStore || connectedInstagram)"
+              />
 
               <!-- Columna de acciones del Wizard -->
               <div class="wizard-column">
+                <FacebookStep
+                  :hasFacebookIntegrationRecord="hasFacebookIntegrationRecord"
+                  :facebookConnectedIntegration="facebookConnectedIntegration"
+                  :userPages="userPages"
+                  :isSDKLoading="isSDKLoading"
+                  :isConnecting="isConnecting"
+                  :connectionError="connectionError"
+                  :successMessage="successMessage"
+                  :savingPageId="savingPageId"
+                  :isRelinkingFacebook="isRelinkingFacebook"
+                  :connectedFacebookPage="connectedFacebookPage"
+                  :isFacebookPending="isFacebookPending"
+                  :sanitizeUrl="sanitizeUrl"
+                  :onConnectFacebook="connectFacebook"
+                  :onSelectPage="selectPage"
+                  :onStartRelinkingFacebook="startRelinkingFacebook"
+                />
 
-                <!-- Paso 1: Conectar Facebook (solo si no hay integración previa) -->
-                <div class="step" v-if="!hasFacebookIntegrationRecord && !facebookConnectedIntegration && !userPages.length">
-                  <span class="step-badge"><i class="fa-solid fa-hashtag"></i> Paso 1</span>
-                  <h4><i class="fab fa-facebook"></i> Conectar Facebook</h4>
-                  <p class="helper">
-                    Usa permisos profesionales para obtener tus páginas de Facebook y publicar de forma segura.
-                  </p>
-
-                  <div class="feedback" v-if="connectionError || successMessage">
-                    <p v-if="connectionError" class="error"><i class="fa-solid fa-circle-exclamation"></i> {{ connectionError }}</p>
-                    <p v-else-if="successMessage" class="success"><i class="fa-solid fa-circle-check"></i> {{ successMessage }}</p>
-                  </div>
-
-                  <button
-                    type="button"
-                    class="btn btn-primary"
-                    :disabled="isSDKLoading || isConnecting"
-                    @click="connectFacebook"
-                  >
-                    <span v-if="isConnecting || isSDKLoading"><i class="fa-solid fa-spinner fa-spin"></i> Conectando...</span>
-                    <span v-else><i class="fab fa-facebook"></i> Conectar</span>
-                  </button>
-                </div>
-
-                <!-- Paso 1 (post conexión o pendiente): Seleccionar una página -->
-                <div class="step" v-else>
-                  <span class="step-badge"><i class="fa-solid fa-hashtag"></i> Paso 1</span>
-                  <h4>
-                    <i class="fab fa-facebook"></i>
-                    {{ facebookConnectedIntegration && !isRelinkingFacebook ? 'Página de Facebook conectada' : 'Selecciona una página de Facebook' }}
-                  </h4>
-                  <p class="helper">
-                    {{ facebookConnectedIntegration && !isRelinkingFacebook
-                      ? 'Ya tienes una página conectada. Si quieres cambiarla, puedes revincular.'
-                      : 'Elige la página que deseas vincular a tu negocio.'
-                    }}
-                  </p>
-
-                  <div class="feedback" v-if="connectionError || successMessage">
-                    <p v-if="connectionError" class="error"><i class="fa-solid fa-circle-exclamation"></i> {{ connectionError }}</p>
-                    <p v-else-if="successMessage" class="success"><i class="fa-solid fa-circle-check"></i> {{ successMessage }}</p>
-                  </div>
-
-                  <div class="pages-box" v-if="!facebookConnectedIntegration || isRelinkingFacebook">
-                    <template v-if="userPages.length">
-                      <strong><i class="fa-solid fa-list"></i> Páginas encontradas</strong>
-                      <ul>
-                        <li v-for="p in userPages" :key="p.id" class="page-item">
-                          <div class="left">
-                            <img v-if="p.pictureUrl" :src="sanitizeUrl(p.pictureUrl)" alt="Logo de la página" class="avatar" />
-                            <i v-else class="fa-solid fa-flag placeholder"></i>
-                            <div class="info">
-                              <span class="page-name">{{ p.name }}</span>
-                              <span v-if="p.category" class="category">{{ p.category }}</span>
-                              <span class="page-id">ID: {{ p.id }}</span>
-                            </div>
-                          </div>
-                          <div class="actions">
-                            <button
-                              type="button"
-                              class="btn btn-primary btn-connect"
-                              :disabled="savingPageId === p.id"
-                              @click="selectPage(p)"
-                            >
-                              <template v-if="savingPageId === p.id">
-                                <i class="fa-solid fa-spinner fa-spin"></i>
-                                <span>Conectando...</span>
-                              </template>
-                              <template v-else>
-                                <i class="fa-solid fa-link"></i>
-                                <span>Conectar</span>
-                              </template>
-                            </button>
-                          </div>
-                        </li>
-                      </ul>
-                    </template>
-                    <template v-else>
-                      <div class="empty-state">
-                        <p>
-                          <i class="fa-solid fa-circle-info"></i>
-                          <span>
-                            {{ isFacebookPending ? 'Tu integración de Facebook está pendiente de seleccionar página.' : 'Aún no hemos cargado tus páginas de Facebook.' }}
-                          </span>
-                        </p>
-                        <button type="button" class="btn btn-secondary" :disabled="isSDKLoading || isConnecting" @click="connectFacebook">
-                          <i class="fa-solid fa-rotate"></i>
-                          <span>{{ isFacebookPending ? 'Cargar páginas' : 'Obtener páginas' }}</span>
-                        </button>
-                      </div>
-                    </template>
-                  </div>
-
-                  <!-- Resumen de la página conectada -->
-                  <div v-else class="connected-summary">
-                    <div class="summary-box">
-                      <div class="left">
-                        <img
-                          v-if="connectedFacebookPage?.picture?.size150 || connectedFacebookPage?.picture?.normal || connectedFacebookPage?.picture?.url"
-                          :src="sanitizeUrl(connectedFacebookPage?.picture?.size150 || connectedFacebookPage?.picture?.normal || connectedFacebookPage?.picture?.url)"
-                          alt="Logo de la página conectada"
-                          class="avatar"
-                        />
-                        <i v-else class="fa-solid fa-flag placeholder"></i>
-                        <div class="info">
-                          <p class="success">
-                            <i class="fa-solid fa-circle-check"></i>
-                            <span>
-                              Facebook conectado a: <strong>{{ facebookConnectedIntegration?.metadata?.pageName }}</strong>
-                              <span v-if="facebookConnectedIntegration?.metadata?.pageId">(ID: {{ facebookConnectedIntegration?.metadata?.pageId }})</span>
-                              <span v-if="typeof facebookConnectedIntegration?.metadata?.followersCount === 'number'" class="page-id">
-                                · Seguidores: {{ facebookConnectedIntegration?.metadata?.followersCount }}
-                              </span>
-                            </span>
-                          </p>
-                        </div>
-                      </div>
-                      <div class="actions">
-                        <button
-                          type="button"
-                          class="btn btn-secondary"
-                          :disabled="isSDKLoading || isConnecting"
-                          @click="() => { isRelinkingFacebook = true; connectFacebook() }"
-                        >
-                          <i class="fa-solid fa-rotate"></i>
-                          <span>Revincular página</span>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-
-                  <!-- Paso 2: Conectar Instagram -->
-                  <div class="step step-ig" v-if="facebookConnectedIntegration || igIsConnectedFromStore">
-                    <span class="step-badge"><i class="fa-solid fa-hashtag"></i> Paso 2</span>
-                    <h4><i class="fab fa-instagram"></i> Conectar Instagram</h4>
-                    <p class="helper">
-                      Conecta tu cuenta de Instagram para habilitar análisis y publicaciones.
-                    </p>
-
-                    <div class="feedback" v-if="instagramErrorMessage || instagramSuccessMessage">
-                      <p v-if="instagramErrorMessage" class="error"><i class="fa-solid fa-circle-exclamation"></i> {{ instagramErrorMessage }}</p>
-                      <p v-else-if="instagramSuccessMessage" class="success"><i class="fa-solid fa-circle-check"></i> {{ instagramSuccessMessage }}</p>
-                    </div>
-
-                    <!-- Resumen de Instagram conectado -->
-                    <div v-if="connectedInstagram && !isRelinkingInstagram" class="connected-summary">
-                      <div class="summary-box">
-                        <div class="left">
-                          <img
-                            v-if="connectedInstagram?.profilePictureUrl"
-                            :src="sanitizeUrl(connectedInstagram?.profilePictureUrl)"
-                            alt="Avatar de la cuenta de Instagram"
-                            class="avatar"
-                          />
-                          <i v-else class="fa-brands fa-instagram placeholder"></i>
-                          <div class="info">
-                            <p class="success">
-                              <i class="fa-solid fa-circle-check"></i>
-                              <span>
-                                Instagram conectado: <strong>@{{ connectedInstagram?.username }}</strong>
-                                <span v-if="typeof connectedInstagram?.followersCount === 'number'" class="page-id">
-                                  · Seguidores: {{ connectedInstagram?.followersCount }}
-                                </span>
-                              </span>
-                            </p>
-                          </div>
-                        </div>
-                        <div class="actions">
-                          <button
-                            type="button"
-                            class="btn btn-secondary"
-                            :disabled="isConnectingInstagram"
-                            @click="() => { isRelinkingInstagram = true; connectInstagramFlow() }"
-                          >
-                            <i class="fa-solid fa-rotate"></i>
-                            <span>Revincular cuenta</span>
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
-                    <!-- Si aún no cargamos cuentas de IG (incl. revincular), mostrar botón para traerlas -->
-                    <div v-else-if="!instagramAccounts.length">
-                      <button
-                        type="button"
-                        class="btn btn-primary"
-                        :disabled="isConnectingInstagram"
-                        @click="connectInstagramFlow"
-                      >
-                        <span v-if="isConnectingInstagram"><i class="fa-solid fa-spinner fa-spin"></i> Conectando Instagram...</span>
-                        <span v-else><i class="fab fa-instagram"></i> Conectar Instagram</span>
-                      </button>
-                    </div>
-
-                    <!-- Listado de cuentas de Instagram: Sugerido y Otros -->
-                    <div class="pages-box" v-else>
-                      <!-- Sugerido (si hay página de FB conectada que coincida con alguna cuenta) -->
-                      <template v-if="suggestedInstagramAccounts.length">
-                        <strong>
-                          <i class="fa-solid fa-thumbtack"></i>
-                          Sugerido para la página conectada
-                          <span class="count">({{ suggestedInstagramAccounts.length }})</span>
-                        </strong>
-                        <ul>
-                          <li v-for="acc in suggestedInstagramAccounts" :key="acc.instagramAccountId" class="page-item">
-                            <div class="left">
-                              <img
-                                v-if="acc.instagramProfilePictureUrl"
-                                :src="sanitizeUrl(acc.instagramProfilePictureUrl)"
-                                alt="Avatar Instagram"
-                                class="avatar"
-                              />
-                              <i v-else class="fa-brands fa-instagram placeholder"></i>
-                              <div class="info">
-                                <span class="page-name">@{{ acc.instagramUsername }}</span>
-                                <span class="category">{{ acc.pageName }}</span>
-                                <span v-if="typeof acc.followersCount === 'number'" class="page-id">Seguidores: {{ acc.followersCount }}</span>
-                              </div>
-                            </div>
-                            <div class="actions">
-                              <button
-                                type="button"
-                                class="btn btn-primary btn-connect"
-                                :disabled="savingInstagramId === acc.instagramAccountId"
-                                @click="selectInstagramAccount(acc)"
-                              >
-                                <template v-if="savingInstagramId === acc.instagramAccountId">
-                                  <i class="fa-solid fa-spinner fa-spin"></i>
-                                  <span>Vinculando...</span>
-                                </template>
-                                <template v-else>
-                                  <i class="fa-solid fa-link"></i>
-                                  <span>Vincular</span>
-                                </template>
-                              </button>
-                            </div>
-                          </li>
-                        </ul>
-                      </template>
-
-                      <!-- Otras cuentas disponibles (si no es la sugerida o si no hay sugeridas) -->
-                      <strong>
-                        <i class="fa-solid fa-list"></i>
-                        <template v-if="suggestedInstagramAccounts.length">Otras cuentas disponibles</template>
-                        <template v-else>Cuentas de Instagram encontradas</template>
-                        <span class="count">
-                          (
-                          {{ (suggestedInstagramAccounts.length ? otherInstagramAccounts.length : instagramAccounts.length) }}
-                          )
-                        </span>
-                      </strong>
-                      <ul>
-                        <li
-                          v-for="acc in (suggestedInstagramAccounts.length ? otherInstagramAccounts : instagramAccounts)"
-                          :key="acc.instagramAccountId"
-                          class="page-item"
-                        >
-                          <div class="left">
-                            <img
-                              v-if="acc.instagramProfilePictureUrl"
-                              :src="sanitizeUrl(acc.instagramProfilePictureUrl)"
-                              alt="Avatar Instagram"
-                              class="avatar"
-                            />
-                            <i v-else class="fa-brands fa-instagram placeholder"></i>
-                            <div class="info">
-                              <span class="page-name">@{{ acc.instagramUsername }}</span>
-                              <span class="category">{{ acc.pageName }}</span>
-                              <span v-if="typeof acc.followersCount === 'number'" class="page-id">Seguidores: {{ acc.followersCount }}</span>
-                            </div>
-                          </div>
-                          <div class="actions">
-                            <button
-                              type="button"
-                              class="btn btn-primary btn-connect"
-                              :disabled="savingInstagramId === acc.instagramAccountId"
-                              @click="selectInstagramAccount(acc)"
-                            >
-                              <template v-if="savingInstagramId === acc.instagramAccountId">
-                                <i class="fa-solid fa-spinner fa-spin"></i>
-                                <span>Vinculando...</span>
-                              </template>
-                              <template v-else>
-                                <i class="fa-solid fa-link"></i>
-                                <span>Vincular</span>
-                              </template>
-                            </button>
-                          </div>
-                        </li>
-                      </ul>
-                    </div>
-                  </div>
-                </div>
+                <InstagramStep
+                  :facebookConnectedIntegration="facebookConnectedIntegration"
+                  :igIsConnectedFromStore="igIsConnectedFromStore"
+                  :connectedInstagram="connectedInstagram"
+                  :isRelinkingInstagram="isRelinkingInstagram"
+                  :isConnectingInstagram="isConnectingInstagram"
+                  :instagramErrorMessage="instagramErrorMessage"
+                  :instagramSuccessMessage="instagramSuccessMessage"
+                  :instagramAccounts="instagramAccounts"
+                  :suggestedInstagramAccounts="suggestedInstagramAccounts"
+                  :otherInstagramAccounts="otherInstagramAccounts"
+                  :savingInstagramId="savingInstagramId"
+                  :sanitizeUrl="sanitizeUrl"
+                  :onConnectInstagramFlow="connectInstagramFlow"
+                  :onSelectInstagramAccount="selectInstagramAccount"
+                  :onStartRelinkingInstagram="startRelinkingInstagram"
+                />
               </div>
             </div>
           </div>
-
           <div class="modal-footer">
             <button
               v-if="allConnected"
