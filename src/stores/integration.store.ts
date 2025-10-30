@@ -72,6 +72,17 @@ export const useIntegrationStore = defineStore('integrations', () => {
     integrations.value = []
   }
 
+  const upsertIntegration = (record: IIntegrationRecord) => {
+    const idx = integrations.value.findIndex(
+      (i) => i._id === (record as any)._id || i.type === record.type,
+    )
+    if (idx >= 0) {
+      integrations.value[idx] = record
+    } else {
+      integrations.value.push(record)
+    }
+  }
+
   /**
    * Orquesta el flujo de conexión de Facebook:
    * 1) Solicita permisos y obtiene el token via SDK
@@ -112,6 +123,47 @@ export const useIntegrationStore = defineStore('integrations', () => {
       const message = sdkError.value || err?.message || 'Error al conectar Facebook'
       error.value = message
       console.error('[IntegrationStore] ❌ Error en connectFacebook:', err)
+      throw new Error(message)
+    } finally {
+      isConnecting.value = false
+    }
+  }
+
+  /**
+   * Finaliza la integración de Facebook guardando la página seleccionada y su token.
+   */
+  const finalizeFacebookPage = async (
+    businessId: string,
+    page: IIntegrationPage,
+  ): Promise<{ message: string; integration: IIntegrationRecord }> => {
+    if (!businessId) {
+      throw new Error('Se requiere el ID del negocio para finalizar la integración de Facebook')
+    }
+    if (!page?.id || !page?.accessToken) {
+      throw new Error('Faltan datos de la página: id y accessToken son requeridos')
+    }
+
+    isConnecting.value = true
+    clearError()
+
+    try {
+      const response = await facebookService.facebookConnectPage(
+        businessId,
+        page.id,
+        page.name,
+        page.accessToken,
+      )
+
+      // Actualiza la lista de integraciones en memoria
+      if (response?.integration) {
+        upsertIntegration(response.integration)
+      }
+
+      return response
+    } catch (err: any) {
+      const message = err?.message || 'Error al guardar la página seleccionada'
+      error.value = message
+      console.error('[IntegrationStore] ❌ Error en finalizeFacebookPage:', err)
       throw new Error(message)
     } finally {
       isConnecting.value = false
@@ -195,6 +247,7 @@ export const useIntegrationStore = defineStore('integrations', () => {
     getIntegrationByType,
     // Acciones
     connectFacebook,
+    finalizeFacebookPage,
     connectInstagram,
     loadIntegrations,
     clearError,
