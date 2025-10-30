@@ -94,7 +94,15 @@ export interface IInstagramTokenInfo {
   expiresAt?: string
 }
 
+export interface IInstagramProfile {
+  id: string
+  username: string
+  profilePictureUrl?: string
+  followersCount?: number
+}
+
 export interface IInstagramFinalizeResponse {
   message: string
   integration: IIntegrationRecord
+  instagram?: IInstagramProfile
 }
