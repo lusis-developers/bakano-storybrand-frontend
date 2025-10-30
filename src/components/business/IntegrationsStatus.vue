@@ -2,6 +2,7 @@
 import { ref } from 'vue'
 import { useBusinessStore } from '@/stores/business.store'
 import { useFacebookSDK } from '@/composables/useFacebookSDK'
+import useIntegrationStore from '@/stores/integration.store'
 import facebookService from '@/services/facebook.service'
 import type { IBusiness } from '@/types/business.types'
 import type { IIntegrationPage } from '@/types/integration.types'
@@ -15,6 +16,10 @@ const isConnecting = ref(false)
 const connectionError = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 const userPages = ref<IIntegrationPage[]>([])
+const savingPageId = ref<string | null>(null)
+
+// Store de integraciones
+const integrationStore = useIntegrationStore()
 
 // Emitir eventos al padre (mantener compatibilidad con BusinessCard.vue)
 const emit = defineEmits<{
@@ -78,10 +83,29 @@ const sanitizeUrl = (url?: string): string => {
 }
 
 // Acción al seleccionar una página específica para vincular
-const selectPage = (page: IIntegrationPage) => {
-  // Emitimos al padre por si quiere manejar el enlace real en backend
-  emit('connect-facebook', page)
-  successMessage.value = `Página "${page.name}" seleccionada para conectar.`
+const selectPage = async (page: IIntegrationPage) => {
+  try {
+    connectionError.value = null
+    successMessage.value = null
+    savingPageId.value = page.id
+
+    // Emitimos al padre por compatibilidad (si quiere observar el evento)
+    emit('connect-facebook', page)
+
+    const businessId =
+      props.business?._id ||
+      props.business?.id ||
+      businessStore.currentBusiness?._id ||
+      businessStore.currentBusiness?.id
+    if (!businessId) throw new Error('No hay negocio seleccionado para finalizar la integración')
+
+    const { message } = await integrationStore.finalizeFacebookPage(businessId, page)
+    successMessage.value = message || `Integración finalizada para la página "${page.name}".`
+  } catch (err: any) {
+    connectionError.value = err?.message || 'Error al finalizar la integración con la página'
+  } finally {
+    savingPageId.value = null
+  }
 }
 </script>
 
@@ -156,9 +180,20 @@ const selectPage = (page: IIntegrationPage) => {
                       </div>
                     </div>
                     <div class="actions">
-                      <button type="button" class="btn btn-primary btn-connect" @click="selectPage(p)">
-                        <i class="fa-solid fa-link"></i>
-                        <span>Conectar</span>
+                      <button
+                        type="button"
+                        class="btn btn-primary btn-connect"
+                        :disabled="savingPageId === p.id"
+                        @click="selectPage(p)"
+                      >
+                        <template v-if="savingPageId === p.id">
+                          <i class="fa-solid fa-spinner fa-spin"></i>
+                          <span>Conectando...</span>
+                        </template>
+                        <template v-else>
+                          <i class="fa-solid fa-link"></i>
+                          <span>Conectar</span>
+                        </template>
                       </button>
                     </div>
                   </li>
@@ -387,9 +422,9 @@ const selectPage = (page: IIntegrationPage) => {
 
 .success {
   font-size: 0.95rem;
-  color: $BAKANO-PINK;
-  background: rgba($BAKANO-PINK, 0.08);
-  border: 1px solid lighten($BAKANO-PINK, 24%);
+  color: $alert-success;
+  background: rgba($alert-success, 0.08);
+  border: 1px solid lighten($alert-success, 24%);
   padding: 0.6rem 0.85rem;
   border-radius: 10px;
   display: inline-flex;
