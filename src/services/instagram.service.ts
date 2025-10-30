@@ -53,7 +53,7 @@ class InstagramService extends APIBase {
         followersCount: account.followersCount,
       }
       const response: AxiosResponse<IInstagramFinalizeResponse> = await this.post(
-        `${this.endpoint}/instagram/connect-account`,
+        `${this.endpoint}/instagram/connect-page`,
         payload,
       )
       return response.data
