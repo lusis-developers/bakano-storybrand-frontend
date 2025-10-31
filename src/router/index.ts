@@ -84,6 +84,12 @@ const router = createRouter({
       component: () => import('../views/Integrations/InstagramConnection.vue'),
       meta: { requiresAuth: true, requiresVerified: true },
     },
+    {
+      path: '/social/manager',
+      name: 'social-manager',
+      component: () => import('../views/SocialManagerView.vue'),
+      meta: { requiresAuth: true, requiresVerified: true },
+    },
   ],
 })
 
@@ -92,12 +98,12 @@ router.beforeEach(async (to, from, next) => {
   // Iniciar tracking de navegación lenta
   navigationStartTime = Date.now()
   isNavigating.value = true
-  
+
   // Configurar timer para detectar navegación lenta (3 segundos)
   if (navigationTimer) {
     clearTimeout(navigationTimer)
   }
-  
+
   navigationTimer = setTimeout(() => {
     if (isNavigating.value && !showSlowWarning.value) {
       // Mostrar aviso de conexión lenta si la navegación toma más de 3 segundos
@@ -170,16 +176,16 @@ router.beforeEach(async (to, from, next) => {
 router.afterEach((to, from) => {
   // Limpiar estado de navegación
   isNavigating.value = false
-  
+
   // Limpiar timer si existe
   if (navigationTimer) {
     clearTimeout(navigationTimer)
     navigationTimer = null
   }
-  
+
   // Calcular duración total de navegación
   const navigationDuration = Date.now() - navigationStartTime
-  
+
   // Si la navegación tomó más de 3 segundos, mostrar aviso brevemente
   if (navigationDuration >= 3000 && !showSlowWarning.value) {
     showSlowWarning.value = true
@@ -194,12 +200,12 @@ router.afterEach((to, from) => {
 router.onError((error) => {
   // Limpiar estado de navegación en caso de error
   isNavigating.value = false
-  
+
   if (navigationTimer) {
     clearTimeout(navigationTimer)
     navigationTimer = null
   }
-  
+
   console.error('Error de navegación:', error)
 })
 
