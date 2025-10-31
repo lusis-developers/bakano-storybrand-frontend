@@ -252,9 +252,22 @@ export const useIntegrationStore = defineStore('integrations', () => {
     }
 
     try {
+      console.log('[IntegrationStore] 🔄 loadIntegrations llamado con businessId:', businessId)
       const response = await integrationService.getIntegrations(businessId)
       integrations.value = response.data || []
       integrationsCount.value = typeof response.count === 'number' ? response.count : integrations.value.length
+      console.log('[IntegrationStore] ✅ Integraciones actualizadas:', {
+        count: integrationsCount.value,
+        types: (integrations.value || []).map((i: any) => i.type),
+        pictures: (integrations.value || []).map((i: any) => ({
+          type: i.type,
+          rootPicture: i?.picture,
+          mdPicture: i?.metadata?.picture,
+          pagePictureUrl: i?.metadata?.pagePictureUrl,
+          profilePictureUrl: i?.metadata?.profilePictureUrl,
+          instagramProfilePictureUrl: i?.metadata?.instagramProfilePictureUrl,
+        })),
+      })
       return response
     } catch (err: any) {
       const message = err?.message || 'Error al obtener integraciones'
