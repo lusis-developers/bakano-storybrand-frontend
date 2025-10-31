@@ -173,11 +173,11 @@ function logout() {
                   </div>
                 </button>
                 
-                <button class="action-btn disabled" disabled title="Próximamente disponible">
-                  <div class="action-icon"><i class="fas fa-chart-bar"></i></div>
+                <button class="action-btn" @click="router.push('/social/manager')" title="Gestionar Redes Sociales">
+                  <div class="action-icon"><i class="fas fa-share-nodes"></i></div>
                   <div class="action-content">
-                    <h3>Ver Análisis</h3>
-                    <p>Próximamente</p>
+                    <h3>Gestionar Redes Sociales</h3>
+                    <p>Programa y publica en Facebook e Instagram</p>
                   </div>
                 </button>
               </div>
