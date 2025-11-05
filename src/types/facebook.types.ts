@@ -41,3 +41,60 @@ export interface PublishVideoPostResponse {
     [key: string]: any
   }
 }
+
+// Posts programados (scheduled)
+export interface ScheduledPagePost {
+  id: string
+  scheduled_publish_time: number // unix seconds
+  message?: string
+  status_type?: string
+  is_published?: boolean
+  created_time?: string
+  permalink_url?: string
+  full_picture?: string
+  attachments?: ScheduledAttachments
+}
+
+export type SortOrder = 'asc' | 'desc'
+
+export interface ScheduledPostsQuery {
+  limit?: number
+  from?: number | string
+  to?: number | string
+  q?: string
+  sort?: SortOrder
+}
+
+export interface ScheduledPostsResponse {
+  message: string
+  page: { id: string; name?: string }
+  count: number
+  filters: { limit: number; from?: number; to?: number; q?: string; sort: SortOrder }
+  stats: { range: { from: number | null; to: number | null }; byDay: Record<string, number> }
+  posts: ScheduledPagePost[]
+}
+
+// Tipos extendidos para adjuntos/attachments en posts programados
+export interface ScheduledMediaImage {
+  height: number
+  src: string
+  width: number
+}
+
+export interface ScheduledMedia {
+  image?: ScheduledMediaImage
+  source?: string
+  // Otros posibles campos del Graph API se dejan como opcionales
+  [key: string]: any
+}
+
+export interface ScheduledAttachment {
+  media?: ScheduledMedia
+  type?: string
+  url?: string
+  [key: string]: any
+}
+
+export interface ScheduledAttachments {
+  data: ScheduledAttachment[]
+}
