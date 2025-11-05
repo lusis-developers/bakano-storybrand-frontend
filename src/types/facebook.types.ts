@@ -13,3 +13,13 @@ export interface PublishTextPostResponse {
   message: string
   data: CreatePostResponse
 }
+
+// Respuesta genérica para publicación de foto(s) o carrusel
+// El backend devuelve:
+// { message: "Facebook <photo|carousel> post created successfully", data: { id: string, ... } }
+export interface PublishPhotoPostResponse {
+  message: string
+  // Puede variar según sea foto única o carrusel; al menos contiene un id
+  // Usamos any para no forzar una forma específica aquí
+  data: any
+}
