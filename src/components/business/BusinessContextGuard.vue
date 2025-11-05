@@ -23,13 +23,10 @@ const isReady = computed(() => !!currentBusiness.value)
 async function initializeBusinessContext() {
   try {
     isInitializing.value = true
-    console.log('[BusinessContextGuard] 🔧 Inicializando contexto de negocio...')
 
     // Cargar lista de negocios si no está disponible
     if (businesses.value.length === 0) {
-      console.log('[BusinessContextGuard] 📥 Cargando negocios del usuario...')
       await businessStore.fetchBusinesses()
-      console.log('[BusinessContextGuard] ✅ Negocios cargados:', businesses.value.map(b => ({ id: (b as any).id || (b as any)._id, name: b.name })))
     }
 
     // Si no hay negocios, mostramos el overlay para que el usuario cree uno en otra vista
@@ -53,10 +50,6 @@ async function initializeBusinessContext() {
       if (first) {
         businessStore.setCurrentBusiness(first)
         selectedBusinessId.value = (first as any).id || (first as any)._id
-        console.log('[BusinessContextGuard] 🎯 Negocio seleccionado automáticamente:', {
-          id: selectedBusinessId.value,
-          name: first.name,
-        })
       }
     }
   } catch (err) {
@@ -132,7 +125,8 @@ watch(businesses, (list) => {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 9999; /* por encima de todo en SocialManagerView */
+  z-index: 9999;
+  /* por encima de todo en SocialManagerView */
 }
 
 .business-guard-panel {
@@ -140,7 +134,7 @@ watch(businesses, (list) => {
   max-width: 560px;
   background: #fff;
   border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.15);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
   padding: 20px;
   text-align: center;
 }
