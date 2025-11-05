@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useToast } from '../../composables/useToast'
 import { useBusinessStore } from '@/stores/business.store'
 import { useFacebookPublishStore } from '@/stores/social/facebookPublish.store'
@@ -97,6 +97,18 @@ const hoursOfDay = computed(() => {
 // Toast para feedback cuando el usuario intenta programar en el pasado
 const { triggerToast } = useToast()
 
+// Reloj interno para marcar horas/slots pasados
+const now = ref(new Date())
+let clockInterval: number | undefined
+onMounted(() => {
+  clockInterval = window.setInterval(() => {
+    now.value = new Date()
+  }, 30000)
+})
+onUnmounted(() => {
+  if (clockInterval) clearInterval(clockInterval)
+})
+
 function combineDateAndHour(base: Date, hour: string): Date {
   const [hStr, mStr] = hour.split(':')
   const d = new Date(base)
@@ -106,8 +118,7 @@ function combineDateAndHour(base: Date, hour: string): Date {
 
 function onHourCellClick(day: { labelLong: string; date: Date }, hour: string) {
   const target = combineDateAndHour(day.date, hour)
-  const now = new Date()
-  if (target.getTime() <= now.getTime()) {
+  if (target.getTime() <= now.value.getTime()) {
     triggerToast('La fecha y hora seleccionadas ya pasaron', 'error', 3000)
     return
   }
@@ -192,6 +203,10 @@ function openPermalink(url?: string) {
     window.open(url.replace(/\s|`/g, ''), '_blank')
   } catch {}
 }
+function isPastCell(day: { date: Date }, hour: string): boolean {
+  const target = combineDateAndHour(day.date, hour)
+  return target.getTime() <= now.value.getTime()
+}
 </script>
 
 <template>
@@ -233,6 +248,7 @@ function openPermalink(url?: string) {
                 v-for="hour in hoursOfDay"
                 :key="`${day.iso}-${hour}`"
                 class="hour-cell"
+                :class="{ 'is-past': isPastCell(day, hour) }"
                 @click="onHourCellClick(day, hour)"
               >
                 <div
@@ -409,6 +425,13 @@ $cell-height: 96px;
       border-bottom: none;
     }
 
+    &.is-past {
+      background-color: $alert-error-bg;
+      cursor: not-allowed;
+      border-top-color: $alert-error-bg;
+      border-bottom-color: $alert-error-bg;
+    }
+
     .scheduled-post {
       position: relative;
       display: flex;
@@ -465,6 +488,9 @@ $cell-height: 96px;
 .day-column.is-today-column {
   .hour-cell {
     background-color: $overlay-purple;
+    &.is-past {
+      background-color: $alert-error-bg;
+    }
   }
 }
 
