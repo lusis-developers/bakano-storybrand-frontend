@@ -62,6 +62,44 @@ class InstagramService extends APIBase {
       throw new Error(message)
     }
   }
+
+  /**
+   * Publica una foto o carrusel en la cuenta de Instagram del negocio.
+   * Backend: POST /integrations/instagram/post/publish/photo/:businessId
+   * - Campo de archivos: 'images' (hasta 10)
+   * - Campos extra en form-data: caption, published, scheduled_publish_time
+   */
+  async publishPhotoOrCarouselPost(
+    businessId: string,
+    payload: { caption?: string; published?: boolean; scheduled_publish_time?: number | string },
+    images: File[],
+  ): Promise<{ message: string; data: any }> {
+    try {
+      const form = new FormData()
+      // Campos de texto
+      if (payload?.caption) form.append('caption', payload.caption)
+      if (typeof payload?.published !== 'undefined') form.append('published', String(!!payload.published))
+      if (typeof payload?.scheduled_publish_time !== 'undefined') {
+        form.append('scheduled_publish_time', String(payload.scheduled_publish_time))
+      }
+
+      // Archivos (campo 'images')
+      for (const file of images || []) {
+        if (file) {
+          form.append('images', file, (file as any)?.name || 'image.jpg')
+        }
+      }
+
+      const response: AxiosResponse<{ message: string; data: any }> = await this.post(
+        `${this.endpoint}/instagram/post/publish/photo/${businessId}`,
+        form,
+      )
+      return response.data
+    } catch (error: any) {
+      const message = error?.message || 'Error al publicar la(s) foto(s) en Instagram'
+      throw new Error(message)
+    }
+  }
 }
 
 const instagramService = new InstagramService()
