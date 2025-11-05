@@ -90,9 +90,11 @@ async function scheduleNow() {
   }
   const message = (postText.value || '').trim()
   const images = uploadedMedia.value.filter((f) => (f.type || '').startsWith('image/'))
+  const videos = uploadedMedia.value.filter((f) => (f.type || '').startsWith('video/'))
   // Para programar: permitir programar solo con imágenes (caption opcional). Si no hay imágenes, requerir mensaje.
-  if (!message && images.length === 0) {
-    triggerToast('Agrega un mensaje o al menos una imagen antes de programar.', 'info')
+  // Extendido: también permitir video (caption opcional). Si no hay imagen ni video, requerir mensaje.
+  if (!message && images.length === 0 && videos.length === 0) {
+    triggerToast('Agrega un mensaje o al menos una imagen/video antes de programar.', 'info')
     isScheduling.value = false
     return
   }
@@ -116,11 +118,21 @@ async function scheduleNow() {
   const scheduled_publish_time = toUnixSeconds(scheduleTime.value)
   const link = extractFirstUrl(postText.value)
   try {
-    const res = images.length > 0
-      ? await facebookPublishStore.publishPhotoPost(businessId, { message, published: false, scheduled_publish_time }, images)
-      : await facebookPublishStore.publishTextPost(businessId, { message, link, published: false, scheduled_publish_time })
+    let res
+    if (videos.length > 0 && images.length === 0) {
+      const firstVideo = videos[0]
+      res = await facebookPublishStore.publishVideoPost(
+        businessId,
+        { message, description: message, published: false, scheduled_publish_time },
+        firstVideo,
+      )
+    } else if (images.length > 0) {
+      res = await facebookPublishStore.publishPhotoPost(businessId, { message, published: false, scheduled_publish_time }, images)
+    } else {
+      res = await facebookPublishStore.publishTextPost(businessId, { message, link, published: false, scheduled_publish_time })
+    }
     const okMsg = res?.message || 'Publicación programada correctamente en Facebook'
-    const postId = res?.data?.id
+    const postId = (res as any)?.data?.id || (res as any)?.data?.video_id
     triggerToast(postId ? `${okMsg} · ID: ${postId}` : okMsg, 'success')
     close()
   } catch (e: any) {
@@ -151,17 +163,29 @@ async function publishNow() {
   const message = (postText.value || '').trim()
   const link = extractFirstUrl(postText.value)
   const images = uploadedMedia.value.filter((f) => (f.type || '').startsWith('image/'))
+  const videos = uploadedMedia.value.filter((f) => (f.type || '').startsWith('video/'))
   // Para publicar ahora: si hay imágenes, el caption es opcional; si no hay imágenes, requerimos mensaje.
-  if (!message && images.length === 0) {
-    triggerToast('Agrega un mensaje o al menos una imagen antes de publicar.', 'info')
+  // Extendido: si hay video, el caption también es opcional; si no hay imagen ni video, requerimos mensaje.
+  if (!message && images.length === 0 && videos.length === 0) {
+    triggerToast('Agrega un mensaje o al menos una imagen/video antes de publicar.', 'info')
     return
   }
   try {
-    const res = images.length > 0
-      ? await facebookPublishStore.publishPhotoPost(businessId, { message, published: true }, images)
-      : await facebookPublishStore.publishTextPost(businessId, { message, link, published: true })
+    let res
+    if (videos.length > 0 && images.length === 0) {
+      const firstVideo = videos[0]
+      res = await facebookPublishStore.publishVideoPost(
+        businessId,
+        { message, description: message, published: true },
+        firstVideo,
+      )
+    } else if (images.length > 0) {
+      res = await facebookPublishStore.publishPhotoPost(businessId, { message, published: true }, images)
+    } else {
+      res = await facebookPublishStore.publishTextPost(businessId, { message, link, published: true })
+    }
     const okMsg = res?.message || 'Publicado correctamente en Facebook'
-    const postId = res?.data?.id
+    const postId = (res as any)?.data?.id || (res as any)?.data?.video_id
     triggerToast(postId ? `${okMsg} · ID: ${postId}` : okMsg, 'success')
     close()
   } catch (e: any) {
