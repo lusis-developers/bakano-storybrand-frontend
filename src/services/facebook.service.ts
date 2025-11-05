@@ -5,7 +5,7 @@ import type {
   IIntegrationRecord,
   IFacebookPageInfo,
 } from '@/types/integration.types'
-import type { CreatePostPayload, PublishTextPostResponse } from '@/types/facebook.types'
+import type { CreatePostPayload, PublishTextPostResponse, PublishPhotoPostResponse } from '@/types/facebook.types'
 
 class FacebookService extends APIBase {
   private readonly endpoint = 'integrations'
@@ -82,6 +82,42 @@ class FacebookService extends APIBase {
       return response.data
     } catch (error: any) {
       const message = error?.message || 'Error al publicar el post de texto en Facebook'
+      throw new Error(message)
+    }
+  }
+
+  /**
+   * Publica una o varias fotos en la página de Facebook del negocio.
+   * Backend: POST /integrations/facebook/post/publish/photo/:businessId
+   * - Campo de archivos: 'images' (hasta 10)
+   * - Campos extra en form-data: message, published, scheduled_publish_time
+   */
+  async publishPhotoPost(
+    businessId: string,
+    payload: Pick<CreatePostPayload, 'message' | 'published' | 'scheduled_publish_time'>,
+    images: File[],
+  ): Promise<PublishPhotoPostResponse> {
+    try {
+      const form = new FormData()
+      // Campos de texto requeridos/opcionales
+      if (payload?.message) form.append('message', payload.message)
+      if (typeof payload?.published !== 'undefined') form.append('published', String(!!payload.published))
+      if (typeof payload?.scheduled_publish_time === 'number') form.append('scheduled_publish_time', String(payload.scheduled_publish_time))
+
+      // Archivos (nombre de campo: 'images')
+      for (const file of images || []) {
+        if (file) {
+          form.append('images', file, (file as any)?.name || 'image.jpg')
+        }
+      }
+
+      const response: AxiosResponse<PublishPhotoPostResponse> = await this.post(
+        `${this.endpoint}/facebook/post/publish/photo/${businessId}`,
+        form,
+      )
+      return response.data
+    } catch (error: any) {
+      const message = error?.message || 'Error al publicar la(s) foto(s) en Facebook'
       throw new Error(message)
     }
   }
