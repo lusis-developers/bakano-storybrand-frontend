@@ -5,7 +5,7 @@ import type {
   IIntegrationRecord,
   IFacebookPageInfo,
 } from '@/types/integration.types'
-import type { CreatePostPayload, PublishTextPostResponse, PublishPhotoPostResponse, PublishVideoPostResponse, CreateVideoPostPayload } from '@/types/facebook.types'
+import type { CreatePostPayload, PublishTextPostResponse, PublishPhotoPostResponse, PublishVideoPostResponse, CreateVideoPostPayload, ScheduledPostsResponse, ScheduledPostsQuery } from '@/types/facebook.types'
 
 class FacebookService extends APIBase {
   private readonly endpoint = 'integrations'
@@ -154,6 +154,32 @@ class FacebookService extends APIBase {
       return response.data
     } catch (error: any) {
       const message = error?.message || 'Error al publicar el video en Facebook'
+      throw new Error(message)
+    }
+  }
+
+  /**
+   * Obtiene los posts programados para la página de Facebook del negocio.
+   * Backend: GET /integrations/facebook/posts/scheduled/:businessId
+   * Permite filtros profesionales: limit, from, to, q, sort
+   */
+  async getScheduledPosts(
+    businessId: string,
+    query?: ScheduledPostsQuery,
+  ): Promise<ScheduledPostsResponse> {
+    try {
+      const params = new URLSearchParams()
+      if (query?.limit) params.append('limit', String(query.limit))
+      if (typeof query?.from !== 'undefined') params.append('from', String(query.from))
+      if (typeof query?.to !== 'undefined') params.append('to', String(query.to))
+      if (query?.q) params.append('q', query.q)
+      if (query?.sort) params.append('sort', query.sort)
+
+      const endpoint = `${this.endpoint}/facebook/posts/scheduled/${businessId}${params.toString() ? `?${params.toString()}` : ''}`
+      const response = await this.get<ScheduledPostsResponse>(endpoint)
+      return response.data
+    } catch (error: any) {
+      const message = error?.message || 'Error al obtener los posts programados de Facebook'
       throw new Error(message)
     }
   }
