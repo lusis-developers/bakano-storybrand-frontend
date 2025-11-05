@@ -89,8 +89,10 @@ async function scheduleNow() {
     return
   }
   const message = (postText.value || '').trim()
-  if (!message) {
-    triggerToast('Agrega un mensaje antes de programar.', 'info')
+  const images = uploadedMedia.value.filter((f) => (f.type || '').startsWith('image/'))
+  // Para programar: permitir programar solo con imágenes (caption opcional). Si no hay imágenes, requerir mensaje.
+  if (!message && images.length === 0) {
+    triggerToast('Agrega un mensaje o al menos una imagen antes de programar.', 'info')
     isScheduling.value = false
     return
   }
@@ -114,12 +116,9 @@ async function scheduleNow() {
   const scheduled_publish_time = toUnixSeconds(scheduleTime.value)
   const link = extractFirstUrl(postText.value)
   try {
-    const res = await facebookPublishStore.publishTextPost(businessId, {
-      message,
-      link,
-      published: false,
-      scheduled_publish_time,
-    })
+    const res = images.length > 0
+      ? await facebookPublishStore.publishPhotoPost(businessId, { message, published: false, scheduled_publish_time }, images)
+      : await facebookPublishStore.publishTextPost(businessId, { message, link, published: false, scheduled_publish_time })
     const okMsg = res?.message || 'Publicación programada correctamente en Facebook'
     const postId = res?.data?.id
     triggerToast(postId ? `${okMsg} · ID: ${postId}` : okMsg, 'success')
@@ -151,16 +150,16 @@ async function publishNow() {
   }
   const message = (postText.value || '').trim()
   const link = extractFirstUrl(postText.value)
-  if (!message) {
-    triggerToast('Agrega un mensaje antes de publicar.', 'info')
+  const images = uploadedMedia.value.filter((f) => (f.type || '').startsWith('image/'))
+  // Para publicar ahora: si hay imágenes, el caption es opcional; si no hay imágenes, requerimos mensaje.
+  if (!message && images.length === 0) {
+    triggerToast('Agrega un mensaje o al menos una imagen antes de publicar.', 'info')
     return
   }
   try {
-    const res = await facebookPublishStore.publishTextPost(businessId, {
-      message,
-      link,
-      published: true,
-    })
+    const res = images.length > 0
+      ? await facebookPublishStore.publishPhotoPost(businessId, { message, published: true }, images)
+      : await facebookPublishStore.publishTextPost(businessId, { message, link, published: true })
     const okMsg = res?.message || 'Publicado correctamente en Facebook'
     const postId = res?.data?.id
     triggerToast(postId ? `${okMsg} · ID: ${postId}` : okMsg, 'success')
