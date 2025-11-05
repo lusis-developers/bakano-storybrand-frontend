@@ -1,12 +1,12 @@
 import { defineStore } from 'pinia'
 import facebookService from '@/services/facebook.service'
-import type { CreatePostPayload, PublishTextPostResponse, PublishPhotoPostResponse } from '@/types/facebook.types'
+import type { CreatePostPayload, PublishTextPostResponse, PublishPhotoPostResponse, PublishVideoPostResponse, CreateVideoPostPayload } from '@/types/facebook.types'
 
 interface FacebookPublishState {
   publishing: boolean
   error: string | null
   lastPostId: string | null
-  lastResponse: PublishTextPostResponse | PublishPhotoPostResponse | null
+  lastResponse: PublishTextPostResponse | PublishPhotoPostResponse | PublishVideoPostResponse | null
 }
 
 // Store específico para publicación de posts en Facebook
@@ -60,6 +60,30 @@ export const useFacebookPublishStore = defineStore('facebookPublishStore', {
         return response
       } catch (error: any) {
         const message = error?.message || 'Error al publicar la(s) foto(s)'
+        this.error = message
+        throw new Error(message)
+      } finally {
+        this.publishing = false
+      }
+    },
+
+    async publishVideoPost(
+      businessId: string,
+      payload: CreateVideoPostPayload,
+      videoFile: File,
+    ): Promise<PublishVideoPostResponse> {
+      this.publishing = true
+      this.error = null
+      this.lastResponse = null
+      this.lastPostId = null
+      try {
+        const response = await facebookService.publishVideoPost(businessId, payload, videoFile)
+        this.lastResponse = response as any
+        // El backend devuelve { data: { video_id: "..." } }
+        this.lastPostId = (response as any)?.data?.video_id || (response as any)?.data?.id || null
+        return response
+      } catch (error: any) {
+        const message = error?.message || 'Error al publicar el video en Facebook'
         this.error = message
         throw new Error(message)
       } finally {
