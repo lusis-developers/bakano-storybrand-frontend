@@ -23,3 +23,21 @@ export interface PublishPhotoPostResponse {
   // Usamos any para no forzar una forma específica aquí
   data: any
 }
+
+// Payload y respuesta para publicación de video
+export interface CreateVideoPostPayload {
+  message?: string
+  description?: string
+  title?: string
+  published?: boolean
+  scheduled_publish_time?: number
+}
+
+export interface PublishVideoPostResponse {
+  message: string
+  data: {
+    video_id?: string
+    id?: string
+    [key: string]: any
+  }
+}
