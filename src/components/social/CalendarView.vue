@@ -1,77 +1,90 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed } from 'vue'
 const emit = defineEmits<{
   (e: 'hour-cell-click', payload: { day: string; hour: string }): void
 }>()
 
 // --- Estado de la Vista ---
+// Rango de fecha recibido desde el padre para sincronizar con la UI superior
+const props = defineProps<{ currentDateRange?: string }>()
 
-// 1. Estado de la Navegación Principal
-const activeTab = ref('Calendario')
-const tabs = [
-  'Calendario',
-  'Listado',
-  'Autolistas',
-  'Publicaciones eliminadas',
-]
-
-// 2. Estado de los Controles del Calendario
-const searchQuery = ref('')
-const showMejoresHoras = ref(true)
-const currentDateRange = ref('27 oct 2025 - 2 nov 2025')
-
-// 3. Estado de la Grilla (Datos estáticos para la UI)
+// 3. Estado de la Grilla
 // En una app real, esto vendría de un composable (p.ej. useCalendar)
-const todayString = 'Viernes 31'
-const daysOfWeek = [
-  'Lunes 27',
-  'Martes 28',
-  'Miércoles 29',
-  'Jueves 30',
-  'Viernes 31',
-  'Sábado 1',
-  'Domingo 2',
-]
+const dayNames: string[] = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado']
+const todayString = computed(() => {
+  const t = new Date()
+  return `${dayNames[t.getDay()]} ${t.getDate()}`
+})
+
+// Utilidades para fechas en español
+const monthIndexMap: Record<string, number> = {
+  'ene': 0, 'enero': 0,
+  'feb': 1, 'febrero': 1,
+  'mar': 2, 'marzo': 2,
+  'abr': 3, 'abril': 3,
+  'may': 4, 'mayo': 4,
+  'jun': 5, 'junio': 5,
+  'jul': 6, 'julio': 6,
+  'ago': 7, 'agosto': 7,
+  'sep': 8, 'sept': 8, 'septiembre': 8,
+  'oct': 9, 'octubre': 9,
+  'nov': 10, 'noviembre': 10,
+  'dic': 11, 'diciembre': 11,
+}
+
+const monthShort: string[] = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
+// (dayNames declarado arriba)
+
+function ymd(d: Date) {
+  const y = d.getFullYear()
+  const m = String(d.getMonth() + 1).padStart(2, '0')
+  const dd = String(d.getDate()).padStart(2, '0')
+  return `${y}-${m}-${dd}`
+}
+
+function parseRangeStart(range: string): Date {
+  // Ejemplo: "27 oct 2025 - 2 nov 2025"
+  const left = (range || '').split(/\s*[-–]\s*/)[0] || ''
+  const norm = left
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .trim()
+  const m = /(\d{1,2})\s*(?:de\s*)?([a-z]+)\s*(?:de\s*)?(\d{4})/.exec(norm)
+  if (m) {
+    const day = parseInt(m[1], 10)
+    const monKey = m[2]
+    const year = parseInt(m[3], 10)
+    const monIdx = monthIndexMap[monKey] ?? monthIndexMap[monKey.slice(0,3)]
+    if (typeof monIdx === 'number') return new Date(year, monIdx, day)
+  }
+  const fallback = new Date()
+  // Ajustar al lunes de la semana actual como fallback
+  const dow = fallback.getDay() // 0..6
+  const diffToMonday = (dow + 6) % 7
+  fallback.setDate(fallback.getDate() - diffToMonday)
+  return fallback
+}
+
+type DayItem = { labelShort: string; labelLong: string; iso: string; date: Date }
+const daysOfWeekData = computed<DayItem[]>(() => {
+  const rangeStr = props.currentDateRange || '27 oct 2025 - 2 nov 2025'
+  const start = parseRangeStart(rangeStr)
+  return Array.from({ length: 7 }, (_, i) => {
+    const d = new Date(start)
+    d.setDate(start.getDate() + i)
+    const labelShort = `${dayNames[d.getDay()]} ${d.getDate()}`
+    const labelLong = `${dayNames[d.getDay()]} ${d.getDate()} ${monthShort[d.getMonth()]} ${d.getFullYear()}`
+    return { labelShort, labelLong, iso: ymd(d), date: d }
+  })
+})
 
 // Generamos las horas de 11:00 a 23:00
 const hoursOfDay = computed(() => {
   return Array.from({ length: 13 }, (_, i) => `${i + 11}:00`)
 })
 
-// --- Funciones (Stubs) ---
-
-function goToPreviousWeek() {
-  console.log('Navegando a la semana anterior...')
-  // Aquí iría la lógica de `date-fns` o similar
-}
-
-function goToNextWeek() {
-  console.log('Navegando a la semana siguiente...')
-  // Aquí iría la lógica de `date-fns` o similar
-}
-
-function createPublication() {
-  console.log('Abriendo modal para crear publicación...')
-}
-
-// --- Reloj y Zona Horaria Actual ---
-const now = ref(new Date())
-const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone
-const formattedTime = computed(() =>
-  now.value.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
-)
-
-let clockInterval: number | undefined
-onMounted(() => {
-  clockInterval = window.setInterval(() => {
-    now.value = new Date()
-  }, 30000) // actualiza cada 30s
-})
-onUnmounted(() => {
-  if (clockInterval) {
-    clearInterval(clockInterval)
-  }
-})
+// (Reloj/zona horaria removidos por no usarse en la UI)
 </script>
 
 <template>
@@ -92,27 +105,27 @@ onUnmounted(() => {
         <div class="grid-days-container">
           <div class="days-header-row">
             <div
-              v-for="day in daysOfWeek"
-              :key="day"
+              v-for="day in daysOfWeekData"
+              :key="day.iso"
               class="day-header"
-              :class="{ 'is-today': day === todayString }"
+              :class="{ 'is-today': day.labelShort === todayString }"
             >
-              {{ day }}
+              {{ day.labelShort }}
             </div>
           </div>
 
           <div class="days-body-grid">
             <div
-              v-for="day in daysOfWeek"
-              :key="day"
+              v-for="day in daysOfWeekData"
+              :key="day.iso"
               class="day-column"
-              :class="{ 'is-today-column': day === todayString }"
+              :class="{ 'is-today-column': day.labelShort === todayString }"
             >
               <div
                 v-for="hour in hoursOfDay"
-                :key="`${day}-${hour}`"
+                :key="`${day.iso}-${hour}`"
                 class="hour-cell"
-                @click="emit('hour-cell-click', { day, hour })"
+                @click="emit('hour-cell-click', { day: day.labelLong, hour })"
               >
                 </div>
             </div>
