@@ -1,12 +1,13 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
+import { useToast } from '../../composables/useToast'
 const emit = defineEmits<{
   (e: 'hour-cell-click', payload: { day: string; hour: string }): void
 }>()
 
 const props = defineProps<{ currentDateRange?: string }>()
 
-const dayNames: string[] = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado']
+const dayNames: string[] = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
 const todayString = computed(() => {
   const t = new Date()
   return `${dayNames[t.getDay()]} ${t.getDate()}`
@@ -27,7 +28,7 @@ const monthIndexMap: Record<string, number> = {
   'dic': 11, 'diciembre': 11,
 }
 
-const monthShort: string[] = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
+const monthShort: string[] = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
 
 function ymd(d: Date) {
   const y = d.getFullYear()
@@ -48,7 +49,7 @@ function parseRangeStart(range: string): Date {
     const day = parseInt(m[1], 10)
     const monKey = m[2]
     const year = parseInt(m[3], 10)
-    const monIdx = monthIndexMap[monKey] ?? monthIndexMap[monKey.slice(0,3)]
+    const monIdx = monthIndexMap[monKey] ?? monthIndexMap[monKey.slice(0, 3)]
     if (typeof monIdx === 'number') return new Date(year, monIdx, day)
   }
   const fallback = new Date()
@@ -74,6 +75,26 @@ const daysOfWeekData = computed<DayItem[]>(() => {
 const hoursOfDay = computed(() => {
   return Array.from({ length: 13 }, (_, i) => `${i + 11}:00`)
 })
+
+// Toast para feedback cuando el usuario intenta programar en el pasado
+const { triggerToast } = useToast()
+
+function combineDateAndHour(base: Date, hour: string): Date {
+  const [hStr, mStr] = hour.split(':')
+  const d = new Date(base)
+  d.setHours(parseInt(hStr, 10) || 0, parseInt(mStr, 10) || 0, 0, 0)
+  return d
+}
+
+function onHourCellClick(day: { labelLong: string; date: Date }, hour: string) {
+  const target = combineDateAndHour(day.date, hour)
+  const now = new Date()
+  if (target.getTime() <= now.getTime()) {
+    triggerToast('La fecha y hora seleccionadas ya pasaron', 'error', 3000)
+    return
+  }
+  emit('hour-cell-click', { day: day.labelLong, hour })
+}
 </script>
 
 <template>
@@ -114,7 +135,7 @@ const hoursOfDay = computed(() => {
                 v-for="hour in hoursOfDay"
                 :key="`${day.iso}-${hour}`"
                 class="hour-cell"
-                @click="emit('hour-cell-click', { day: day.labelLong, hour })"
+                @click="onHourCellClick(day, hour)"
               >
                 </div>
             </div>
@@ -140,6 +161,7 @@ $cell-height: 96px;
   background-color: $BAKANO-LIGHT;
   box-sizing: border-box;
 }
+
 .calendar-grid-wrapper {
   margin-top: 16px;
   width: 100%;
@@ -215,8 +237,14 @@ $cell-height: 96px;
   font-weight: 600;
   color: $BAKANO-DARK;
   border-right: 1px solid $text-light;
-  &:last-child { border-right: none; }
-  &.is-today { color: $BAKANO-PURPLE; }
+
+  &:last-child {
+    border-right: none;
+  }
+
+  &.is-today {
+    color: $BAKANO-PURPLE;
+  }
 }
 
 .days-body-grid {
@@ -229,7 +257,10 @@ $cell-height: 96px;
   display: flex;
   flex-direction: column;
   border-right: 1px solid $text-light;
-  &:last-child { border-right: none; }
+
+  &:last-child {
+    border-right: none;
+  }
 }
 
 .hour-cell {
@@ -240,16 +271,26 @@ $cell-height: 96px;
   background-size: 100% 1px;
   background-repeat: no-repeat;
   background-position: top left;
-  &:last-child { border-bottom: none; }
+
+  &:last-child {
+    border-bottom: none;
+  }
 }
 
 .day-column.is-today-column {
-  .hour-cell { background-color: $overlay-purple; }
+  .hour-cell {
+    background-color: $overlay-purple;
+  }
 }
 
 // --- Media Queries (Desktop) ---
 @media (min-width: 1024px) {
-  .calendar-page { padding: 24px 32px; }
-  .calendar-grid { min-width: 0; }
+  .calendar-page {
+    padding: 24px 32px;
+  }
+
+  .calendar-grid {
+    min-width: 0;
+  }
 }
 </style>
