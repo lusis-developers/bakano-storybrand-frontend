@@ -5,7 +5,7 @@ import type {
   IIntegrationRecord,
   IFacebookPageInfo,
 } from '@/types/integration.types'
-import type { CreatePostPayload, PublishTextPostResponse, PublishPhotoPostResponse } from '@/types/facebook.types'
+import type { CreatePostPayload, PublishTextPostResponse, PublishPhotoPostResponse, PublishVideoPostResponse, CreateVideoPostPayload } from '@/types/facebook.types'
 
 class FacebookService extends APIBase {
   private readonly endpoint = 'integrations'
@@ -118,6 +118,42 @@ class FacebookService extends APIBase {
       return response.data
     } catch (error: any) {
       const message = error?.message || 'Error al publicar la(s) foto(s) en Facebook'
+      throw new Error(message)
+    }
+  }
+
+  /**
+   * Publica un video en la página de Facebook del negocio.
+   * Backend: POST /integrations/facebook/post/publish/video/:businessId
+   * - Campo de archivo: 'video' (single)
+   * - Campos extra en form-data: message, description, title, published, scheduled_publish_time
+   */
+  async publishVideoPost(
+    businessId: string,
+    payload: CreateVideoPostPayload,
+    videoFile: File,
+  ): Promise<PublishVideoPostResponse> {
+    try {
+      const form = new FormData()
+      // Campos de texto
+      if (payload?.message) form.append('message', payload.message)
+      if (payload?.description) form.append('description', payload.description)
+      if (payload?.title) form.append('title', payload.title)
+      if (typeof payload?.published !== 'undefined') form.append('published', String(!!payload.published))
+      if (typeof payload?.scheduled_publish_time === 'number') form.append('scheduled_publish_time', String(payload.scheduled_publish_time))
+
+      // Archivo de video
+      if (videoFile) {
+        form.append('video', videoFile, (videoFile as any)?.name || 'video.mp4')
+      }
+
+      const response: AxiosResponse<PublishVideoPostResponse> = await this.post(
+        `${this.endpoint}/facebook/post/publish/video/${businessId}`,
+        form,
+      )
+      return response.data
+    } catch (error: any) {
+      const message = error?.message || 'Error al publicar el video en Facebook'
       throw new Error(message)
     }
   }
