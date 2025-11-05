@@ -3,6 +3,8 @@ import { ref, computed, onMounted, watch } from 'vue'
 import { useIntegrationStore } from '@/stores/integration.store'
 import { useBusinessStore } from '@/stores/business.store'
 import CalendarSelect from '@/components/shared/CalendarSelect.vue'
+import { useFacebookPublishStore } from '@/stores/social/facebookPublish.store'
+import { useToast } from '@/composables/useToast'
 
 // Props y eventos del modal
 const props = defineProps<{
@@ -19,6 +21,9 @@ const postText = ref('')
 const uploadedMedia = ref<File[]>([])
 const scheduleTime = ref('')
 const showCalendarSelect = ref(false)
+const facebookPublishStore = useFacebookPublishStore()
+const { triggerToast } = useToast()
+const publishing = computed(() => facebookPublishStore.publishing)
 
 // Estado UI
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -75,6 +80,45 @@ function handleSchedule() {
     selection: props.selection,
   })
   close()
+}
+
+function getBusinessId(): string | null {
+  const cb = businessStore.currentBusiness as any
+  return cb?.id || cb?._id || null
+}
+
+function extractFirstUrl(text?: string): string | undefined {
+  if (!text) return undefined
+  const match = text.match(/\bhttps?:\/\/\S+/i)
+  return sanitizeUrl(match ? match[0] : undefined)
+}
+
+async function publishNow() {
+  const businessId = getBusinessId()
+  if (!businessId) {
+    triggerToast('No hay negocio seleccionado. Selecciona un negocio para publicar.', 'error')
+    return
+  }
+  const message = (postText.value || '').trim()
+  const link = extractFirstUrl(postText.value)
+  if (!message && !link && uploadedMedia.value.length === 0) {
+    triggerToast('Agrega contenido antes de publicar.', 'info')
+    return
+  }
+  try {
+    const res = await facebookPublishStore.publishTextPost(businessId, {
+      message,
+      link,
+      published: true,
+    })
+    const okMsg = res?.message || 'Publicado correctamente en Facebook'
+    const postId = res?.data?.id
+    triggerToast(postId ? `${okMsg} · ID: ${postId}` : okMsg, 'success')
+    close()
+  } catch (e: any) {
+    const msg = e?.message || 'Error al publicar el post'
+    triggerToast(msg, 'error')
+  }
 }
 
 function openCalendarSelect() {
@@ -539,11 +583,15 @@ watch(
 
           <!-- Scheduler -->
           <div class="scheduler">
-            <button class="btn" @click="close">Cancelar</button>
+            <button class="btn" :disabled="publishing" @click="close">Cancelar</button>
             <div class="scheduler-actions">
-              <button class="btn" @click="openCalendarSelect">Seleccionar fecha y hora</button>
+              <button class="btn" :disabled="publishing" @click="openCalendarSelect">Seleccionar fecha y hora</button>
               <span v-if="scheduleTime" class="schedule-info"><i class="fa-solid fa-calendar-days"></i> {{ formattedSchedule }}</span>
-              <button class="btn btn-primary" @click="handleSchedule">Programar</button>
+              <button class="btn btn-primary" :disabled="publishing" @click="publishNow" :aria-busy="publishing ? 'true' : 'false'">
+                <span v-if="publishing" class="spinner" aria-hidden="true"></span>
+                <span>{{ publishing ? 'Publicando…' : 'Publicar ahora' }}</span>
+              </button>
+              <button class="btn btn-primary" :disabled="publishing" @click="handleSchedule">Programar</button>
             </div>
           </div>
         </div>
@@ -571,6 +619,13 @@ watch(
             <p class="preview-note">Las previsualizaciones son una aproximación...</p>
             <div v-if="postLocation" class="preview-location"><i class="fa-solid fa-location-dot"></i> {{ postLocation }}</div>
           </div>
+        </div>
+      </div>
+      <!-- Overlay de publicación en progreso -->
+      <div v-if="publishing" class="publishing-overlay" aria-busy="true" role="alert" aria-live="assertive">
+        <div class="publishing-overlay-content">
+          <span class="spinner lg" aria-hidden="true"></span>
+          <div class="publishing-text">Publicando…</div>
         </div>
       </div>
     </div>
@@ -886,6 +941,66 @@ watch(
   background: $BAKANO-DARK;
   color: $white;
   border-color: $BAKANO-DARK;
+}
+
+.btn:disabled,
+.btn[disabled],
+.btn-primary:disabled,
+.btn-primary[disabled] {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+/* Inline spinner for loading state */
+.spinner {
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(255, 255, 255, 0.6);
+  border-top-color: #fff;
+  border-radius: 50%;
+  display: inline-block;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Overlay explícito de publicación */
+.publishing-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(2px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.publishing-overlay-content {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 16px;
+  border-radius: 12px;
+  border: 1px solid $text-light;
+  background: $white;
+  color: $BAKANO-DARK;
+  box-shadow: 0 8px 20px $overlay-purple;
+}
+
+.spinner.lg {
+  width: 24px;
+  height: 24px;
+  border-width: 3px;
+  border-color: rgba(0, 0, 0, 0.2);
+  border-top-color: $BAKANO-PURPLE;
+}
+
+.publishing-text {
+  font-weight: 600;
 }
 
 .schedule-info {
