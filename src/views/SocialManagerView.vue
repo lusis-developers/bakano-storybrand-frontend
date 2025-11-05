@@ -7,13 +7,43 @@ import BusinessContextGuard from '@/components/business/BusinessContextGuard.vue
 // Estado UI a nivel de vista
 const searchQuery = ref('')
 const showMejoresHoras = ref(true)
-const currentDateRange = ref('27 oct 2025 - 2 nov 2025')
+
+// --- Fecha y rango de semana en tiempo real ---
+const monthShort: string[] = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+function startOfWeekMonday(d: Date) {
+  const base = new Date(d)
+  const dow = base.getDay() // 0..6, Domingo=0
+  const diffToMonday = (dow + 6) % 7
+  base.setHours(0, 0, 0, 0)
+  base.setDate(base.getDate() - diffToMonday)
+  return base
+}
+function formatRange(start: Date): string {
+  const end = new Date(start)
+  end.setDate(start.getDate() + 6)
+  const sDay = String(start.getDate())
+  const sMon = monthShort[start.getMonth()]
+  const sYear = String(start.getFullYear())
+  const eDay = String(end.getDate())
+  const eMon = monthShort[end.getMonth()]
+  const eYear = String(end.getFullYear())
+  return `${sDay} ${sMon} ${sYear} - ${eDay} ${eMon} ${eYear}`
+}
+
+// Offset de semanas (0=semana actual). Navegación anterior/siguiente
+const weekOffset = ref(0)
+const currentDateRange = computed(() => {
+  const base = startOfWeekMonday(now.value)
+  const start = new Date(base)
+  start.setDate(base.getDate() + weekOffset.value * 7)
+  return formatRange(start)
+})
 
 function goToPreviousWeek() {
-  console.log('Navegando a la semana anterior...')
+  weekOffset.value -= 1
 }
 function goToNextWeek() {
-  console.log('Navegando a la semana siguiente...')
+  weekOffset.value += 1
 }
 
 // Reloj y zona horaria
@@ -34,21 +64,9 @@ onUnmounted(() => { if (clockInterval) clearInterval(clockInterval) })
 const showCreateModal = ref(false)
 const selectedSlot = ref<{ day?: string; hour?: string }>({})
 function openCreatePublication(slot?: { day?: string; hour?: string }) {
-  console.log('[SocialManagerView] openCreatePublication invoked', {
-    slot,
-    beforeShow: showCreateModal.value,
-    selectedSlotBefore: selectedSlot.value,
-  })
   selectedSlot.value = slot ?? {}
   showCreateModal.value = true
-  console.log('[SocialManagerView] openCreatePublication done', {
-    afterShow: showCreateModal.value,
-    selectedSlotAfter: selectedSlot.value,
-  })
 }
-watch(showCreateModal, (val) => {
-  console.log('[SocialManagerView] showCreateModal changed:', val)
-})
 function handleSubmit(payload: { day?: string; hour?: string; text: string }) {
   console.log('Publicación enviada:', payload)
 }
@@ -111,7 +129,7 @@ function handleSubmit(payload: { day?: string; hour?: string; text: string }) {
       </div>
     </section>
 
-    <CalendarView @hour-cell-click="openCreatePublication" />
+    <CalendarView :current-date-range="currentDateRange" @hour-cell-click="openCreatePublication" />
 
     <CreatePost
       v-model="showCreateModal"
