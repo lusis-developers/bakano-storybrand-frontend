@@ -22,16 +22,50 @@ const showCalendarSelect = ref(false)
 
 // Estado UI
 const fileInput = ref<HTMLInputElement | null>(null)
+const videoFileInput = ref<HTMLInputElement | null>(null)
+const textAreaRef = ref<HTMLTextAreaElement | null>(null)
+const showEmojiPicker = ref(false)
+const showLocationPicker = ref(false)
+const postLocation = ref('')
 const menuOpen = ref(false)
 
 // Helpers
 function close() { emit('update:modelValue', false) }
 function onAddImage() { fileInput.value?.click() }
+function onAddVideo() { videoFileInput.value?.click() }
 function onFilesSelected(e: Event) {
   const input = e.target as HTMLInputElement
   const files = input.files ? Array.from(input.files) : []
   if (files.length) uploadedMedia.value = [...uploadedMedia.value, ...files]
   input.value = ''
+}
+function onVideosSelected(e: Event) {
+  const input = e.target as HTMLInputElement
+  const files = input.files ? Array.from(input.files) : []
+  const videos = files.filter((f) => (f.type || '').startsWith('video/'))
+  if (videos.length) uploadedMedia.value = [...uploadedMedia.value, ...videos]
+  input.value = ''
+}
+
+function toggleEmojiPicker() { showEmojiPicker.value = !showEmojiPicker.value }
+function toggleLocationPicker() { showLocationPicker.value = !showLocationPicker.value }
+function applyLocation() { showLocationPicker.value = false }
+function insertEmoji(emoji: string) {
+  const el = textAreaRef.value
+  if (!el) {
+    postText.value += emoji
+    return
+  }
+  const start = el.selectionStart ?? postText.value.length
+  const end = el.selectionEnd ?? start
+  const before = postText.value.slice(0, start)
+  const after = postText.value.slice(end)
+  postText.value = before + emoji + after
+  requestAnimationFrame(() => {
+    el.focus()
+    const pos = start + emoji.length
+    el.setSelectionRange(pos, pos)
+  })
 }
 function handleSchedule() {
   emit('schedule-post', {
@@ -45,6 +79,14 @@ function handleSchedule() {
 
 function openCalendarSelect() {
   console.log('[CreatePost] 📅 Abrir selector de fecha/hora. scheduleTime actual:', scheduleTime.value)
+  // Si no hay horario aún, intentar derivarlo del slot clicado
+  if (!scheduleTime.value) {
+    const derived = deriveScheduleTimeFromSelection(props.selection)
+    if (derived) {
+      console.log('[CreatePost] ⏱️ Derivado al abrir selector:', derived)
+      scheduleTime.value = derived
+    }
+  }
   showCalendarSelect.value = true
 }
 
@@ -53,12 +95,158 @@ function onCalendarConfirm(val: string) {
   scheduleTime.value = val
 }
 
+// ====== Formato amigable para mostrar la fecha/hora programada ======
+function capitalize(s: string) { return s ? s.charAt(0).toUpperCase() + s.slice(1) : s }
+const daysEs = ['domingo', 'lunes', 'martes', 'miércoles', 'jueves', 'viernes', 'sábado']
+const monthsShortEs = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic']
+function formatScheduleTime(iso?: string): string {
+  if (!iso) return ''
+  const m = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(iso.trim())
+  if (!m) return iso
+  const y = parseInt(m[1], 10)
+  const mo = parseInt(m[2], 10) - 1
+  const d = parseInt(m[3], 10)
+  const hh = parseInt(m[4], 10)
+  const mm = parseInt(m[5], 10)
+  const dt = new Date(y, mo, d, hh, mm)
+  const weekday = capitalize(daysEs[dt.getDay()])
+  const monShort = monthsShortEs[mo]
+  const dd = String(d)
+  const hhStr = String(hh).padStart(2, '0')
+  const mmStr = String(mm).padStart(2, '0')
+  return `${weekday} ${dd} ${monShort} ${y} · ${hhStr}:${mmStr}`
+}
+const formattedSchedule = computed(() => formatScheduleTime(scheduleTime.value))
+
+// ====== Helpers para autoselección desde el calendario (día/hora) ======
+// Soporta formatos en español como "31 oct 2025" y horas como "14:30" o "2 pm"
+const monthIndexMap: Record<string, number> = {
+  'ene': 0, 'enero': 0,
+  'feb': 1, 'febrero': 1,
+  'mar': 2, 'marzo': 2,
+  'abr': 3, 'abril': 3,
+  'may': 4, 'mayo': 4,
+  'jun': 5, 'junio': 5,
+  'jul': 6, 'julio': 6,
+  'ago': 7, 'agosto': 7,
+  'sep': 8, 'sept': 8, 'septiembre': 8,
+  'oct': 9, 'octubre': 9,
+  'nov': 10, 'noviembre': 10,
+  'dic': 11, 'diciembre': 11,
+}
+
+function toYmdFromDate(dt: Date): string {
+  const yyyy = dt.getFullYear()
+  const mm = String(dt.getMonth() + 1).padStart(2, '0')
+  const dd = String(dt.getDate()).padStart(2, '0')
+  return `${yyyy}-${mm}-${dd}`
+}
+
+function parseDayToYmd(dayStr?: string | null): string {
+  if (!dayStr) return ''
+  const sRaw = dayStr.trim()
+  const s = sRaw.toLowerCase()
+  // ISO directo
+  const mIso = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s)
+  if (mIso) return `${mIso[1]}-${mIso[2]}-${mIso[3]}`
+
+  // Aceptar rangos: "27 oct 2025 - 2 nov 2025" -> tomar el primer segmento
+  const leftPart = s.split(/\s*[-–]\s*/)[0] || s
+
+  // Normalizar y quitar acentos/puntuación sobrante
+  const normalized = leftPart
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '') // quitar acentos
+    .replace(/[,.;]/g, ' ')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  // Soportar frases como "lunes 31 de octubre de 2025", "31 oct", "31 de oct 2025"
+  const mEs = /(\d{1,2})\s*(?:de\s*)?([a-z]+)(?:\s*(?:de\s*)?(\d{4}))?/i.exec(normalized)
+  if (mEs) {
+    const day = parseInt(mEs[1], 10)
+    const monKey = mEs[2].toLowerCase()
+    const year = mEs[3] ? parseInt(mEs[3], 10) : new Date().getFullYear()
+    const monIdx = monthIndexMap[monKey] ?? monthIndexMap[monKey.slice(0, 3)]
+    if (typeof monIdx === 'number' && !isNaN(day)) {
+      const dt = new Date(year, monIdx, day)
+      return toYmdFromDate(dt)
+    }
+  }
+
+  // Intentar parseo libre del navegador
+  const dt = new Date(sRaw)
+  if (!isNaN(dt.getTime())) return toYmdFromDate(dt)
+  return ''
+}
+
+function parseHourToHm(hourStr?: string | null): string {
+  if (!hourStr) return ''
+  const s = hourStr.trim().toLowerCase()
+  const m = /^(\d{1,2})(?::?(\d{2}))?\s*(am|pm)?$/.exec(s)
+  if (m) {
+    let hh = parseInt(m[1], 10)
+    let mm = m[2] ? parseInt(m[2], 10) : 0
+    const ap = m[3]
+    if (ap) {
+      if (ap === 'pm' && hh < 12) hh += 12
+      if (ap === 'am' && hh === 12) hh = 0
+    }
+    hh = Math.max(0, Math.min(23, hh))
+    // Redondeo a cuartos de hora
+    const rounded = Math.round(mm / 15) * 15
+    const addHour = Math.floor(rounded / 60)
+    hh = (hh + addHour) % 24
+    const mmStr = String(rounded % 60).padStart(2, '0')
+    return `${String(hh).padStart(2, '0')}:${mmStr}`
+  }
+  // Intentar HH:MM limpio
+  const mIso = /^(\d{2}):(\d{2})$/.exec(s)
+  if (mIso) {
+    const hh = Math.max(0, Math.min(23, parseInt(mIso[1], 10)))
+    const mm = Math.max(0, Math.min(59, parseInt(mIso[2], 10)))
+    return `${String(hh).padStart(2, '0')}:${String(mm).padStart(2, '0')}`
+  }
+  return ''
+}
+
+function deriveScheduleTimeFromSelection(sel?: { day?: string; hour?: string } | null): string {
+  if (!sel) return ''
+  const ymd = parseDayToYmd(sel.day)
+  const hm = parseHourToHm(sel.hour)
+  if (ymd && hm) return `${ymd}T${hm}`
+  if (ymd) {
+    // Hora aproximada siguiente media hora
+    const now = new Date()
+    const minutes = now.getMinutes()
+    const rounded = minutes <= 30 ? 30 : 0
+    const addHour = minutes > 30 ? 1 : 0
+    now.setHours(now.getHours() + addHour)
+    const hh = String(now.getHours()).padStart(2, '0')
+    const min = String(rounded).padStart(2, '0')
+    return `${ymd}T${hh}:${min}`
+  }
+  if (hm) {
+    const now = new Date()
+    const ymdNow = toYmdFromDate(now)
+    return `${ymdNow}T${hm}`
+  }
+  return ''
+}
+
 // Preview helpers
 function makeObjectURL(file: File) {
   // Usa la API del navegador de forma explícita para evitar errores de tipado en TS
   return window.URL.createObjectURL(file)
 }
-const firstImageUrl = computed(() => uploadedMedia.value.length ? makeObjectURL(uploadedMedia.value[0]) : '')
+const firstImageUrl = computed(() => {
+  const img = uploadedMedia.value.find((f) => (f.type || '').startsWith('image/'))
+  return img ? makeObjectURL(img) : ''
+})
+const firstVideoUrl = computed(() => {
+  const vid = uploadedMedia.value.find((f) => (f.type || '').startsWith('video/'))
+  return vid ? makeObjectURL(vid) : ''
+})
 
 // Avatar de la integración (Facebook/Instagram)
 const integrations = useIntegrationStore()
@@ -74,27 +262,9 @@ async function ensureIntegrationsReady() {
     const businessId =
       (businessStore.currentBusiness as any)?.id ||
       (businessStore.currentBusiness as any)?._id
-    console.log('[CreatePost] ensureIntegrationsReady -> hasAny:', hasAny, 'businessId:', businessId)
     // Cargamos siempre al abrir el modal para evitar datos stale
     if (businessId) {
-      console.log('[CreatePost] 🔄 Cargando integraciones desde store...', {
-        businessId,
-        prevCount: integrations.integrationsCount,
-        prevListTypes: (integrations.integrations || []).map((i: any) => i.type),
-      })
-      const res = await integrations.loadIntegrations(businessId)
-      console.log('[CreatePost] ✅ Integraciones cargadas', {
-        count: res?.count,
-        types: (res?.data || []).map((i: any) => i.type),
-        pictures: (res?.data || []).map((i: any) => ({
-          type: i.type,
-          rootPicture: i?.picture,
-          mdPicture: i?.metadata?.picture,
-          pagePictureUrl: i?.metadata?.pagePictureUrl,
-          profilePictureUrl: i?.metadata?.profilePictureUrl,
-          instagramProfilePictureUrl: i?.metadata?.instagramProfilePictureUrl,
-        })),
-      })
+      await integrations.loadIntegrations(businessId)
     } else {
       console.warn('[CreatePost] ⚠️ No hay businessId disponible aún. Se intentará nuevamente cuando el negocio esté listo.')
     }
@@ -110,14 +280,21 @@ onMounted(() => {
 watch(
   () => props.modelValue,
   (open) => {
-    if (open) ensureIntegrationsReady()
+    if (open) {
+      ensureIntegrationsReady()
+      const derived = deriveScheduleTimeFromSelection(props.selection)
+      if (derived) {
+        scheduleTime.value = derived
+        // Abrir el selector para confirmación inmediata
+        showCalendarSelect.value = true
+      }
+    }
   },
 )
 // Volver a intentar cargar cuando el negocio cambie o se inicialice
 watch(
   () => (businessStore.currentBusiness as any)?.id || (businessStore.currentBusiness as any)?._id,
   (businessId) => {
-    console.log('[CreatePost] businessId changed ->', businessId)
     if (props.modelValue && businessId) ensureIntegrationsReady()
   },
 )
@@ -184,7 +361,6 @@ const avatarUrl = computed(() => {
   const md = ai?.metadata || {}
   const candidates = buildPictureCandidates(md, ai)
   const selected = pickFirstString(...candidates)
-  console.log('[CreatePost] avatar candidates:', candidates, '\nselected:', selected, '\nplatform:', ai?.type, 'connected:', ai?.isConnected)
   return selected
 })
 
@@ -200,8 +376,6 @@ watch(
   },
   { deep: true }
 )
-
-console.log('[CreatePost] avatarUrl initial:', avatarUrl.value)
 
 // Nombre visible (página de Facebook o username de Instagram)
 const displayName = computed(() => {
@@ -223,7 +397,6 @@ const pageImageUrl = computed(() => {
   const ai = activeIntegration.value as any
   const md = ai?.metadata || {}
   const selected = pickFirstString(...buildPictureCandidates(md, ai))
-  console.log('[CreatePost] pageImageUrl candidates:', buildPictureCandidates(md, ai), '\nselected:', selected)
   return selected
 })
 
@@ -251,6 +424,19 @@ watch(avatarUrl, (val) => {
 watch(pageImageUrl, (val) => {
   console.log('[CreatePost] pageImageUrl changed ->', val)
 })
+
+// React a cambios del slot seleccionado para autocompletar fecha/hora
+watch(
+  () => props.selection,
+  (sel) => {
+    console.log('[CreatePost] 🔁 props.selection changed:', sel)
+    const derived = deriveScheduleTimeFromSelection(sel)
+    if (derived) {
+      scheduleTime.value = derived
+    }
+  },
+  { deep: true }
+)
 </script>
 
 <template>
@@ -267,6 +453,7 @@ watch(pageImageUrl, (val) => {
           <div v-if="props.selection?.day || props.selection?.hour" class="post-modal-chips">
             <span v-if="props.selection?.day" class="chip">{{ props.selection?.day }}</span>
             <span v-if="props.selection?.hour" class="chip">{{ props.selection?.hour }}</span>
+            <span v-if="postLocation" class="chip"><i class="fa-solid fa-location-dot"></i> {{ postLocation }}</span>
           </div>
         </div>
         <button class="icon-btn" @click="close">✕</button>
@@ -290,7 +477,7 @@ watch(pageImageUrl, (val) => {
           <!-- Text area -->
           <div class="field">
             <label class="field-label">Contenido</label>
-            <textarea v-model="postText" class="textarea"></textarea>
+            <textarea ref="textAreaRef" v-model="postText" class="textarea"></textarea>
             <div class="char-counter">{{ (postText?.length ?? 0) }} / 16192</div>
           </div>
 
@@ -298,24 +485,55 @@ watch(pageImageUrl, (val) => {
           <div class="media-uploader">
             <div class="toolbar">
               <button class="toolbar-btn" @click="menuOpen = !menuOpen">Imagen/Video</button>
-              <button class="toolbar-btn">Emoji</button>
-              <button class="toolbar-btn">Ubicación</button>
-              <button class="toolbar-btn">Más</button>
+              <button class="toolbar-btn" @click="toggleEmojiPicker">Emoji</button>
+              <button class="toolbar-btn" @click="toggleLocationPicker">Ubicación</button>
             </div>
             <div v-if="menuOpen" class="dropdown">
               <button class="dropdown-item" @click="onAddImage">Añadir imagen</button>
-              <button class="dropdown-item">Añadir video</button>
-              <button class="dropdown-item">Google Drive</button>
-              <button class="dropdown-item">Canva</button>
+              <button class="dropdown-item" @click="onAddVideo">Añadir video</button>
             </div>
             <input ref="fileInput" type="file" accept="image/*" class="sr-only" @change="onFilesSelected" />
+            <input ref="videoFileInput" type="file" accept="video/*" class="sr-only" @change="onVideosSelected" />
+
+            <!-- Panels debajo del toolbar -->
+            <div class="toolbar-panels">
+              <!-- Emoji picker simple -->
+              <div v-if="showEmojiPicker" class="emoji-panel">
+                <div class="emoji-grid">
+                  <button
+                    v-for="e in ['😀', '😂', '😍', '🔥', '🎉', '👍', '🙏', '💡', '📍', '📷', '🎬', '🏷️', '🌟', '💼']"
+                    :key="e"
+                    class="emoji-btn"
+                    @click="insertEmoji(e)"
+                    :aria-label="`Insertar ${e}`"
+                  >{{ e }}</button>
+                </div>
+              </div>
+
+              <!-- Location picker simple -->
+              <div v-if="showLocationPicker" class="location-panel">
+                <label class="field-label" for="post-location">Ubicación</label>
+                <input id="post-location" v-model="postLocation" class="input" placeholder="Ej: Bogotá, Colombia" />
+                <div class="panel-actions">
+                  <button class="btn" @click="applyLocation">Aplicar</button>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Thumbnails -->
           <div v-if="uploadedMedia.length" class="thumb-grid">
             <div v-for="(file, idx) in uploadedMedia" :key="idx" class="thumb">
-              <img :src="makeObjectURL(file)" class="thumb-img" :alt="`media-${idx}`" />
-              <div class="thumb-badge">#{{ idx + 1 }}</div>
+              <template v-if="(file.type || '').startsWith('image/')">
+                <img :src="makeObjectURL(file)" class="thumb-img" :alt="`media-${idx}`" />
+              </template>
+              <template v-else-if="(file.type || '').startsWith('video/')">
+                <video :src="makeObjectURL(file)" class="thumb-video" muted controls></video>
+              </template>
+              <div class="thumb-badge">
+                <template v-if="(file.type || '').startsWith('video/')"><i class="fa-solid fa-video"></i></template>
+                <template v-else>#{{ idx + 1 }}</template>
+              </div>
             </div>
           </div>
 
@@ -324,7 +542,7 @@ watch(pageImageUrl, (val) => {
             <button class="btn" @click="close">Cancelar</button>
             <div class="scheduler-actions">
               <button class="btn" @click="openCalendarSelect">Seleccionar fecha y hora</button>
-              <span v-if="scheduleTime" class="schedule-info">{{ scheduleTime }}</span>
+              <span v-if="scheduleTime" class="schedule-info"><i class="fa-solid fa-calendar-days"></i> {{ formattedSchedule }}</span>
               <button class="btn btn-primary" @click="handleSchedule">Programar</button>
             </div>
           </div>
@@ -343,13 +561,15 @@ watch(pageImageUrl, (val) => {
               </div>
             </div>
             <div class="preview-body">{{ postText || 'Tu texto aparecerá aquí...' }}</div>
-            <img v-if="firstImageUrl" :src="firstImageUrl" class="preview-img" alt="preview" />
+            <video v-if="firstVideoUrl" :src="firstVideoUrl" class="preview-video" controls></video>
+            <img v-else-if="firstImageUrl" :src="firstImageUrl" class="preview-img" alt="preview" />
             <div class="preview-actions">
               <button class="action"><i class="fa-regular fa-thumbs-up"></i> Like</button>
               <button class="action"><i class="fa-regular fa-comment"></i> Comment</button>
               <button class="action"><i class="fa-solid fa-share"></i> Share</button>
             </div>
             <p class="preview-note">Las previsualizaciones son una aproximación...</p>
+            <div v-if="postLocation" class="preview-location"><i class="fa-solid fa-location-dot"></i> {{ postLocation }}</div>
           </div>
         </div>
       </div>
@@ -612,6 +832,13 @@ watch(pageImageUrl, (val) => {
   object-fit: cover;
 }
 
+.thumb-video {
+  width: 100%;
+  height: 96px;
+  object-fit: cover;
+  background: #000;
+}
+
 .thumb-badge {
   position: absolute;
   top: 6px;
@@ -659,6 +886,18 @@ watch(pageImageUrl, (val) => {
   background: $BAKANO-DARK;
   color: $white;
   border-color: $BAKANO-DARK;
+}
+
+.schedule-info {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: $BAKANO-LIGHT;
+  color: $BAKANO-DARK;
+  border: 1px solid $text-light;
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
 }
 
 .preview-card {
@@ -719,6 +958,13 @@ watch(pageImageUrl, (val) => {
   object-fit: cover;
 }
 
+.preview-video {
+  width: 100%;
+  max-height: 320px;
+  object-fit: contain;
+  background: #000;
+}
+
 .preview-actions {
   display: flex;
   align-items: center;
@@ -746,5 +992,55 @@ watch(pageImageUrl, (val) => {
   margin: 6px 12px 10px;
   font-size: 12px;
   color: $BAKANO-DARK;
+}
+
+.preview-location {
+  margin: 0 12px 12px;
+  font-size: 13px;
+  color: $BAKANO-DARK;
+}
+
+.toolbar-panels {
+  margin-top: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.emoji-panel {
+  border: 1px solid $text-light;
+  border-radius: 10px;
+  background: $white;
+  padding: 8px;
+}
+
+.emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+}
+
+.emoji-btn {
+  border: 1px solid $text-light;
+  border-radius: 8px;
+  background: $white;
+  cursor: pointer;
+  padding: 6px 0;
+  font-size: 18px;
+}
+
+.emoji-btn:hover {
+  background: $BAKANO-LIGHT;
+}
+
+.location-panel {
+  border: 1px solid $text-light;
+  border-radius: 10px;
+  background: $white;
+  padding: 8px;
+}
+
+.panel-actions {
+  margin-top: 8px;
 }
 </style>
