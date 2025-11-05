@@ -72,14 +72,64 @@ function insertEmoji(emoji: string) {
     el.setSelectionRange(pos, pos)
   })
 }
-function handleSchedule() {
-  emit('schedule-post', {
-    text: postText.value,
-    media: uploadedMedia.value,
-    time: scheduleTime.value,
-    selection: props.selection,
-  })
-  close()
+// Programación interna: usa el mismo store de Facebook y envía scheduled_publish_time
+const isScheduling = ref(false)
+
+function toUnixSeconds(iso: string): number {
+  const dt = new Date(iso)
+  return Math.floor(dt.getTime() / 1000)
+}
+
+async function scheduleNow() {
+  isScheduling.value = true
+  const businessId = getBusinessId()
+  if (!businessId) {
+    triggerToast('No hay negocio seleccionado. Selecciona un negocio para programar.', 'error')
+    isScheduling.value = false
+    return
+  }
+  const message = (postText.value || '').trim()
+  if (!message) {
+    triggerToast('Agrega un mensaje antes de programar.', 'info')
+    isScheduling.value = false
+    return
+  }
+  if (!scheduleTime.value) {
+    triggerToast('Selecciona fecha y hora para programar.', 'info')
+    isScheduling.value = false
+    return
+  }
+  const when = new Date(scheduleTime.value)
+  const now = new Date()
+  if (isNaN(when.getTime())) {
+    triggerToast('La fecha/hora seleccionada no es válida.', 'error')
+    isScheduling.value = false
+    return
+  }
+  if (when.getTime() <= now.getTime()) {
+    triggerToast('No puedes programar en el pasado. Selecciona una fecha y hora futura.', 'error')
+    isScheduling.value = false
+    return
+  }
+  const scheduled_publish_time = toUnixSeconds(scheduleTime.value)
+  const link = extractFirstUrl(postText.value)
+  try {
+    const res = await facebookPublishStore.publishTextPost(businessId, {
+      message,
+      link,
+      published: false,
+      scheduled_publish_time,
+    })
+    const okMsg = res?.message || 'Publicación programada correctamente en Facebook'
+    const postId = res?.data?.id
+    triggerToast(postId ? `${okMsg} · ID: ${postId}` : okMsg, 'success')
+    close()
+  } catch (e: any) {
+    const msg = e?.message || 'Error al programar el post'
+    triggerToast(msg, 'error')
+  } finally {
+    isScheduling.value = false
+  }
 }
 
 function getBusinessId(): string | null {
@@ -101,8 +151,8 @@ async function publishNow() {
   }
   const message = (postText.value || '').trim()
   const link = extractFirstUrl(postText.value)
-  if (!message && !link && uploadedMedia.value.length === 0) {
-    triggerToast('Agrega contenido antes de publicar.', 'info')
+  if (!message) {
+    triggerToast('Agrega un mensaje antes de publicar.', 'info')
     return
   }
   try {
@@ -591,7 +641,7 @@ watch(
                 <span v-if="publishing" class="spinner" aria-hidden="true"></span>
                 <span>{{ publishing ? 'Publicando…' : 'Publicar ahora' }}</span>
               </button>
-              <button class="btn btn-primary" :disabled="publishing" @click="handleSchedule">Programar</button>
+              <button class="btn btn-primary" :disabled="publishing" @click="scheduleNow">Programar</button>
             </div>
           </div>
         </div>
@@ -625,7 +675,7 @@ watch(
       <div v-if="publishing" class="publishing-overlay" aria-busy="true" role="alert" aria-live="assertive">
         <div class="publishing-overlay-content">
           <span class="spinner lg" aria-hidden="true"></span>
-          <div class="publishing-text">Publicando…</div>
+          <div class="publishing-text">{{ isScheduling ? 'Programando…' : 'Publicando…' }}</div>
         </div>
       </div>
     </div>
