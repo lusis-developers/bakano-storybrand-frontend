@@ -4,19 +4,14 @@ const emit = defineEmits<{
   (e: 'hour-cell-click', payload: { day: string; hour: string }): void
 }>()
 
-// --- Estado de la Vista ---
-// Rango de fecha recibido desde el padre para sincronizar con la UI superior
 const props = defineProps<{ currentDateRange?: string }>()
 
-// 3. Estado de la Grilla
-// En una app real, esto vendría de un composable (p.ej. useCalendar)
 const dayNames: string[] = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado']
 const todayString = computed(() => {
   const t = new Date()
   return `${dayNames[t.getDay()]} ${t.getDate()}`
 })
 
-// Utilidades para fechas en español
 const monthIndexMap: Record<string, number> = {
   'ene': 0, 'enero': 0,
   'feb': 1, 'febrero': 1,
@@ -33,7 +28,6 @@ const monthIndexMap: Record<string, number> = {
 }
 
 const monthShort: string[] = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
-// (dayNames declarado arriba)
 
 function ymd(d: Date) {
   const y = d.getFullYear()
@@ -43,7 +37,6 @@ function ymd(d: Date) {
 }
 
 function parseRangeStart(range: string): Date {
-  // Ejemplo: "27 oct 2025 - 2 nov 2025"
   const left = (range || '').split(/\s*[-–]\s*/)[0] || ''
   const norm = left
     .normalize('NFD')
@@ -59,7 +52,6 @@ function parseRangeStart(range: string): Date {
     if (typeof monIdx === 'number') return new Date(year, monIdx, day)
   }
   const fallback = new Date()
-  // Ajustar al lunes de la semana actual como fallback
   const dow = fallback.getDay() // 0..6
   const diffToMonday = (dow + 6) % 7
   fallback.setDate(fallback.getDate() - diffToMonday)
@@ -79,12 +71,9 @@ const daysOfWeekData = computed<DayItem[]>(() => {
   })
 })
 
-// Generamos las horas de 11:00 a 23:00
 const hoursOfDay = computed(() => {
   return Array.from({ length: 13 }, (_, i) => `${i + 11}:00`)
 })
-
-// (Reloj/zona horaria removidos por no usarse en la UI)
 </script>
 
 <template>
@@ -137,34 +126,26 @@ const hoursOfDay = computed(() => {
 </template>
 
 <style lang="scss" scoped>
-// Paleta Bakano: usa exclusivamente variables del módulo de colores
-// Nota: Las variables SCSS ($BAKANO-*, $white, etc.) ya se inyectan globalmente vía vite.config.ts
-
-// --- Tokens de diseño (solo medidas)
-$header-height: 56px; // Alto fijo para el header de días
-$time-col-width: 80px; // Ancho fijo para la columna de horas
-$day-col-width: 180px; // Ancho fijo para cada columna de día
-$cell-height: 96px; // Alto de cada celda de hora (más espacio entre horas)
+$header-height: 56px;
+$time-col-width: 80px;
+$day-col-width: 180px;
+$cell-height: 96px;
 
 .calendar-page {
   width: 100%;
-  height: 100vh; // Ocupa toda la pantalla
+  height: 100vh;
   display: flex;
   flex-direction: column;
   padding: 16px;
   background-color: $BAKANO-LIGHT;
   box-sizing: border-box;
 }
-
-// --- 1. Header de Navegación ---
-
-// --- 3. Grilla del Calendario ---
 .calendar-grid-wrapper {
   margin-top: 16px;
   width: 100%;
-  flex: 1; // Ocupa el resto de la pantalla
-  min-height: 0; // Necesario para que el contenedor flex permita overflow
-  overflow: auto; // Scroll vertical y horizontal dentro del contenedor
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
   border: 1px solid $text-light;
   border-radius: 12px;
   background-color: $white;
@@ -174,14 +155,14 @@ $cell-height: 96px; // Alto de cada celda de hora (más espacio entre horas)
 .calendar-grid {
   display: grid;
   grid-template-columns: $time-col-width 1fr;
-  min-width: $time-col-width + (7 * $day-col-width); // Fuerza scroll horizontal en móvil
+  min-width: $time-col-width + (7 * $day-col-width);
   height: 100%;
 }
 
 .grid-times {
   display: flex;
   flex-direction: column;
-  position: sticky; // Columna de horas pegajosa a la izquierda
+  position: sticky;
   left: 0;
   z-index: 3;
   background-color: $white;
@@ -191,7 +172,7 @@ $cell-height: 96px; // Alto de cada celda de hora (más espacio entre horas)
     height: $header-height;
     border-bottom: 1px solid $text-light;
     position: sticky;
-    top: 0; // Fija el header de horas
+    top: 0;
     background: $white;
     z-index: 4;
   }
@@ -203,7 +184,7 @@ $cell-height: 96px; // Alto de cada celda de hora (más espacio entre horas)
     justify-content: flex-end;
     padding: 8px;
     padding-top: 2px;
-    margin-top: -8px; // Alinea el texto con la línea de la celda
+    margin-top: -8px;
     font-size: 12px;
     color: $BAKANO-PURPLE;
   }
@@ -220,7 +201,7 @@ $cell-height: 96px; // Alto de cada celda de hora (más espacio entre horas)
   grid-template-columns: repeat(7, $day-col-width);
   height: $header-height;
   border-bottom: 1px solid $text-light;
-  position: sticky; // Header de días pegajoso arriba
+  position: sticky;
   top: 0;
   background: $white;
   z-index: 2;
@@ -262,7 +243,6 @@ $cell-height: 96px; // Alto de cada celda de hora (más espacio entre horas)
   &:last-child { border-bottom: none; }
 }
 
-// Estilo para la columna de "hoy"
 .day-column.is-today-column {
   .hour-cell { background-color: $overlay-purple; }
 }
@@ -270,6 +250,6 @@ $cell-height: 96px; // Alto de cada celda de hora (más espacio entre horas)
 // --- Media Queries (Desktop) ---
 @media (min-width: 1024px) {
   .calendar-page { padding: 24px 32px; }
-  .calendar-grid { min-width: 0; } // Se adapta al contenedor en desktop
+  .calendar-grid { min-width: 0; }
 }
 </style>
