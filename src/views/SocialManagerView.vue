@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { useBusinessStore } from '@/stores/business.store'
 import CalendarView from '@/components/social/CalendarView.vue'
 import CreatePost from '@/components/social/CreatePost.vue'
 import BusinessContextGuard from '@/components/business/BusinessContextGuard.vue'
@@ -70,6 +71,10 @@ function openCreatePublication(slot?: { day?: string; hour?: string }) {
 function handleSubmit(payload: { day?: string; hour?: string; text: string }) {
   console.log('Publicación enviada:', payload)
 }
+
+// Store de negocio para pasar el businessId al calendario
+const businessStore = useBusinessStore()
+const currentBusiness = computed(() => businessStore.currentBusiness)
 </script>
 
 <template>
@@ -129,7 +134,11 @@ function handleSubmit(payload: { day?: string; hour?: string; text: string }) {
       </div>
     </section>
 
-    <CalendarView :current-date-range="currentDateRange" @hour-cell-click="openCreatePublication" />
+    <CalendarView
+      :current-date-range="currentDateRange"
+      :business-id="currentBusiness?.id || currentBusiness?._id"
+      @hour-cell-click="openCreatePublication"
+    />
 
     <CreatePost
       v-model="showCreateModal"
