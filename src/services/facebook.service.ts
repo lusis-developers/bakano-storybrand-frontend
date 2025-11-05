@@ -5,10 +5,7 @@ import type {
   IIntegrationRecord,
   IFacebookPageInfo,
 } from '@/types/integration.types'
-import type {
-  CreatePostPayload,
-  PublishTextPostResponse,
-} from '@/types/facebook.types'
+import type { CreatePostPayload, PublishTextPostResponse } from '@/types/facebook.types'
 
 class FacebookService extends APIBase {
   private readonly endpoint = 'integrations'
@@ -53,15 +50,12 @@ class FacebookService extends APIBase {
         message: string
         integration: IIntegrationRecord
         page?: IFacebookPageInfo
-      }> = await this.post(
-        `${this.endpoint}/facebook/connect-page`,
-        {
-          business: businessId,
-          pageId,
-          pageName,
-          pageAccessToken,
-        },
-      )
+      }> = await this.post(`${this.endpoint}/facebook/connect-page`, {
+        business: businessId,
+        pageId,
+        pageName,
+        pageAccessToken,
+      })
       return response.data
     } catch (error: any) {
       const message = error?.message || 'Error al guardar la página de Facebook'
@@ -71,7 +65,7 @@ class FacebookService extends APIBase {
 
   /**
    * Publica un post de texto/enlace en la página de Facebook del negocio.
-   * Backend: POST /post/publish/text/:businessId
+   * Backend: POST /integrations/facebook/post/publish/text/:businessId
    *
    * Este endpoint requiere que el backend ya tenga la integración activa y
    * resuelve el pageAccessToken y pageId internamente.
@@ -82,7 +76,7 @@ class FacebookService extends APIBase {
   ): Promise<PublishTextPostResponse> {
     try {
       const response: AxiosResponse<PublishTextPostResponse> = await this.post(
-        `post/publish/text/${businessId}`,
+        `${this.endpoint}/facebook/post/publish/text/${businessId}`,
         payload,
       )
       return response.data
