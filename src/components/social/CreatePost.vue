@@ -4,6 +4,7 @@ import { useIntegrationStore } from '@/stores/integration.store'
 import { useBusinessStore } from '@/stores/business.store'
 import CalendarSelect from '@/components/shared/CalendarSelect.vue'
 import { useFacebookPublishStore } from '@/stores/social/facebookPublish.store'
+import { useInstagramPublishStore } from '@/stores/social/instagramPublish.store'
 import { useToast } from '@/composables/useToast'
 import CreatePostHeader from '@/components/social/create/CreatePostHeader.vue'
 import MediaPicker from '@/components/social/create/MediaPicker.vue'
@@ -28,8 +29,9 @@ const uploadedMedia = ref<File[]>([])
 const scheduleTime = ref('')
 const showCalendarSelect = ref(false)
 const facebookPublishStore = useFacebookPublishStore()
+const instagramPublishStore = useInstagramPublishStore()
 const { triggerToast } = useToast()
-const publishing = computed(() => facebookPublishStore.publishing)
+const publishing = computed(() => facebookPublishStore.publishing || instagramPublishStore.publishing)
 
 // Estado UI
 const fileInput = ref<HTMLInputElement | null>(null)
@@ -91,6 +93,11 @@ function insertEmoji(emoji: string) {
 // Programación interna: usa el mismo store de Facebook y envía scheduled_publish_time
 const isScheduling = ref(false)
 
+// Selección de plataformas a publicar
+const publishToFacebook = ref(true)
+const publishToInstagram = ref(false)
+const canPublishInstagram = computed(() => uploadedMedia.value.some((f) => (f.type || '').startsWith('image/') || (f.type || '').startsWith('video/')))
+
 function toUnixSeconds(iso: string): number {
   const dt = new Date(iso)
   return Math.floor(dt.getTime() / 1000)
@@ -107,6 +114,11 @@ async function scheduleNow() {
   const message = (postText.value || '').trim()
   const images = uploadedMedia.value.filter((f) => (f.type || '').startsWith('image/'))
   const videos = uploadedMedia.value.filter((f) => (f.type || '').startsWith('video/'))
+  if (!publishToFacebook.value && !publishToInstagram.value) {
+    triggerToast('Selecciona al menos una plataforma (Facebook o Instagram).', 'info')
+    isScheduling.value = false
+    return
+  }
   // Para programar: permitir programar solo con imágenes (caption opcional). Si no hay imágenes, requerir mensaje.
   // Extendido: también permitir video (caption opcional). Si no hay imagen ni video, requerir mensaje.
   if (!message && images.length === 0 && videos.length === 0) {
@@ -134,23 +146,84 @@ async function scheduleNow() {
   const scheduled_publish_time = toUnixSeconds(scheduleTime.value)
   const link = extractFirstUrl(postText.value)
   try {
-    let res
-    if (videos.length > 0 && images.length === 0) {
-      const firstVideo = videos[0]
-      res = await facebookPublishStore.publishVideoPost(
-        businessId,
-        { message, description: message, published: false, scheduled_publish_time },
-        firstVideo,
-      )
-    } else if (images.length > 0) {
-      res = await facebookPublishStore.publishPhotoPost(businessId, { message, published: false, scheduled_publish_time }, images)
-    } else {
-      res = await facebookPublishStore.publishTextPost(businessId, { message, link, published: false, scheduled_publish_time })
+    const tasks: Array<Promise<{ message: string; data: any }>> = []
+    const platforms: string[] = []
+
+    // Instagram programado
+    if (publishToInstagram.value) {
+      if (videos.length > 0 && images.length === 0) {
+        const firstVideo = videos[0]
+        tasks.push(
+          instagramPublishStore.publishReel(
+            businessId,
+            { caption: message, share_to_feed: true, published: false, scheduled_publish_time },
+            firstVideo,
+          ),
+        )
+        platforms.push('Instagram (Reel)')
+      } else if (images.length > 0) {
+        tasks.push(
+          instagramPublishStore.publishPhotoOrCarousel(
+            businessId,
+            { caption: message, published: false, scheduled_publish_time },
+            images,
+          ),
+        )
+        platforms.push(images.length > 1 ? 'Instagram (Carrusel)' : 'Instagram (Foto)')
+      } else {
+        throw new Error('Instagram requiere al menos una imagen para programar.')
+      }
     }
-    const okMsg = res?.message || 'Publicación programada correctamente en Facebook'
-    const postId = (res as any)?.data?.id || (res as any)?.data?.video_id
-    triggerToast(postId ? `${okMsg} · ID: ${postId}` : okMsg, 'success')
-    close()
+
+    // Facebook programado
+    if (publishToFacebook.value) {
+      if (videos.length > 0 && images.length === 0) {
+        const firstVideo = videos[0]
+        tasks.push(
+          facebookPublishStore.publishVideoPost(
+            businessId,
+            { message, description: message, published: false, scheduled_publish_time },
+            firstVideo,
+          ),
+        )
+        platforms.push('Facebook (Video)')
+      } else if (images.length > 0) {
+        tasks.push(
+          facebookPublishStore.publishPhotoPost(
+            businessId,
+            { message, published: false, scheduled_publish_time },
+            images,
+          ),
+        )
+        platforms.push(images.length > 1 ? 'Facebook (Carrusel)' : 'Facebook (Foto)')
+      } else {
+        tasks.push(
+          facebookPublishStore.publishTextPost(
+            businessId,
+            { message, link, published: false, scheduled_publish_time },
+          ),
+        )
+        platforms.push('Facebook (Texto)')
+      }
+    }
+
+    const settled = await Promise.allSettled(tasks)
+    const okMsgs: string[] = []
+    const errMsgs: string[] = []
+    settled.forEach((r, idx) => {
+      const label = platforms[idx] || 'Plataforma'
+      if (r.status === 'fulfilled') {
+        const res = r.value as any
+        const id = res?.data?.id || res?.data?.video_id || res?.data?.container_id
+        okMsgs.push(`${label}: ${res?.message || 'Programado correctamente'}${id ? ` · ID: ${id}` : ''}`)
+      } else {
+        const msg = (r.reason as any)?.message || 'Error al programar'
+        errMsgs.push(`${label}: ${msg}`)
+      }
+    })
+    if (okMsgs.length) triggerToast(okMsgs.join(' | '), 'success')
+    if (errMsgs.length) triggerToast(errMsgs.join(' | '), 'error')
+    if (okMsgs.length) close()
   } catch (e: any) {
     const msg = e?.message || 'Error al programar el post'
     triggerToast(msg, 'error')
@@ -180,6 +253,10 @@ async function publishNow() {
   const link = extractFirstUrl(postText.value)
   const images = uploadedMedia.value.filter((f) => (f.type || '').startsWith('image/'))
   const videos = uploadedMedia.value.filter((f) => (f.type || '').startsWith('video/'))
+  if (!publishToFacebook.value && !publishToInstagram.value) {
+    triggerToast('Selecciona al menos una plataforma (Facebook o Instagram).', 'info')
+    return
+  }
   // Para publicar ahora: si hay imágenes, el caption es opcional; si no hay imágenes, requerimos mensaje.
   // Extendido: si hay video, el caption también es opcional; si no hay imagen ni video, requerimos mensaje.
   if (!message && images.length === 0 && videos.length === 0) {
@@ -187,23 +264,84 @@ async function publishNow() {
     return
   }
   try {
-    let res
-    if (videos.length > 0 && images.length === 0) {
-      const firstVideo = videos[0]
-      res = await facebookPublishStore.publishVideoPost(
-        businessId,
-        { message, description: message, published: true },
-        firstVideo,
-      )
-    } else if (images.length > 0) {
-      res = await facebookPublishStore.publishPhotoPost(businessId, { message, published: true }, images)
-    } else {
-      res = await facebookPublishStore.publishTextPost(businessId, { message, link, published: true })
+    const tasks: Array<Promise<{ message: string; data: any }>> = []
+    const platforms: string[] = []
+
+    // Instagram inmediato
+    if (publishToInstagram.value) {
+      if (videos.length > 0 && images.length === 0) {
+        const firstVideo = videos[0]
+        tasks.push(
+          instagramPublishStore.publishReel(
+            businessId,
+            { caption: message, share_to_feed: true, published: true },
+            firstVideo,
+          ),
+        )
+        platforms.push('Instagram (Reel)')
+      } else if (images.length > 0) {
+        tasks.push(
+          instagramPublishStore.publishPhotoOrCarousel(
+            businessId,
+            { caption: message, published: true },
+            images,
+          ),
+        )
+        platforms.push(images.length > 1 ? 'Instagram (Carrusel)' : 'Instagram (Foto)')
+      } else {
+        throw new Error('Instagram requiere al menos una imagen para publicar.')
+      }
     }
-    const okMsg = res?.message || 'Publicado correctamente en Facebook'
-    const postId = (res as any)?.data?.id || (res as any)?.data?.video_id
-    triggerToast(postId ? `${okMsg} · ID: ${postId}` : okMsg, 'success')
-    close()
+
+    // Facebook inmediato
+    if (publishToFacebook.value) {
+      if (videos.length > 0 && images.length === 0) {
+        const firstVideo = videos[0]
+        tasks.push(
+          facebookPublishStore.publishVideoPost(
+            businessId,
+            { message, description: message, published: true },
+            firstVideo,
+          ),
+        )
+        platforms.push('Facebook (Video)')
+      } else if (images.length > 0) {
+        tasks.push(
+          facebookPublishStore.publishPhotoPost(
+            businessId,
+            { message, published: true },
+            images,
+          ),
+        )
+        platforms.push(images.length > 1 ? 'Facebook (Carrusel)' : 'Facebook (Foto)')
+      } else {
+        tasks.push(
+          facebookPublishStore.publishTextPost(
+            businessId,
+            { message, link, published: true },
+          ),
+        )
+        platforms.push('Facebook (Texto)')
+      }
+    }
+
+    const settled = await Promise.allSettled(tasks)
+    const okMsgs: string[] = []
+    const errMsgs: string[] = []
+    settled.forEach((r, idx) => {
+      const label = platforms[idx] || 'Plataforma'
+      if (r.status === 'fulfilled') {
+        const res = r.value as any
+        const id = res?.data?.id || res?.data?.video_id || res?.data?.container_id
+        okMsgs.push(`${label}: ${res?.message || 'Publicado correctamente'}${id ? ` · ID: ${id}` : ''}`)
+      } else {
+        const msg = (r.reason as any)?.message || 'Error al publicar'
+        errMsgs.push(`${label}: ${msg}`)
+      }
+    })
+    if (okMsgs.length) triggerToast(okMsgs.join(' | '), 'success')
+    if (errMsgs.length) triggerToast(errMsgs.join(' | '), 'error')
+    if (okMsgs.length) close()
   } catch (e: any) {
     const msg = e?.message || 'Error al publicar el post'
     triggerToast(msg, 'error')
@@ -385,8 +523,7 @@ const firstVideoUrl = computed(() => {
 const integrations = useIntegrationStore()
 const businessStore = useBusinessStore()
 
-// Preferencia de plataforma para el avatar/preview (por defecto Facebook)
-const preferPlatform = ref<'facebook' | 'instagram'>('facebook')
+// Preferencia de plataforma para el avatar/preview: se deriva de la selección de publicación
 
 // Asegurar que las integraciones estén cargadas cuando se abre el modal
 async function ensureIntegrationsReady() {
@@ -471,8 +608,9 @@ function buildPictureCandidates(md: any, root: any): Array<string | undefined> {
 const activeIntegration = computed(() => {
   const fb = integrations.facebookIntegration as any
   const ig = integrations.instagramIntegration as any
-  const preferred = preferPlatform.value === 'facebook' ? fb : ig
-  const secondary = preferPlatform.value === 'facebook' ? ig : fb
+  const preferredType = publishToInstagram.value ? 'instagram' : 'facebook'
+  const preferred = preferredType === 'facebook' ? fb : ig
+  const secondary = preferredType === 'facebook' ? ig : fb
 
   // Preferimos la plataforma seleccionada si está conectada
   if (preferred?.isConnected) return preferred
@@ -590,9 +728,21 @@ watch(
           <div class="social-tabs">
             <div class="social-tabs-left">
               <span class="platform-pill">
-                <span class="platform-icon">f</span>
-                <span class="platform-label">POST</span>
+                <span class="platform-label">Plataformas</span>
               </span>
+              <div class="platform-toggles">
+                <label class="toggle">
+                  <input type="checkbox" v-model="publishToFacebook" />
+                  <span class="toggle-label">Facebook</span>
+                </label>
+                <label class="toggle" :class="{ disabled: !canPublishInstagram }" :title="!canPublishInstagram ? 'Para programar en Instagram, sube al menos una imagen' : ''">
+                  <input type="checkbox" v-model="publishToInstagram" :disabled="!canPublishInstagram" />
+                  <span class="toggle-label">Instagram</span>
+                </label>
+              </div>
+              <div class="platform-help" :class="{ warning: !canPublishInstagram }">
+                {{ !canPublishInstagram ? 'Instagram requiere al menos una imagen para programar/publicar.' : 'Instagram habilitado para foto o carrusel.' }}
+              </div>
             </div>
             <button class="icon-btn small">+</button>
           </div>
@@ -781,6 +931,47 @@ watch(
 
 .platform-label {
   font-weight: 600;
+}
+
+/* Toggle de plataformas */
+.platform-toggles {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border: 1px solid $text-light;
+  border-radius: 999px;
+  background: $white;
+}
+
+.toggle input {
+  accent-color: $BAKANO-PURPLE;
+}
+
+.toggle-label {
+  font-size: 12px;
+  color: $BAKANO-DARK;
+}
+
+.toggle.disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.platform-help {
+  font-size: 12px;
+  color: $BAKANO-PURPLE;
+  margin-top: 4px;
+}
+
+.platform-help.warning {
+  color: $BAKANO-PURPLE;
 }
 
 .icon-btn.small {
