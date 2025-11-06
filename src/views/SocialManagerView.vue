@@ -84,9 +84,6 @@ const currentBusiness = computed(() => businessStore.currentBusiness)
     <header class="view-header">
       <nav class="tabs">
         <button class="tab-item active">Calendario</button>
-        <button class="tab-item">Listado</button>
-        <button class="tab-item">Autolistas</button>
-        <button class="tab-item">Publicaciones eliminadas</button>
       </nav>
       <div class="header-info">
         <i class="fas fa-clock"></i>
