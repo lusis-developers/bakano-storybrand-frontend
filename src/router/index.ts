@@ -93,7 +93,7 @@ const router = createRouter({
     {
       path: '/advisor',
       name: 'advisor',
-      component: () => import('../views/AdvisorView.vue'),
+      component: () => import('../views/AdvisorView/index.vue'),
       meta: { requiresAuth: true, requiresVerified: true },
     },
   ],
