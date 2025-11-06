@@ -109,6 +109,9 @@ onUnmounted(() => {
   if (clockInterval) clearInterval(clockInterval)
 })
 
+// Loader UI minimalista centrado mientras se cargan los eventos
+const uiLoading = ref(false)
+
 function combineDateAndHour(base: Date, hour: string): Date {
   const [hStr, mStr] = hour.split(':')
   const d = new Date(base)
@@ -146,6 +149,7 @@ const weekRange = computed(() => {
 async function fetchScheduled() {
   if (!resolvedBusinessId.value) return
   try {
+    uiLoading.value = true
     await store.fetchScheduledPosts(resolvedBusinessId.value, {
       from: weekRange.value.from,
       to: weekRange.value.to,
@@ -154,6 +158,8 @@ async function fetchScheduled() {
     })
   } catch (e: any) {
     triggerToast(e?.message || 'Error al cargar posts programados', 'error', 3000)
+  } finally {
+    uiLoading.value = false
   }
 }
 
@@ -201,7 +207,7 @@ function openPermalink(url?: string) {
   if (!url) return
   try {
     window.open(url.replace(/\s|`/g, ''), '_blank')
-  } catch {}
+  } catch { }
 }
 function isPastCell(day: { date: Date }, hour: string): boolean {
   const target = combineDateAndHour(day.date, hour)
@@ -212,6 +218,16 @@ function isPastCell(day: { date: Date }, hour: string): boolean {
 <template>
   <div class="calendar-page">
     <div class="calendar-grid-wrapper">
+      <!-- Overlay de carga minimalista centrado -->
+      <div
+        v-if="uiLoading || store.scheduledLoading"
+        class="calendar-loading-overlay"
+      >
+        <div class="overlay-box">
+          <div class="loader"></div>
+          <div class="loader-text">Cargando posts programados…</div>
+        </div>
+      </div>
       <main class="calendar-grid">
         <div class="grid-times">
           <div class="time-header-spacer"></div>
@@ -311,6 +327,7 @@ $cell-height: 96px;
   border-radius: 12px;
   background-color: $white;
   box-shadow: 0 4px 12px $overlay-purple;
+  position: relative; // para posicionar el overlay centrado
 }
 
 .calendar-grid {
@@ -368,33 +385,33 @@ $cell-height: 96px;
   z-index: 2;
 }
 
-  .day-header {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 14px;
-    font-weight: 600;
-    color: $BAKANO-DARK;
-    border-right: 1px solid $text-light;
+.day-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 14px;
+  font-weight: 600;
+  color: $BAKANO-DARK;
+  border-right: 1px solid $text-light;
 
-    &:last-child {
-      border-right: none;
-    }
-
-    &.is-today {
-      color: $BAKANO-PURPLE;
-    }
-
-    .day-count {
-      margin-left: 8px;
-      font-size: 11px;
-      color: $white;
-      background-color: $BAKANO-PURPLE;
-      border-radius: 12px;
-      padding: 2px 6px;
-      line-height: 1;
-    }
+  &:last-child {
+    border-right: none;
   }
+
+  &.is-today {
+    color: $BAKANO-PURPLE;
+  }
+
+  .day-count {
+    margin-left: 8px;
+    font-size: 11px;
+    color: $white;
+    background-color: $BAKANO-PURPLE;
+    border-radius: 12px;
+    padding: 2px 6px;
+    line-height: 1;
+  }
+}
 
 .days-body-grid {
   display: grid;
@@ -412,82 +429,83 @@ $cell-height: 96px;
   }
 }
 
-  .hour-cell {
-    height: $cell-height;
-    border-top: 1px solid $text-light;
-    border-bottom: 1px solid $text-light;
-    background-color: $white;
-    background-size: 100% 1px;
-    background-repeat: no-repeat;
-    background-position: top left;
+.hour-cell {
+  height: $cell-height;
+  border-top: 1px solid $text-light;
+  border-bottom: 1px solid $text-light;
+  background-color: $white;
+  background-size: 100% 1px;
+  background-repeat: no-repeat;
+  background-position: top left;
 
-    &:last-child {
-      border-bottom: none;
+  &:last-child {
+    border-bottom: none;
+  }
+
+  &.is-past {
+    background-color: $alert-error-bg;
+    cursor: not-allowed;
+    border-top-color: $alert-error-bg;
+    border-bottom-color: $alert-error-bg;
+  }
+
+  .scheduled-post {
+    position: relative;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px;
+    margin: 6px;
+    border: 1px solid $text-light;
+    border-radius: 8px;
+    background-color: $overlay-purple;
+    cursor: pointer;
+
+    .post-time {
+      font-size: 11px;
+      color: $BAKANO-PURPLE;
+      min-width: 44px;
     }
 
-    &.is-past {
-      background-color: $alert-error-bg;
-      cursor: not-allowed;
-      border-top-color: $alert-error-bg;
-      border-bottom-color: $alert-error-bg;
-    }
-
-    .scheduled-post {
-      position: relative;
+    .post-content {
       display: flex;
       align-items: center;
       gap: 8px;
-      padding: 6px 8px;
-      margin: 6px;
+      overflow: hidden;
+    }
+
+    .post-message {
+      font-size: 12px;
+      color: $BAKANO-DARK;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+      overflow: hidden;
+      max-width: 320px;
+    }
+
+    .post-thumb {
+      width: 36px;
+      height: 36px;
+      object-fit: cover;
+      border-radius: 6px;
       border: 1px solid $text-light;
-      border-radius: 8px;
-      background-color: $overlay-purple;
-      cursor: pointer;
+    }
 
-      .post-time {
-        font-size: 11px;
-        color: $BAKANO-PURPLE;
-        min-width: 44px;
-      }
-
-      .post-content {
-        display: flex;
-        align-items: center;
-        gap: 8px;
-        overflow: hidden;
-      }
-
-      .post-message {
-        font-size: 12px;
-        color: $BAKANO-DARK;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-        overflow: hidden;
-        max-width: 320px;
-      }
-
-      .post-thumb {
-        width: 36px;
-        height: 36px;
-        object-fit: cover;
-        border-radius: 6px;
-        border: 1px solid $text-light;
-      }
-
-      .post-type {
-        font-size: 11px;
-        color: $BAKANO-DARK;
-        background-color: $white;
-        border: 1px solid $text-light;
-        border-radius: 6px;
-        padding: 2px 6px;
-      }
+    .post-type {
+      font-size: 11px;
+      color: $BAKANO-DARK;
+      background-color: $white;
+      border: 1px solid $text-light;
+      border-radius: 6px;
+      padding: 2px 6px;
     }
   }
+}
 
 .day-column.is-today-column {
   .hour-cell {
     background-color: $overlay-purple;
+
     &.is-past {
       background-color: $alert-error-bg;
     }
@@ -495,13 +513,50 @@ $cell-height: 96px;
 }
 
 // Estado de carga de programación
-.calendar-grid-wrapper::after {
-  content: v-bind('store.scheduledLoading ? "Cargando posts programados…" : ""');
+// Overlay minimalista en medio del calendario
+.calendar-loading-overlay {
   position: absolute;
-  top: 12px;
-  right: 16px;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none; // no bloquea interacciones
+}
+
+.overlay-box {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: $white;
+  border: 1px solid $text-light;
+  border-radius: 12px;
+  padding: 8px 12px;
+  box-shadow: 0 6px 20px $overlay-purple;
+}
+
+.loader {
+  width: 24px;
+  height: 24px;
+  border: 3px solid $text-light;
+  border-top-color: $BAKANO-PURPLE;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.loader-text {
   font-size: 12px;
   color: $BAKANO-PURPLE;
+  font-weight: 600;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 // --- Media Queries (Desktop) ---
