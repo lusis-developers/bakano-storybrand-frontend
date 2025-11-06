@@ -1,7 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import type { IBusiness } from '@/types/business.types'
 import IntegrationsStatus from './IntegrationsStatus.vue'
+import integrationService from '@/services/integration.service'
+import type { IIntegrationRecord } from '@/types/integration.types'
 
 interface Props {
   business: IBusiness
@@ -76,6 +78,62 @@ const callPhone = () => {
     window.location.href = `tel:${props.business.phone}`
   }
 }
+
+// --- Integrations inline status (per business) ---
+const isLoadingIntegrations = ref(false)
+const facebookStatus = ref<{ connected: boolean; name?: string; pictureUrl?: string } | null>(null)
+const instagramStatus = ref<{ connected: boolean; username?: string; profilePictureUrl?: string; followersCount?: number } | null>(null)
+
+function sanitizeUrl(url?: string): string {
+  if (!url) return ''
+  return url.replace(/`/g, '').trim()
+}
+
+async function loadIntegrationsInline() {
+  const businessId = (props.business as any)._id || (props.business as any).id
+  if (!businessId) return
+  try {
+    isLoadingIntegrations.value = true
+    const { data } = await integrationService.getIntegrations(String(businessId))
+    const byType = (type: string) => data.find((r: IIntegrationRecord) => String(r.type).toLowerCase() === type)
+
+    const fb = byType('facebook')
+    if (fb) {
+      const md = (fb.metadata || {}) as any
+      facebookStatus.value = {
+        connected: !!fb.isConnected || fb.connectionStatus === 'connected',
+        name: md?.pageName || fb.name,
+        pictureUrl: sanitizeUrl(md?.picture?.size150 || md?.picture?.normal || md?.picture?.url || md?.pagePictureUrl),
+      }
+    } else {
+      facebookStatus.value = { connected: false }
+    }
+
+    const ig = byType('instagram')
+    if (ig) {
+      const md = (ig.metadata || {}) as any
+      instagramStatus.value = {
+        connected: !!ig.isConnected || ig.connectionStatus === 'connected',
+        username: md?.instagramUsername || md?.username,
+        profilePictureUrl: sanitizeUrl(md?.instagramProfilePictureUrl || md?.profilePictureUrl || md?.picture?.url),
+        followersCount: typeof md?.followersCount === 'number' ? md.followersCount : undefined,
+      }
+    } else {
+      instagramStatus.value = { connected: false }
+    }
+  } catch (e) {
+    // En caso de error, mantenemos estados como no conectados para no romper la UI
+    facebookStatus.value = facebookStatus.value || { connected: false }
+    instagramStatus.value = instagramStatus.value || { connected: false }
+    console.error('[BusinessCard] Error cargando integraciones inline:', e)
+  } finally {
+    isLoadingIntegrations.value = false
+  }
+}
+
+onMounted(() => {
+  loadIntegrationsInline()
+})
 </script>
 
 <template>
@@ -86,6 +144,33 @@ const callPhone = () => {
         <div class="business-name-section">
           <h3 class="business-name">{{ business.name }}</h3>
           <span :class="['status-badge', statusColor]">{{ statusText }}</span>
+          <!-- Inline integrations badges -->
+          <div class="integrations-inline" aria-label="Estado de integraciones">
+            <div
+              v-if="facebookStatus"
+              :class="['integration-badge', facebookStatus.connected ? 'connected' : 'disconnected']"
+              :title="facebookStatus.connected 
+                ? `Facebook conectado · Negocio: ${business.name}${facebookStatus.name ? ` · Página: ${facebookStatus.name}` : ''}`
+                : `Facebook no conectado · Negocio: ${business.name}`"
+            >
+              <i class="fa-brands fa-facebook"></i>
+              <span>
+                {{ facebookStatus.connected ? 'Facebook conectado' : 'Facebook no conectado' }}
+              </span>
+            </div>
+            <div
+              v-if="instagramStatus"
+              :class="['integration-badge', instagramStatus.connected ? 'connected' : 'disconnected']"
+              :title="instagramStatus.connected 
+                ? `Instagram conectado · Negocio: ${business.name}${instagramStatus.username ? ` · Usuario: @${instagramStatus.username}` : ''}`
+                : `Instagram no conectado · Negocio: ${business.name}`"
+            >
+              <i class="fa-brands fa-instagram"></i>
+              <span>
+                {{ instagramStatus.connected ? 'Instagram conectado' : 'Instagram no conectado' }}
+              </span>
+            </div>
+          </div>
         </div>
         
         <p v-if="business.industry" class="business-industry">
@@ -569,5 +654,42 @@ const callPhone = () => {
   margin-top: 1.5rem;
   border-top: 1px solid #f1f5f9;
   padding-top: 1.5rem;
+}
+
+// Integrations inline badges (minimalist palette)
+.integrations-inline {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.integration-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid lighten($BAKANO-DARK, 82%);
+  background: $BAKANO-LIGHT;
+  color: $BAKANO-DARK;
+
+  i {
+    color: $BAKANO-PINK;
+  }
+
+  &.connected {
+    background: rgba($BAKANO-PINK, 0.08);
+    border-color: lighten($BAKANO-PINK, 24%);
+  }
+
+  &.disconnected {
+    background: $BAKANO-LIGHT;
+    border-color: lighten($BAKANO-DARK, 86%);
+    i {
+      color: lighten($BAKANO-DARK, 35%);
+    }
+  }
 }
 </style>
