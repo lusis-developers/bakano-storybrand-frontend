@@ -301,7 +301,7 @@ function logout() {
 .brand h1 {
   font-size: 1.5rem;
   font-weight: 700;
-  color: #1e293b;
+  color: $BAKANO-DARK;
   margin: 0;
 
   @media (max-width: 768px) {
@@ -333,7 +333,7 @@ function logout() {
 
 .user-name {
   font-weight: 600;
-  color: #1e293b;
+  color: $BAKANO-DARK;
   font-size: 0.875rem;
 }
 
@@ -370,7 +370,7 @@ function logout() {
   width: 40px;
   height: 40px;
   border: 4px solid #e2e8f0;
-  border-top: 4px solid #667eea;
+  border-top: 4px solid $BAKANO-PINK;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -395,10 +395,11 @@ function logout() {
 // Welcome Section
 .welcome-section {
   .welcome-card {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
+    background: white;
+    color: $BAKANO-DARK;
     padding: 2rem;
     border-radius: 16px;
+    border: 1px solid #e2e8f0;
 
     @media (max-width: 768px) {
       padding: 1.5rem;
@@ -417,7 +418,7 @@ function logout() {
 
     p {
       font-size: 1.125rem;
-      opacity: 0.9;
+      color: #64748b;
       margin-bottom: 2rem;
 
       @media (max-width: 768px) {
@@ -443,10 +444,10 @@ function logout() {
   align-items: center;
   gap: 1rem;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: white;
+  border: 1px solid #e2e8f0;
   border-radius: 12px;
-  color: white;
+  color: $BAKANO-DARK;
   text-decoration: none;
   text-align: left;
   cursor: pointer;
@@ -462,13 +463,13 @@ function logout() {
   }
 
   &:hover:not(:disabled) {
-    background: rgba(255, 255, 255, 0.2);
+    background: #f8fafc;
     transform: translateY(-2px);
   }
 
   &.primary {
-    background: rgba(255, 255, 255, 0.2);
-    border-color: rgba(255, 255, 255, 0.3);
+    background: #f8fafc;
+    border-color: #e2e8f0;
   }
 
   &.disabled {
@@ -488,6 +489,7 @@ function logout() {
 
 .action-icon {
   font-size: 1.5rem;
+  color: $BAKANO-PINK;
 
   @media (max-width: 768px) {
     font-size: 1.25rem;
@@ -507,7 +509,7 @@ function logout() {
 
   p {
     font-size: 0.875rem;
-    opacity: 0.8;
+    color: #64748b;
     margin: 0;
 
     @media (max-width: 768px) {
@@ -521,7 +523,7 @@ function logout() {
   h2 {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #1e293b;
+    color: $BAKANO-DARK;
     margin-bottom: 1rem;
 
     @media (max-width: 768px) {
@@ -570,7 +572,7 @@ function logout() {
   h3 {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #1e293b;
+    color: $BAKANO-DARK;
     margin-bottom: 0.25rem;
 
     @media (max-width: 768px) {
@@ -590,7 +592,7 @@ function logout() {
   h2 {
     font-size: 1.5rem;
     font-weight: 700;
-    color: #1e293b;
+    color: $BAKANO-DARK;
     margin-bottom: 1rem;
 
     @media (max-width: 768px) {
@@ -625,7 +627,7 @@ function logout() {
   h3 {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #1e293b;
+    color: $BAKANO-DARK;
     margin-bottom: 0.5rem;
 
     @media (max-width: 768px) {
@@ -658,7 +660,7 @@ function logout() {
   h3 {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #1e293b;
+    color: $BAKANO-DARK;
     margin-bottom: 0.5rem;
 
     @media (max-width: 768px) {
@@ -705,22 +707,23 @@ function logout() {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: $BAKANO-PINK;
   color: white;
 
   &:hover {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    background: darken($BAKANO-PINK, 6%);
+    box-shadow: 0 6px 14px rgba(230, 40, 92, 0.18);
   }
 }
 
 .btn-outline {
   background: transparent;
-  color: #667eea;
-  border: 1px solid #667eea;
+  color: $BAKANO-PINK;
+  border: 1px solid $BAKANO-PINK;
 
   &:hover {
-    background: #667eea;
+    background: $BAKANO-PINK;
     color: white;
   }
 }
