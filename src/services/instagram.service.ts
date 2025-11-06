@@ -100,6 +100,43 @@ class InstagramService extends APIBase {
       throw new Error(message)
     }
   }
+
+  /**
+   * Publica un Reel (video) en la cuenta de Instagram del negocio.
+   * Backend: POST /integrations/instagram/post/publish/reel/:businessId
+   * - Campo de archivo: 'video'
+   * - Campos extra en form-data: caption, share_to_feed, published, scheduled_publish_time
+   */
+  async publishReelPost(
+    businessId: string,
+    payload: { caption?: string; share_to_feed?: boolean; published?: boolean; scheduled_publish_time?: number | string },
+    video: File,
+  ): Promise<{ message: string; data: any }> {
+    try {
+      const form = new FormData()
+      // Campos de texto
+      if (payload?.caption) form.append('caption', payload.caption)
+      if (typeof payload?.share_to_feed !== 'undefined') form.append('share_to_feed', String(!!payload.share_to_feed))
+      if (typeof payload?.published !== 'undefined') form.append('published', String(!!payload.published))
+      if (typeof payload?.scheduled_publish_time !== 'undefined') {
+        form.append('scheduled_publish_time', String(payload.scheduled_publish_time))
+      }
+
+      // Archivo de video
+      if (video) {
+        form.append('video', video, (video as any)?.name || 'reel.mp4')
+      }
+
+      const response: AxiosResponse<{ message: string; data: any }> = await this.post(
+        `${this.endpoint}/instagram/post/publish/reel/${businessId}`,
+        form,
+      )
+      return response.data
+    } catch (error: any) {
+      const message = error?.message || 'Error al publicar el Reel en Instagram'
+      throw new Error(message)
+    }
+  }
 }
 
 const instagramService = new InstagramService()
