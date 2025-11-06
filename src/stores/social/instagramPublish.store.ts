@@ -48,6 +48,35 @@ export const useInstagramPublishStore = defineStore('instagramPublishStore', {
       }
     },
 
+    /**
+     * Publica un Reel (video) en Instagram.
+     * - payload: { caption?, share_to_feed?, published?, scheduled_publish_time? }
+     * - video: archivo a subir en el campo 'video'
+     */
+    async publishReel(
+      businessId: string,
+      payload: { caption?: string; share_to_feed?: boolean; published?: boolean; scheduled_publish_time?: number | string },
+      video: File,
+    ): Promise<{ message: string; data: any }> {
+      this.publishing = true
+      this.error = null
+      this.lastResponse = null
+      this.lastContainerId = null
+      try {
+        const response = await instagramService.publishReelPost(businessId, payload, video)
+        this.lastResponse = response
+        // El backend incluye container_id e is_scheduled dentro de data
+        this.lastContainerId = (response as any)?.data?.container_id || null
+        return response
+      } catch (error: any) {
+        const message = error?.message || 'Error al publicar Reel en Instagram'
+        this.error = message
+        throw new Error(message)
+      } finally {
+        this.publishing = false
+      }
+    },
+
     reset() {
       this.publishing = false
       this.error = null
