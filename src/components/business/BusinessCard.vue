@@ -149,25 +149,21 @@ onMounted(() => {
             <div
               v-if="facebookStatus"
               :class="['integration-badge', facebookStatus.connected ? 'connected' : 'disconnected']"
-              :title="facebookStatus.connected 
-                ? `Facebook conectado · Negocio: ${business.name}${facebookStatus.name ? ` · Página: ${facebookStatus.name}` : ''}`
-                : `Facebook no conectado · Negocio: ${business.name}`"
+              title="Estado de Facebook"
             >
               <i class="fa-brands fa-facebook"></i>
               <span>
-                {{ facebookStatus.connected ? 'Facebook conectado' : 'Facebook no conectado' }}
+                {{ facebookStatus.connected ? (facebookStatus.name || 'Facebook conectado') : 'Facebook no conectado' }}
               </span>
             </div>
             <div
               v-if="instagramStatus"
               :class="['integration-badge', instagramStatus.connected ? 'connected' : 'disconnected']"
-              :title="instagramStatus.connected 
-                ? `Instagram conectado · Negocio: ${business.name}${instagramStatus.username ? ` · Usuario: @${instagramStatus.username}` : ''}`
-                : `Instagram no conectado · Negocio: ${business.name}`"
+              title="Estado de Instagram"
             >
               <i class="fa-brands fa-instagram"></i>
               <span>
-                {{ instagramStatus.connected ? 'Instagram conectado' : 'Instagram no conectado' }}
+                {{ instagramStatus.connected ? (instagramStatus.username ? '@' + instagramStatus.username : 'Instagram conectado') : 'Instagram no conectado' }}
               </span>
             </div>
           </div>
