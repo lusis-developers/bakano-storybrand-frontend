@@ -90,6 +90,12 @@ const router = createRouter({
       component: () => import('../views/SocialManagerView.vue'),
       meta: { requiresAuth: true, requiresVerified: true },
     },
+    {
+      path: '/advisor',
+      name: 'advisor',
+      component: () => import('../views/AdvisorView.vue'),
+      meta: { requiresAuth: true, requiresVerified: true },
+    },
   ],
 })
 
