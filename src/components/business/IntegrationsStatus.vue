@@ -324,7 +324,7 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
       <h4 class="title"><i class="fa-solid fa-plug"></i> Integraciones</h4>
       <button type="button" class="btn btn-primary" @click="openWizard">
         <i class="fa-solid fa-share-nodes"></i>
-        <span>Conectar redes</span>
+        <span>{{ fbConnectionStatus === 'connected' && igIsConnectedFromStore ? 'Reconectar redes' : 'Conectar redes' }}</span>
       </button>
     </div>
 
