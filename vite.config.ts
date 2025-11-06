@@ -6,6 +6,9 @@ import vueDevTools from 'vite-plugin-vue-devtools'
 
 // https://vite.dev/config/
 export default defineConfig({
+  define: {
+    'import.meta.env.APP_VERSION': JSON.stringify(process.env.npm_package_version ?? '0.0.0'),
+  },
   plugins: [vue(), vueDevTools()],
   resolve: {
     alias: {
