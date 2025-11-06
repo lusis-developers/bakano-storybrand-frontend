@@ -131,6 +131,9 @@ function logout() {
   authStore.logout()
   router.push('/login')
 }
+
+// Limpieza: se elimina la simulación del Asesor IA dentro del dashboard.
+// El acceso ahora se realiza mediante un RouterLink hacia la ruta /advisor.
 </script>
 
 <template>
@@ -180,6 +183,15 @@ function logout() {
                     <p>Programa y publica en Facebook e Instagram</p>
                   </div>
                 </button>
+                
+                <!-- Nueva acción rápida: Asesor IA 24/7 -->
+                <RouterLink class="action-btn" to="/advisor" title="Asesor IA 24/7">
+                  <div class="action-icon"><i class="fas fa-comments"></i></div>
+                  <div class="action-content">
+                    <h3>Asesor IA 24/7</h3>
+                    <p>Chatea y consulta métricas</p>
+                  </div>
+                </RouterLink>
               </div>
             </div>
           </section>
@@ -261,6 +273,9 @@ function logout() {
               </div>
             </div>
           </section>
+          
+          <!-- Se elimina el bloque del Asesor IA 24/7 del dashboard.
+               Ahora se ofrece como una vista dedicada accesible desde las acciones rápidas. -->
         </div>
       </div>
     </main>
@@ -432,9 +447,19 @@ function logout() {
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 12px;
   color: white;
+  text-decoration: none;
   text-align: left;
   cursor: pointer;
   transition: all 0.2s ease;
+
+  &:link,
+  &:visited,
+  &:hover,
+  &:active,
+  &:focus {
+    text-decoration: none;
+    outline: none;
+  }
 
   &:hover:not(:disabled) {
     background: rgba(255, 255, 255, 0.2);
@@ -699,4 +724,6 @@ function logout() {
     color: white;
   }
 }
+
+// Limpieza: se removieron estilos de la sección del Asesor IA ya que ahora es una vista independiente.
 </style>
