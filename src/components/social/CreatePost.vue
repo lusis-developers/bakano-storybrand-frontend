@@ -5,6 +5,12 @@ import { useBusinessStore } from '@/stores/business.store'
 import CalendarSelect from '@/components/shared/CalendarSelect.vue'
 import { useFacebookPublishStore } from '@/stores/social/facebookPublish.store'
 import { useToast } from '@/composables/useToast'
+import CreatePostHeader from '@/components/social/create/CreatePostHeader.vue'
+import MediaPicker from '@/components/social/create/MediaPicker.vue'
+import ThumbnailsGrid from '@/components/social/create/ThumbnailsGrid.vue'
+import SchedulerBar from '@/components/social/create/SchedulerBar.vue'
+import PreviewCard from '@/components/social/create/PreviewCard.vue'
+import PublishingOverlay from '@/components/social/create/PublishingOverlay.vue'
 
 // Props y eventos del modal
 const props = defineProps<{
@@ -33,6 +39,16 @@ const showEmojiPicker = ref(false)
 const showLocationPicker = ref(false)
 const postLocation = ref('')
 const menuOpen = ref(false)
+
+// Handlers para subcomponentes
+function handleImagesSelected(files: FileList) {
+  const arr = Array.from(files)
+  if (arr.length) uploadedMedia.value = [...uploadedMedia.value, ...arr]
+}
+function handleVideosSelected(files: FileList) {
+  const arr = Array.from(files).filter((f) => (f.type || '').startsWith('video/'))
+  if (arr.length) uploadedMedia.value = [...uploadedMedia.value, ...arr]
+}
 
 // Helpers
 function close() { emit('update:modelValue', false) }
@@ -564,17 +580,7 @@ watch(
     <!-- Modal container -->
     <div class="post-modal-container">
       <!-- Header -->
-      <div class="post-modal-header">
-        <div class="post-modal-header-left">
-          <h3>Crear publicación</h3>
-          <div v-if="props.selection?.day || props.selection?.hour" class="post-modal-chips">
-            <span v-if="props.selection?.day" class="chip">{{ props.selection?.day }}</span>
-            <span v-if="props.selection?.hour" class="chip">{{ props.selection?.hour }}</span>
-            <span v-if="postLocation" class="chip"><i class="fa-solid fa-location-dot"></i> {{ postLocation }}</span>
-          </div>
-        </div>
-        <button class="icon-btn" @click="close">✕</button>
-      </div>
+      <CreatePostHeader :selection="props.selection" :postLocation="postLocation" @close="close" />
 
       <!-- Body: dos columnas -->
       <div class="post-modal-body">
@@ -599,108 +605,51 @@ watch(
           </div>
 
           <!-- Media uploader -->
-          <div class="media-uploader">
-            <div class="toolbar">
-              <button class="toolbar-btn" @click="menuOpen = !menuOpen">Imagen/Video</button>
-              <button class="toolbar-btn" @click="toggleEmojiPicker">Emoji</button>
-              <button class="toolbar-btn" @click="toggleLocationPicker">Ubicación</button>
-            </div>
-            <div v-if="menuOpen" class="dropdown">
-              <button class="dropdown-item" @click="onAddImage">Añadir imagen</button>
-              <button class="dropdown-item" @click="onAddVideo">Añadir video</button>
-            </div>
-            <input ref="fileInput" type="file" accept="image/*" class="sr-only" @change="onFilesSelected" />
-            <input ref="videoFileInput" type="file" accept="video/*" class="sr-only" @change="onVideosSelected" />
-
-            <!-- Panels debajo del toolbar -->
-            <div class="toolbar-panels">
-              <!-- Emoji picker simple -->
-              <div v-if="showEmojiPicker" class="emoji-panel">
-                <div class="emoji-grid">
-                  <button
-                    v-for="e in ['😀', '😂', '😍', '🔥', '🎉', '👍', '🙏', '💡', '📍', '📷', '🎬', '🏷️', '🌟', '💼']"
-                    :key="e"
-                    class="emoji-btn"
-                    @click="insertEmoji(e)"
-                    :aria-label="`Insertar ${e}`"
-                  >{{ e }}</button>
-                </div>
-              </div>
-
-              <!-- Location picker simple -->
-              <div v-if="showLocationPicker" class="location-panel">
-                <label class="field-label" for="post-location">Ubicación</label>
-                <input id="post-location" v-model="postLocation" class="input" placeholder="Ej: Bogotá, Colombia" />
-                <div class="panel-actions">
-                  <button class="btn" @click="applyLocation">Aplicar</button>
-                </div>
-              </div>
-            </div>
-          </div>
+          <MediaPicker
+            :showEmojiPicker="showEmojiPicker"
+            :showLocationPicker="showLocationPicker"
+            :postLocation="postLocation"
+            @toggle-emoji="toggleEmojiPicker"
+            @toggle-location="toggleLocationPicker"
+            @update:postLocation="(v) => (postLocation = v)"
+            @apply-location="applyLocation"
+            @images-selected="handleImagesSelected"
+            @videos-selected="handleVideosSelected"
+          />
 
           <!-- Thumbnails -->
-          <div v-if="uploadedMedia.length" class="thumb-grid">
-            <div v-for="(file, idx) in uploadedMedia" :key="idx" class="thumb">
-              <template v-if="(file.type || '').startsWith('image/')">
-                <img :src="makeObjectURL(file)" class="thumb-img" :alt="`media-${idx}`" />
-              </template>
-              <template v-else-if="(file.type || '').startsWith('video/')">
-                <video :src="makeObjectURL(file)" class="thumb-video" muted controls></video>
-              </template>
-              <div class="thumb-badge">
-                <template v-if="(file.type || '').startsWith('video/')"><i class="fa-solid fa-video"></i></template>
-                <template v-else>#{{ idx + 1 }}</template>
-              </div>
-            </div>
-          </div>
+          <ThumbnailsGrid
+            v-if="uploadedMedia.length"
+            :files="uploadedMedia.map(f => ({ url: makeObjectURL(f), type: ((f.type || '').startsWith('video/') ? 'video' : 'image') }))"
+          />
 
           <!-- Scheduler -->
-          <div class="scheduler">
-            <button class="btn" :disabled="publishing" @click="close">Cancelar</button>
-            <div class="scheduler-actions">
-              <button class="btn" :disabled="publishing" @click="openCalendarSelect">Seleccionar fecha y hora</button>
-              <span v-if="scheduleTime" class="schedule-info"><i class="fa-solid fa-calendar-days"></i> {{ formattedSchedule }}</span>
-              <button class="btn btn-primary" :disabled="publishing" @click="publishNow" :aria-busy="publishing ? 'true' : 'false'">
-                <span v-if="publishing" class="spinner" aria-hidden="true"></span>
-                <span>{{ publishing ? 'Publicando…' : 'Publicar ahora' }}</span>
-              </button>
-              <button class="btn btn-primary" :disabled="publishing" @click="scheduleNow">Programar</button>
-            </div>
-          </div>
+          <SchedulerBar
+            :formattedSchedule="formattedSchedule"
+            :hasSchedule="!!scheduleTime"
+            :publishing="publishing"
+            @open-picker="openCalendarSelect"
+            @publish-now="publishNow"
+            @schedule-now="scheduleNow"
+            @cancel="close"
+          />
         </div>
 
         <!-- Columna derecha (Vista previa) -->
         <div class="post-modal-col">
-          <div class="preview-card">
-            <div class="preview-header">
-              <div class="avatar">
-                <img v-if="avatarUrl" :src="avatarUrl" alt="Foto de perfil" class="avatar-img" />
-              </div>
-              <div class="preview-title">
-                <span class="name">{{ displayName }}</span>
-                <span class="time">Just now</span>
-              </div>
-            </div>
-            <div class="preview-body">{{ postText || 'Tu texto aparecerá aquí...' }}</div>
-            <video v-if="firstVideoUrl" :src="firstVideoUrl" class="preview-video" controls></video>
-            <img v-else-if="firstImageUrl" :src="firstImageUrl" class="preview-img" alt="preview" />
-            <div class="preview-actions">
-              <button class="action"><i class="fa-regular fa-thumbs-up"></i> Like</button>
-              <button class="action"><i class="fa-regular fa-comment"></i> Comment</button>
-              <button class="action"><i class="fa-solid fa-share"></i> Share</button>
-            </div>
-            <p class="preview-note">Las previsualizaciones son una aproximación...</p>
-            <div v-if="postLocation" class="preview-location"><i class="fa-solid fa-location-dot"></i> {{ postLocation }}</div>
-          </div>
+          <PreviewCard
+            :avatarUrl="avatarUrl"
+            :displayName="displayName"
+            :postText="postText || 'Tu texto aparecerá aquí...'"
+            :firstVideoUrl="firstVideoUrl"
+            :firstImageUrl="firstImageUrl"
+            :pageImageUrl="pageImageUrl"
+            :postLocation="postLocation"
+          />
         </div>
       </div>
       <!-- Overlay de publicación en progreso -->
-      <div v-if="publishing" class="publishing-overlay" aria-busy="true" role="alert" aria-live="assertive">
-        <div class="publishing-overlay-content">
-          <span class="spinner lg" aria-hidden="true"></span>
-          <div class="publishing-text">{{ isScheduling ? 'Programando…' : 'Publicando…' }}</div>
-        </div>
-      </div>
+      <PublishingOverlay v-if="publishing" :isScheduling="isScheduling" />
     </div>
   </div>
   <CalendarSelect v-model="showCalendarSelect" :value="scheduleTime" @confirm="onCalendarConfirm" />
@@ -876,7 +825,7 @@ watch(
 
 .char-counter {
   font-size: 12px;
-  color: $text-light;
+  color: $BAKANO-DARK;
   text-align: right;
 }
 
@@ -1036,8 +985,13 @@ watch(
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* Overlay explícito de publicación */
