@@ -57,7 +57,7 @@ onMounted(async () => {
 const initializeDashboard = async () => {
   try {
     isLoading.value = true
-    
+
     // Cargar datos necesarios
     await Promise.all([
       businessStore.fetchBusinesses(),
@@ -274,7 +274,7 @@ function logout() {
 }
 
 .container {
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
   padding: 0 1rem;
 
@@ -449,7 +449,7 @@ function logout() {
   &.disabled {
     opacity: 0.5;
     cursor: not-allowed;
-    
+
     &:hover {
       background: rgba(255, 255, 255, 0.1);
       transform: none;
