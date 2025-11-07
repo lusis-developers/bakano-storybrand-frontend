@@ -53,11 +53,8 @@ const connectInstagram = async () => {
     connecting.value = false
   }
 }
-
-onMounted(() => {
-  // Iniciar proceso automáticamente al entrar
-  connectInstagram()
-})
+// Nota: se desactiva el inicio automático de conexión.
+// El usuario puede iniciar el proceso manualmente con el botón "Reintentar".
 </script>
 
 <template>
