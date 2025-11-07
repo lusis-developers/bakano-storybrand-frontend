@@ -74,11 +74,8 @@ const initializeDashboard = async () => {
       // Cargar actividad de Instagram (últimos 10 posts + insights)
       try {
         await integrationStore.loadInstagramPosts(businessId, 10)
-        // Si falta la integración, notificar y redirigir a la página de negocios
-        if (integrationStore.igIntegrationMissing) {
-          triggerToast('Para una mejor experiencia, integra tus redes sociales (Facebook e Instagram). Te llevamos a la página de negocios para conectar.', 'info')
-          router.push('/business')
-        }
+        // Si falta la integración, mostrar un mensaje claro en el Dashboard.
+        // No redirigimos automáticamente; el usuario decide cuándo ir a Gestión de Negocios.
       } catch (e) {
         console.warn('No se pudo cargar actividad de Instagram:', e)
       }
@@ -218,6 +215,19 @@ function logout() {
           <!-- Stats Section -->
           <section class="stats-section">
             <h2>Resumen de Actividad</h2>
+            <!-- Aviso de integración faltante (sin redirección automática) -->
+            <div v-if="integrationStore.igIntegrationMissing" class="integration-alert">
+              <div class="alert-content">
+                <i class="fas fa-plug" aria-hidden="true"></i>
+                <span>
+                  Para ver tus métricas sociales aquí, primero conecta tus redes (Facebook e Instagram)
+                  desde la Gestión de Negocios.
+                </span>
+              </div>
+              <button class="btn btn-primary" @click="router.push('/business')">
+                Ir a Gestión de Negocios
+              </button>
+            </div>
             
             <div class="stats-grid">
               <div class="stat-card">
@@ -573,6 +583,30 @@ function logout() {
     @media (max-width: 768px) {
       font-size: 1.25rem;
     }
+  }
+}
+
+// Aviso de integración faltante (inline, sin modal)
+.integration-alert {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff7f9;
+  border: 1px solid #ffe0e9;
+  color: $BAKANO-DARK;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+
+  .alert-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #9a3e51;
+  }
+
+  i {
+    color: $BAKANO-PINK;
   }
 }
 
