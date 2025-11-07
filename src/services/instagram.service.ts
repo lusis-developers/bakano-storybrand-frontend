@@ -5,6 +5,7 @@ import type {
   IInstagramFinalizeResponse,
   IInstagramLinkedAccount,
 } from '@/types/integration.types'
+import type { IInstagramPostsResponse } from '@/types/integration.types'
 
 class InstagramService extends APIBase {
   private readonly endpoint = 'integrations'
@@ -134,6 +135,24 @@ class InstagramService extends APIBase {
       return response.data
     } catch (error: any) {
       const message = error?.message || 'Error al publicar el Reel en Instagram'
+      throw new Error(message)
+    }
+  }
+
+  /**
+   * Obtiene los posts recientes de Instagram junto con sus insights.
+   * Backend: GET /integrations/instagram/posts/:businessId?limit=10
+   */
+  async getInstagramPostsWithInsights(
+    businessId: string,
+    limit = 10,
+  ): Promise<IInstagramPostsResponse> {
+    try {
+      const endpoint = `${this.endpoint}/instagram/posts/${businessId}${limit ? `?limit=${limit}` : ''}`
+      const response = await this.get<IInstagramPostsResponse>(endpoint)
+      return response.data
+    } catch (error: any) {
+      const message = error?.message || 'Error al obtener posts e insights de Instagram'
       throw new Error(message)
     }
   }
