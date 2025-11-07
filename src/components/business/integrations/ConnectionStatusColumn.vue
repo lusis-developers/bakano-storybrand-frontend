@@ -28,6 +28,9 @@ const props = defineProps<{
         </div>
       </li>
     </ul>
+    <p v-if="!props.facebookConnectedIntegration || !props.igConnected" class="helper">
+      Consejo: si al intentar conectar no se abren ventanas de autorización, desactiva bloqueadores de contenido para este sitio o prueba desde otro navegador.
+    </p>
   </div>
 </template>
 
