@@ -153,4 +153,6 @@ export interface IInstagramPostsResponse {
   count: number
   limit: number
   posts: IInstagramPost[]
+  // Cliente: bandera opcional para indicar que falta integración (cuando el backend responde 404)
+  missingIntegration?: boolean
 }

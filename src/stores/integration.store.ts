@@ -34,6 +34,7 @@ export const useIntegrationStore = defineStore('integrations', () => {
   const igPostsLoading = ref(false)
   const igPostsError = ref<string | null>(null)
   const instagramPosts = ref<import('@/types/integration.types').IInstagramPost[]>([])
+  const igIntegrationMissing = ref(false)
 
   // Composable del SDK de Facebook
   const { isLoading: isSDKLoading, error: sdkError, login } = useFacebookSDK()
@@ -240,6 +241,7 @@ export const useIntegrationStore = defineStore('integrations', () => {
     try {
       const response = await instagramService.getInstagramPostsWithInsights(businessId, limit)
       instagramPosts.value = response?.posts || []
+      igIntegrationMissing.value = !!response?.missingIntegration
       return response
     } catch (err: any) {
       const message = err?.message || 'Error al obtener posts de Instagram'
@@ -356,6 +358,7 @@ export const useIntegrationStore = defineStore('integrations', () => {
     instagramTotalPosts,
     instagramTotalReach,
     instagramTotalEngagement,
+    igIntegrationMissing,
   }
 })
 
