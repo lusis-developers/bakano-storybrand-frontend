@@ -152,6 +152,17 @@ class InstagramService extends APIBase {
       const response = await this.get<IInstagramPostsResponse>(endpoint)
       return response.data
     } catch (error: any) {
+      // Si no existe integración (404), devolver respuesta vacía con bandera
+      if (error?.status === 404) {
+        return {
+          message: 'No Instagram/Meta integration found for this business',
+          businessId,
+          count: 0,
+          limit,
+          posts: [],
+          missingIntegration: true,
+        }
+      }
       const message = error?.message || 'Error al obtener posts e insights de Instagram'
       throw new Error(message)
     }
