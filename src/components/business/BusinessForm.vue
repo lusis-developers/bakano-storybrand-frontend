@@ -59,8 +59,8 @@ const industryOptions = computed(() => {
 })
 
 const isFormValid = computed(() => {
-  return formData.value.name.trim() && 
-         !Object.values(errors.value).some(error => error)
+  return formData.value.name.trim() &&
+    !Object.values(errors.value).some(error => error)
 })
 
 const hasAddress = computed(() => {
@@ -72,10 +72,10 @@ const hasAddress = computed(() => {
 const validateField = (field: string, value: string) => {
   switch (field) {
     case 'name':
-      errors.value.name = !value.trim() ? 'El nombre es requerido' : 
-                         value.length > 100 ? 'El nombre no puede exceder 100 caracteres' : ''
+      errors.value.name = !value.trim() ? 'El nombre es requerido' :
+        value.length > 100 ? 'El nombre no puede exceder 100 caracteres' : ''
       break
-    
+
     case 'email':
       if (value) {
         const emailRegex = /^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$/
@@ -84,7 +84,7 @@ const validateField = (field: string, value: string) => {
         errors.value.email = ''
       }
       break
-    
+
     case 'website':
       if (value) {
         const websiteRegex = /^https?:\/\/.+/
@@ -93,7 +93,7 @@ const validateField = (field: string, value: string) => {
         errors.value.website = ''
       }
       break
-    
+
     case 'phone':
       if (value) {
         const phoneRegex = /^[\+]?[1-9][\d]{0,15}$/
@@ -156,7 +156,7 @@ const resetForm = () => {
     },
     isActive: true
   }
-  
+
   errors.value = {
     name: '',
     email: '',
@@ -628,6 +628,7 @@ onMounted(() => {
     opacity: 0;
     transform: translateY(-10px);
   }
+
   to {
     opacity: 1;
     transform: translateY(0);
@@ -743,7 +744,7 @@ onMounted(() => {
     margin: 0;
     cursor: pointer;
 
-    &:checked + .toggle-label {
+    &:checked+.toggle-label {
       background: #667eea;
       color: white;
     }
@@ -849,7 +850,12 @@ onMounted(() => {
 }
 
 @keyframes spin {
-  0% { transform: rotate(0deg); }
-  100% { transform: rotate(360deg); }
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>

@@ -1,10 +1,14 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
+import SelectedBusinessIndicator from '@/components/globals/SelectedBusinessIndicator.vue'
 
 const authStore = useAuthStore()
 const isMenuOpen = ref(false)
 const isUserMenuOpen = ref(false)
+
+// Versión de la plataforma inyectada desde Vite (vite.config.ts)
+const appVersion = import.meta.env.APP_VERSION
 
 const toggleMenu = () => {
   isMenuOpen.value = !isMenuOpen.value
@@ -36,6 +40,7 @@ const handleLogout = () => {
             alt="Bakano" 
             class="nav__logo-img"
           />
+          <span class="nav__version" aria-label="Versión de la plataforma">v{{ appVersion }}</span>
         </RouterLink>
 
         <div class="nav__auth">
@@ -50,6 +55,7 @@ const handleLogout = () => {
 
           <!-- User Menu -->
           <div v-else class="nav__auth-user">
+            <SelectedBusinessIndicator class="nav__business-indicator" @requestCloseHeader="closeMenu" />
             <div class="nav__user-menu">
               <button 
                 @click="toggleUserMenu" 
@@ -188,6 +194,23 @@ const handleLogout = () => {
     }
   }
 
+  &__version {
+    margin-left: 0.5rem;
+    display: none;
+    align-items: center;
+    font-size: 0.75rem;
+    line-height: 1;
+    color: rgba($BAKANO-DARK, 0.7);
+    background: rgba($BAKANO-DARK, 0.05);
+    border: 1px solid rgba($BAKANO-DARK, 0.12);
+    padding: 0.125rem 0.5rem;
+    border-radius: 6px;
+
+    @media (min-width: 768px) {
+      display: inline-flex;
+    }
+  }
+
   &__menu {
     display: none;
     align-items: center;
@@ -246,6 +269,16 @@ const handleLogout = () => {
     &-user {
       position: relative;
     }
+  }
+
+  &__business-indicator {
+    margin-right: 0.75rem;
+  }
+
+  &__auth-user {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
   }
 
   &__user-menu {
