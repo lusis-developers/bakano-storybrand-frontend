@@ -30,6 +30,10 @@ export const useIntegrationStore = defineStore('integrations', () => {
   const instagramTokenInfo = ref<IInstagramConnectResponse['token'] | null>(null)
   const integrations = ref<IIntegrationRecord[]>([])
   const integrationsCount = ref<number>(0)
+  // Instagram Activity
+  const igPostsLoading = ref(false)
+  const igPostsError = ref<string | null>(null)
+  const instagramPosts = ref<import('@/types/integration.types').IInstagramPost[]>([])
 
   // Composable del SDK de Facebook
   const { isLoading: isSDKLoading, error: sdkError, login } = useFacebookSDK()
@@ -51,6 +55,14 @@ export const useIntegrationStore = defineStore('integrations', () => {
 
   const isFacebookConnected = computed<boolean>(() => !!facebookIntegration.value?.isConnected)
   const isInstagramConnected = computed<boolean>(() => !!instagramIntegration.value?.isConnected)
+  // Totales de actividad de Instagram (últimos N posts)
+  const instagramTotalPosts = computed(() => instagramPosts.value.length)
+  const instagramTotalReach = computed(() =>
+    instagramPosts.value.reduce((sum, p) => sum + (p?.insights?.reach || 0), 0),
+  )
+  const instagramTotalEngagement = computed(() =>
+    instagramPosts.value.reduce((sum, p) => sum + (p?.insights?.engagement || 0), 0),
+  )
 
   const getIntegrationByType = (type: IntegrationType): IIntegrationRecord | undefined => {
     return integrations.value.find((i) => i.type === type)
@@ -215,6 +227,31 @@ export const useIntegrationStore = defineStore('integrations', () => {
   }
 
   /**
+   * Carga los últimos posts de Instagram con sus insights para el negocio.
+   */
+  const loadInstagramPosts = async (businessId: string, limit = 10) => {
+    if (!businessId) {
+      throw new Error('Se requiere el ID del negocio para obtener actividad de Instagram')
+    }
+
+    igPostsLoading.value = true
+    igPostsError.value = null
+
+    try {
+      const response = await instagramService.getInstagramPostsWithInsights(businessId, limit)
+      instagramPosts.value = response?.posts || []
+      return response
+    } catch (err: any) {
+      const message = err?.message || 'Error al obtener posts de Instagram'
+      igPostsError.value = message
+      console.error('[IntegrationStore] ❌ Error en loadInstagramPosts:', err)
+      throw new Error(message)
+    } finally {
+      igPostsLoading.value = false
+    }
+  }
+
+  /**
    * Finaliza la vinculación con una cuenta de Instagram específica (Business)
    */
   const finalizeInstagramAccount = async (
@@ -302,6 +339,7 @@ export const useIntegrationStore = defineStore('integrations', () => {
     connectInstagram,
     finalizeInstagramAccount,
     loadIntegrations,
+    loadInstagramPosts,
     clearError,
     clearPages,
     clearInstagramError,
@@ -311,6 +349,13 @@ export const useIntegrationStore = defineStore('integrations', () => {
     instagramAccounts,
     instagramTokenInfo,
     integrations,
+    // Actividad de Instagram
+    igPostsLoading,
+    igPostsError,
+    instagramPosts,
+    instagramTotalPosts,
+    instagramTotalReach,
+    instagramTotalEngagement,
   }
 })
 
