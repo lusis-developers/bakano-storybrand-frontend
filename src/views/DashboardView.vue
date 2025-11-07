@@ -74,6 +74,11 @@ const initializeDashboard = async () => {
       // Cargar actividad de Instagram (últimos 10 posts + insights)
       try {
         await integrationStore.loadInstagramPosts(businessId, 10)
+        // Si falta la integración, notificar y redirigir a la página de conexión
+        if (integrationStore.igIntegrationMissing) {
+          triggerToast('Para una mejor experiencia, integra tus redes sociales (Facebook e Instagram). Te llevamos a la página para conectar.', 'info')
+          router.push('/instagram-connect')
+        }
       } catch (e) {
         console.warn('No se pudo cargar actividad de Instagram:', e)
       }
@@ -213,6 +218,16 @@ function logout() {
           <!-- Stats Section -->
           <section class="stats-section">
             <h2>Resumen de Actividad</h2>
+            <!-- Aviso de integración faltante -->
+            <div v-if="integrationStore.igIntegrationMissing" class="integration-alert">
+              <div class="alert-content">
+                <i class="fas fa-plug"></i>
+                <span>Para una mejor experiencia, integra tus redes sociales (Facebook e Instagram).</span>
+              </div>
+              <button class="btn btn-primary" @click="router.push('/instagram-connect')">
+                Conectar redes
+              </button>
+            </div>
             
             <div class="stats-grid">
               <div class="stat-card">
@@ -568,6 +583,30 @@ function logout() {
     @media (max-width: 768px) {
       font-size: 1.25rem;
     }
+  }
+}
+
+// Aviso de integración faltante
+.integration-alert {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fff7f9;
+  border: 1px solid #ffe0e9;
+  color: $BAKANO-DARK;
+  padding: 1rem;
+  border-radius: 12px;
+  margin-bottom: 1rem;
+
+  .alert-content {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: #9a3e51;
+  }
+
+  i {
+    color: $BAKANO-PINK;
   }
 }
 
