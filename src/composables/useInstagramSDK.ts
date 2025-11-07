@@ -1,6 +1,7 @@
 // FILE: src/composables/useInstagramSDK.ts
 import { ref, readonly } from 'vue'
 import { useFacebookSDK } from '@/composables/useFacebookSDK'
+import { useToast } from '@/composables/useToast'
 
 // Meta Graph version (Facebook Graph API para IG profesional vinculado a página)
 const FB_GRAPH_VERSION = 'v24.0'
@@ -45,6 +46,7 @@ function buildInstagramAuthorizeURL(
 export function useInstagramSDK() {
   const loading = ref(false)
   const error = ref<string | null>(null)
+  const { triggerToast } = useToast()
 
   // SDK de Facebook se mantiene para flujos con Graph API (páginas vinculadas)
   const { login, isLoading: isSDKLoading, error: fbError } = useFacebookSDK()
@@ -78,8 +80,18 @@ export function useInstagramSDK() {
     error.value = null
     if (!IG_CLIENT_ID || !IG_REDIRECT_URI) {
       error.value = 'Faltan variables: VITE_INSTAGRAM_CLIENT_ID y VITE_INSTAGRAM_REDIRECT_URI'
+      triggerToast(error.value, 'error', 6000)
       return
     }
+    // Mensaje informativo para posibles bloqueos del navegador o content blockers
+    console.info(
+      '[Instagram Login] Redirigiendo a Instagram para autorizar. Si no se abre en unos segundos, puede ser un problema del navegador o de un "content blocker". Desactiva bloqueadores para este sitio o intenta desde otro navegador.',
+    )
+    triggerToast(
+      'Redirigiendo a Instagram para autorizar. Si no se abre en unos segundos, desactiva bloqueadores de contenido para este sitio o prueba desde otro navegador.',
+      'info',
+      5000,
+    )
     const state = Math.random().toString(36).slice(2, 10)
     sessionStorage.setItem('ig_oauth_state', state)
     const url = buildInstagramAuthorizeURL(state, scopes)
@@ -114,8 +126,9 @@ export function useInstagramSDK() {
         body: JSON.stringify({ code, redirect_uri: IG_REDIRECT_URI }),
       })
       if (!res.ok) {
-        const msg = `Error al intercambiar code: ${res.status}`
+        const msg = `Error al intercambiar code: ${res.status}. Si la ventana de autorización no se abrió, desactiva bloqueadores de contenido para este sitio o prueba desde otro navegador.`
         error.value = msg
+        triggerToast(msg, 'error', 6000)
         throw new Error(msg)
       }
       const json = (await res.json()) as {
@@ -129,7 +142,11 @@ export function useInstagramSDK() {
         permissions: json.permissions?.split(',') ?? [],
       }
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Error al obtener short-lived token'
+      error.value =
+        e instanceof Error
+          ? e.message
+          : 'Error al obtener short-lived token. Verifica bloqueadores de contenido y prueba en otro navegador.'
+      triggerToast(String(error.value), 'error', 6000)
       throw new Error(error.value)
     } finally {
       loading.value = false
@@ -152,13 +169,18 @@ export function useInstagramSDK() {
         body: JSON.stringify({ access_token: shortLivedToken }),
       })
       if (!res.ok) {
-        const msg = `Error al obtener long-lived token: ${res.status}`
+        const msg = `Error al obtener long-lived token: ${res.status}. Si el flujo no avanzó, desactiva bloqueadores de contenido para este sitio o prueba desde otro navegador.`
         error.value = msg
+        triggerToast(msg, 'error', 6000)
         throw new Error(msg)
       }
       return (await res.json()) as { access_token: string; token_type: string; expires_in: number }
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Error al intercambiar long-lived token'
+      error.value =
+        e instanceof Error
+          ? e.message
+          : 'Error al intercambiar long-lived token. Verifica bloqueadores de contenido y prueba en otro navegador.'
+      triggerToast(String(error.value), 'error', 6000)
       throw new Error(error.value)
     } finally {
       loading.value = false
@@ -181,13 +203,18 @@ export function useInstagramSDK() {
         body: JSON.stringify({ access_token: longLivedToken }),
       })
       if (!res.ok) {
-        const msg = `Error al refrescar long-lived token: ${res.status}`
+        const msg = `Error al refrescar long-lived token: ${res.status}. Si tu sesión no se pudo renovar, desactiva bloqueadores de contenido para este sitio o prueba desde otro navegador.`
         error.value = msg
+        triggerToast(msg, 'error', 6000)
         throw new Error(msg)
       }
       return (await res.json()) as { access_token: string; token_type: string; expires_in: number }
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Error al refrescar token'
+      error.value =
+        e instanceof Error
+          ? e.message
+          : 'Error al refrescar token. Verifica bloqueadores de contenido y prueba en otro navegador.'
+      triggerToast(String(error.value), 'error', 6000)
       throw new Error(error.value)
     } finally {
       loading.value = false
@@ -204,7 +231,11 @@ export function useInstagramSDK() {
       if (!res.ok) throw new Error(`IG API error: ${res.status}`)
       return (await res.json()) as { id: string; username: string }
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Error al consultar IG me'
+      error.value =
+        e instanceof Error
+          ? e.message
+          : 'Error al consultar IG me. Verifica bloqueadores de contenido y prueba en otro navegador.'
+      triggerToast(String(error.value), 'error', 6000)
       throw new Error(error.value)
     } finally {
       loading.value = false
@@ -227,7 +258,11 @@ export function useInstagramSDK() {
       const json = (await res.json()) as { data?: Array<Record<string, any>> }
       return json.data ?? []
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Error al listar media (Instagram API)'
+      error.value =
+        e instanceof Error
+          ? e.message
+          : 'Error al listar media (Instagram API). Verifica bloqueadores de contenido y prueba en otro navegador.'
+      triggerToast(String(error.value), 'error', 6000)
       throw new Error(error.value)
     } finally {
       loading.value = false
@@ -251,7 +286,11 @@ export function useInstagramSDK() {
         access_token: p.access_token ? String(p.access_token) : undefined, // Page Access Token si está presente
       }))
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Error al listar páginas del usuario'
+      error.value =
+        e instanceof Error
+          ? e.message
+          : 'Error al listar páginas del usuario. Verifica bloqueadores de contenido y prueba en otro navegador.'
+      triggerToast(String(error.value), 'error', 6000)
       throw new Error(error.value)
     } finally {
       loading.value = false
@@ -274,7 +313,11 @@ export function useInstagramSDK() {
       const json = (await res.json()) as { instagram_business_account?: { id: string } | null }
       return json.instagram_business_account?.id ?? null
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Error al consultar instagram_business_account'
+      error.value =
+        e instanceof Error
+          ? e.message
+          : 'Error al consultar instagram_business_account. Verifica bloqueadores de contenido y prueba en otro navegador.'
+      triggerToast(String(error.value), 'error', 6000)
       throw new Error(error.value)
     } finally {
       loading.value = false
@@ -298,7 +341,11 @@ export function useInstagramSDK() {
       const json = (await res.json()) as { data?: Array<Record<string, any>> }
       return json.data ?? []
     } catch (e) {
-      error.value = e instanceof Error ? e.message : 'Error al listar media del IG User'
+      error.value =
+        e instanceof Error
+          ? e.message
+          : 'Error al listar media del IG User. Verifica bloqueadores de contenido y prueba en otro navegador.'
+      triggerToast(String(error.value), 'error', 6000)
       throw new Error(error.value)
     } finally {
       loading.value = false
