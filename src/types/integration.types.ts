@@ -118,3 +118,39 @@ export interface IIntegrationConfig {
   customFields?: Record<string, any>
   tokenExpiresAt?: string | Date | null
 }
+
+// ===== Posts e Insights de Instagram =====
+export interface IInstagramPostInsights {
+  engagement: number
+  impressions: number
+  reach: number
+  saved: number
+}
+
+export interface IInstagramMediaChild {
+  id: string
+  media_type: string
+  media_url: string
+}
+
+export interface IInstagramPost {
+  id: string
+  caption?: string
+  media_type: 'IMAGE' | 'VIDEO' | 'CAROUSEL_ALBUM' | string
+  media_url?: string
+  permalink: string
+  thumbnail_url?: string
+  timestamp: string
+  like_count?: number
+  comments_count?: number
+  insights?: IInstagramPostInsights
+  children?: { data: IInstagramMediaChild[] }
+}
+
+export interface IInstagramPostsResponse {
+  message: string
+  businessId: string
+  count: number
+  limit: number
+  posts: IInstagramPost[]
+}
