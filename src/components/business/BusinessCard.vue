@@ -1,6 +1,9 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import type { IBusiness } from '@/types/business.types'
+import IntegrationsStatus from './IntegrationsStatus.vue'
+import integrationService from '@/services/integration.service'
+import type { IIntegrationRecord } from '@/types/integration.types'
 
 interface Props {
   business: IBusiness
@@ -10,6 +13,7 @@ interface Props {
 interface Emits {
   (e: 'edit', business: IBusiness): void
   (e: 'delete', business: IBusiness): void
+  (e: 'connect-facebook'): void
 }
 
 const props = defineProps<Props>()
@@ -74,6 +78,62 @@ const callPhone = () => {
     window.location.href = `tel:${props.business.phone}`
   }
 }
+
+// --- Integrations inline status (per business) ---
+const isLoadingIntegrations = ref(false)
+const facebookStatus = ref<{ connected: boolean; name?: string; pictureUrl?: string } | null>(null)
+const instagramStatus = ref<{ connected: boolean; username?: string; profilePictureUrl?: string; followersCount?: number } | null>(null)
+
+function sanitizeUrl(url?: string): string {
+  if (!url) return ''
+  return url.replace(/`/g, '').trim()
+}
+
+async function loadIntegrationsInline() {
+  const businessId = (props.business as any)._id || (props.business as any).id
+  if (!businessId) return
+  try {
+    isLoadingIntegrations.value = true
+    const { data } = await integrationService.getIntegrations(String(businessId))
+    const byType = (type: string) => data.find((r: IIntegrationRecord) => String(r.type).toLowerCase() === type)
+
+    const fb = byType('facebook')
+    if (fb) {
+      const md = (fb.metadata || {}) as any
+      facebookStatus.value = {
+        connected: !!fb.isConnected || fb.connectionStatus === 'connected',
+        name: md?.pageName || fb.name,
+        pictureUrl: sanitizeUrl(md?.picture?.size150 || md?.picture?.normal || md?.picture?.url || md?.pagePictureUrl),
+      }
+    } else {
+      facebookStatus.value = { connected: false }
+    }
+
+    const ig = byType('instagram')
+    if (ig) {
+      const md = (ig.metadata || {}) as any
+      instagramStatus.value = {
+        connected: !!ig.isConnected || ig.connectionStatus === 'connected',
+        username: md?.instagramUsername || md?.username,
+        profilePictureUrl: sanitizeUrl(md?.instagramProfilePictureUrl || md?.profilePictureUrl || md?.picture?.url),
+        followersCount: typeof md?.followersCount === 'number' ? md.followersCount : undefined,
+      }
+    } else {
+      instagramStatus.value = { connected: false }
+    }
+  } catch (e) {
+    // En caso de error, mantenemos estados como no conectados para no romper la UI
+    facebookStatus.value = facebookStatus.value || { connected: false }
+    instagramStatus.value = instagramStatus.value || { connected: false }
+    console.error('[BusinessCard] Error cargando integraciones inline:', e)
+  } finally {
+    isLoadingIntegrations.value = false
+  }
+}
+
+onMounted(() => {
+  loadIntegrationsInline()
+})
 </script>
 
 <template>
@@ -84,6 +144,29 @@ const callPhone = () => {
         <div class="business-name-section">
           <h3 class="business-name">{{ business.name }}</h3>
           <span :class="['status-badge', statusColor]">{{ statusText }}</span>
+          <!-- Inline integrations badges -->
+          <div class="integrations-inline" aria-label="Estado de integraciones">
+            <div
+              v-if="facebookStatus"
+              :class="['integration-badge', facebookStatus.connected ? 'connected' : 'disconnected']"
+              title="Estado de Facebook"
+            >
+              <i class="fa-brands fa-facebook"></i>
+              <span>
+                {{ facebookStatus.connected ? (facebookStatus.name || 'Facebook conectado') : 'Facebook no conectado' }}
+              </span>
+            </div>
+            <div
+              v-if="instagramStatus"
+              :class="['integration-badge', instagramStatus.connected ? 'connected' : 'disconnected']"
+              title="Estado de Instagram"
+            >
+              <i class="fa-brands fa-instagram"></i>
+              <span>
+                {{ instagramStatus.connected ? (instagramStatus.username ? '@' + instagramStatus.username : 'Instagram conectado') : 'Instagram no conectado' }}
+              </span>
+            </div>
+          </div>
         </div>
         
         <p v-if="business.industry" class="business-industry">
@@ -149,6 +232,11 @@ const callPhone = () => {
         <span class="address-icon"><i class="fas fa-map-marker-alt"></i></span>
         <span class="address-text">{{ addressText }}</span>
       </div>
+      
+      <!-- Integrations Status -->
+      <div class="integrations-wrapper">
+        <IntegrationsStatus :business="business" @connect-facebook="$emit('connect-facebook')" />
+      </div>
     </div>
 
     <!-- Card Footer -->
@@ -177,19 +265,38 @@ const callPhone = () => {
 .business-card {
   background: white;
   border-radius: 12px;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   transition: all 0.2s ease;
   overflow: hidden;
-  border: 1px solid #e2e8f0;
+  border: 1px solid lighten($BAKANO-DARK, 88%);
+  position: relative;
 
   &:hover {
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
     transform: translateY(-2px);
   }
 
   &.inactive {
-    opacity: 0.7;
-    background: #f8fafc;
+    background: lighten($BAKANO-DARK, 96%);
+    border-color: lighten($BAKANO-DARK, 90%);
+    border-left: 4px solid lighten($BAKANO-DARK, 80%);
+    
+    // Sutil overlay para reforzar el estado desactivado
+    &::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      border-radius: 12px;
+      pointer-events: none;
+      background: linear-gradient(
+        rgba($BAKANO-LIGHT, 0.5), rgba($BAKANO-LIGHT, 0.5)
+      );
+    }
+
+    &:hover {
+      transform: none;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+    }
   }
 
   // Grid view
@@ -263,7 +370,7 @@ const callPhone = () => {
 // Card Header
 .card-header {
   padding: 1.5rem 1.5rem 1rem 1.5rem;
-  border-bottom: 1px solid #f1f5f9;
+  border-bottom: 1px solid lighten($BAKANO-DARK, 90%);
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -289,7 +396,7 @@ const callPhone = () => {
 .business-name {
   font-size: 1.25rem;
   font-weight: 600;
-  color: #1e293b;
+  color: $BAKANO-DARK;
   margin: 0;
   line-height: 1.3;
   word-break: break-word;
@@ -310,18 +417,20 @@ const callPhone = () => {
   letter-spacing: 0.025em;
 
   &.success {
-    background: #dcfce7;
-    color: #166534;
+    background: rgba($BAKANO-PINK, 0.12);
+    color: $BAKANO-DARK;
+    border: 1px solid lighten($BAKANO-PINK, 24%);
   }
 
   &.warning {
-    background: #fef3c7;
-    color: #92400e;
+    background: lighten($BAKANO-DARK, 95%);
+    color: lighten($BAKANO-DARK, 20%);
+    border: 1px dashed lighten($BAKANO-DARK, 75%);
   }
 }
 
 .business-industry {
-  color: #64748b;
+  color: lighten($BAKANO-DARK, 40%);
   font-size: 0.875rem;
   margin: 0;
   font-weight: 500;
@@ -337,7 +446,7 @@ const callPhone = () => {
   width: 36px;
   height: 36px;
   border-radius: 8px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid lighten($BAKANO-DARK, 86%);
   background: white;
   cursor: pointer;
   display: flex;
@@ -347,18 +456,80 @@ const callPhone = () => {
   transition: all 0.2s ease;
 
   &:hover {
-    background: #f8fafc;
-    border-color: #cbd5e1;
+    background: lighten($BAKANO-LIGHT, 4%);
+    border-color: lighten($BAKANO-DARK, 80%);
   }
 
   &.edit:hover {
-    background: #eff6ff;
-    border-color: #3b82f6;
+    background: rgba($BAKANO-PINK, 0.1);
+    border-color: lighten($BAKANO-PINK, 24%);
   }
 
   &.danger:hover {
-    background: #fef2f2;
-    border-color: #ef4444;
+    background: rgba($BAKANO-PINK, 0.08);
+    border-color: lighten($BAKANO-PINK, 18%);
+  }
+}
+
+// Estado visual cuando la tarjeta está inactiva
+.business-card.inactive {
+  .business-name {
+    color: lighten($BAKANO-DARK, 30%);
+  }
+
+  .business-description,
+  .business-industry,
+  .footer-info,
+  .address-info {
+    color: lighten($BAKANO-DARK, 45%);
+    border-color: lighten($BAKANO-DARK, 90%);
+    background: lighten($BAKANO-LIGHT, 1%);
+  }
+
+  .action-btn {
+    background: lighten($BAKANO-LIGHT, 0%);
+    border-color: lighten($BAKANO-DARK, 88%);
+    color: lighten($BAKANO-DARK, 35%);
+    
+    &:hover {
+      background: lighten($BAKANO-LIGHT, 2%);
+      border-color: lighten($BAKANO-DARK, 86%);
+    }
+  }
+
+  .btn-outline {
+    background: lighten($BAKANO-LIGHT, 2%);
+    color: lighten($BAKANO-DARK, 25%);
+    border-color: lighten($BAKANO-DARK, 85%);
+
+    &:hover {
+      background: lighten($BAKANO-LIGHT, 4%);
+      color: lighten($BAKANO-DARK, 20%);
+    }
+  }
+
+  .btn-danger {
+    background: lighten($BAKANO-PINK, 26%);
+    color: white;
+    border-color: lighten($BAKANO-PINK, 28%);
+
+    &:hover {
+      background: lighten($BAKANO-PINK, 22%);
+      border-color: lighten($BAKANO-PINK, 22%);
+    }
+  }
+
+  .integration-badge {
+    opacity: 0.75;
+    border-color: lighten($BAKANO-DARK, 88%);
+    
+    &.connected {
+      background: rgba($BAKANO-PINK, 0.06);
+    }
+
+    &.disconnected {
+      background: lighten($BAKANO-LIGHT, 1%);
+    }
   }
 }
 
@@ -372,7 +543,7 @@ const callPhone = () => {
 }
 
 .business-description {
-  color: #64748b;
+  color: lighten($BAKANO-DARK, 40%);
   font-size: 0.875rem;
   line-height: 1.5;
   margin: 0 0 1rem 0;
@@ -399,41 +570,27 @@ const callPhone = () => {
   gap: 0.5rem;
   padding: 0.5rem 0.75rem;
   border-radius: 6px;
-  border: 1px solid #e2e8f0;
-  background: #f8fafc;
+  border: 1px solid lighten($BAKANO-DARK, 86%);
+  background: $BAKANO-LIGHT;
   cursor: pointer;
   transition: all 0.2s ease;
   text-align: left;
   font-size: 0.75rem;
 
   &:hover {
-    background: #f1f5f9;
-    border-color: #cbd5e1;
-  }
-
-  &.email:hover {
-    background: #eff6ff;
-    border-color: #3b82f6;
-  }
-
-  &.phone:hover {
-    background: #f0fdf4;
-    border-color: #22c55e;
-  }
-
-  &.website:hover {
-    background: #fefbef;
-    border-color: #f59e0b;
+    background: lighten($BAKANO-LIGHT, 3%);
+    border-color: lighten($BAKANO-DARK, 80%);
   }
 }
 
 .contact-icon {
   font-size: 0.875rem;
   flex-shrink: 0;
+  color: lighten($BAKANO-DARK, 30%);
 }
 
 .contact-text {
-  color: #374151;
+  color: $BAKANO-DARK;
   font-weight: 500;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -445,12 +602,12 @@ const callPhone = () => {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  color: #64748b;
+  color: lighten($BAKANO-DARK, 40%);
   font-size: 0.75rem;
   padding: 0.5rem 0.75rem;
-  background: #f8fafc;
+  background: $BAKANO-LIGHT;
   border-radius: 6px;
-  border: 1px solid #e2e8f0;
+  border: 1px solid lighten($BAKANO-DARK, 86%);
 }
 
 .address-icon {
@@ -465,12 +622,12 @@ const callPhone = () => {
 // Card Footer
 .card-footer {
   padding: 1rem 1.5rem;
-  border-top: 1px solid #f1f5f9;
+  border-top: 1px solid lighten($BAKANO-DARK, 90%);
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 1rem;
-  background: #fafbfc;
+  background: lighten($BAKANO-LIGHT, 2%);
 
   @media (max-width: 768px) {
     padding: 1rem;
@@ -485,7 +642,7 @@ const callPhone = () => {
   flex-direction: column;
   gap: 0.25rem;
   font-size: 0.75rem;
-  color: #64748b;
+  color: lighten($BAKANO-DARK, 40%);
 
   @media (max-width: 768px) {
     flex-direction: row;
@@ -537,23 +694,68 @@ const callPhone = () => {
 
 .btn-outline {
   background: transparent;
-  color: #667eea;
-  border: 1px solid #667eea;
+  color: $BAKANO-DARK;
+  border: 1px solid lighten($BAKANO-DARK, 80%);
 
   &:hover:not(:disabled) {
-    background: #667eea;
+    background: $BAKANO-PINK;
     color: white;
+    border-color: lighten($BAKANO-PINK, 8%);
   }
 }
 
 .btn-danger {
-  background: #ef4444;
+  background: $BAKANO-PINK;
   color: white;
-  border: 1px solid #ef4444;
+  border: 1px solid lighten($BAKANO-PINK, 8%);
 
   &:hover:not(:disabled) {
-    background: #dc2626;
-    border-color: #dc2626;
+    background: darken($BAKANO-PINK, 6%);
+    border-color: darken($BAKANO-PINK, 6%);
+  }
+}
+
+// Integrations wrapper
+.integrations-wrapper {
+  margin-top: 1.5rem;
+  border-top: 1px solid lighten($BAKANO-DARK, 90%);
+  padding-top: 1.5rem;
+}
+
+// Integrations inline badges (minimalist palette)
+.integrations-inline {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.integration-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  padding: 0.25rem 0.55rem;
+  border-radius: 999px;
+  border: 1px solid lighten($BAKANO-DARK, 82%);
+  background: $BAKANO-LIGHT;
+  color: $BAKANO-DARK;
+
+  i {
+    color: $BAKANO-PINK;
+  }
+
+  &.connected {
+    background: rgba($BAKANO-PINK, 0.08);
+    border-color: lighten($BAKANO-PINK, 24%);
+  }
+
+  &.disconnected {
+    background: $BAKANO-LIGHT;
+    border-color: lighten($BAKANO-DARK, 86%);
+    i {
+      color: lighten($BAKANO-DARK, 35%);
+    }
   }
 }
 </style>

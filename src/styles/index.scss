@@ -1,2 +1,28 @@
 @forward 'colorVariables.module.scss';
 @forward 'fonts.modules.scss';
+
+@use "sass:color";
+@use "sass:math";
+
+// Minimal, global replacements for deprecated lighten()/darken()
+// Usage stays the same across the app: lighten($color, 10%), darken($color, 10%)
+// Internally uses modern Sass color APIs to avoid deprecation warnings.
+@function _to-percent($amount) {
+  @return if(math.unit($amount) == '%', $amount, $amount * 1%);
+}
+
+@function lighten($c, $amount, $method: 'adjust') {
+  $pct: _to-percent($amount);
+  @if $method == 'scale' {
+    @return color.scale($c, $lightness: $pct);
+  }
+  @return color.adjust($c, $lightness: $pct);
+}
+
+@function darken($c, $amount, $method: 'adjust') {
+  $pct: _to-percent($amount);
+  @if $method == 'scale' {
+    @return color.scale($c, $lightness: -$pct);
+  }
+  @return color.adjust($c, $lightness: -$pct);
+}

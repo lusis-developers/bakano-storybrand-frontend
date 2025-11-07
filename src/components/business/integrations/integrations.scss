@@ -1,0 +1,333 @@
+/* Shared styles for integration steps (Facebook/Instagram) extracted from IntegrationsStatus.vue */
+
+/* Utilities */
+.left {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  object-fit: cover;
+  border: 1px solid lighten($BAKANO-DARK, 82%);
+}
+
+.placeholder {
+  color: lighten($BAKANO-DARK, 24%);
+}
+
+/* Buttons */
+.btn {
+  padding: 0.625rem 1rem;
+  border-radius: 10px;
+  font-weight: 700;
+  font-size: 0.95rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  min-width: 140px;
+
+  &:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+}
+
+.btn-outline {
+  background: $white;
+  color: $BAKANO-DARK;
+  border-color: lighten($BAKANO-DARK, 82%);
+
+  &:hover:not(:disabled) {
+    background: darken($white, 2%);
+    border-color: lighten($BAKANO-DARK, 76%);
+    box-shadow: 0 4px 12px rgba($BAKANO-DARK, 0.12);
+  }
+}
+
+.btn-primary {
+  background: $BAKANO-DARK;
+  color: $white;
+  border-color: $BAKANO-DARK;
+
+  &:hover:not(:disabled) {
+    background: lighten($BAKANO-DARK, 4%);
+    border-color: lighten($BAKANO-DARK, 4%);
+    box-shadow: 0 6px 18px rgba($BAKANO-DARK, 0.18);
+  }
+}
+
+.btn-secondary {
+  background: lighten($BAKANO-DARK, 86%);
+  color: $BAKANO-DARK;
+  border-color: lighten($BAKANO-DARK, 86%);
+
+  &:hover:not(:disabled) {
+    background: lighten($BAKANO-DARK, 82%);
+    border-color: lighten($BAKANO-DARK, 82%);
+    box-shadow: 0 4px 12px rgba($BAKANO-DARK, 0.12);
+  }
+}
+
+.btn-danger {
+  background: $BAKANO-PINK;
+  color: $white;
+  border-color: $BAKANO-PINK;
+
+  &:hover:not(:disabled) {
+    background: darken($BAKANO-PINK, 8%);
+    border-color: darken($BAKANO-PINK, 8%);
+    box-shadow: 0 4px 12px rgba($BAKANO-DARK, 0.12);
+  }
+}
+
+/* Step blocks */
+.step {
+  display: grid;
+  gap: 0.5rem;
+  margin-bottom: 1.25rem;
+
+  &-ig {
+    margin-top: 20px;
+    border-top: 1px solid #eee9e9;
+    padding-top: 20px;
+  }
+}
+
+.step-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 1rem;
+  font-weight: 800;
+  color: $BAKANO-DARK;
+  background: rgba($BAKANO-DARK, 0.05);
+  border: 1px solid lighten($BAKANO-DARK, 18%);
+  border-radius: 999px;
+  padding: 0.35rem 0.65rem;
+  width: fit-content;
+  gap: 0.35rem;
+}
+
+.helper {
+  font-size: 1rem;
+  color: lighten($BAKANO-DARK, 20%);
+}
+
+.feedback {
+  margin: 0.6rem 0 0.9rem;
+}
+
+.error {
+  font-size: 0.95rem;
+  color: $BAKANO-PINK;
+  background: rgba($BAKANO-PINK, 0.1);
+  border: 1px solid lighten($BAKANO-PINK, 24%);
+  padding: 0.6rem 0.85rem;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.success {
+  font-size: 0.95rem;
+  color: $alert-success;
+  background: rgba($alert-success, 0.08);
+  border: 1px solid lighten($alert-success, 24%);
+  padding: 0.6rem 0.85rem;
+  border-radius: 10px;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Lists of pages/accounts */
+.pages-box {
+  margin-top: 0.75rem;
+  border: 1px solid lighten($BAKANO-DARK, 86%);
+  border-radius: 14px;
+  padding: 0.9rem;
+  background: $BAKANO-LIGHT;
+}
+
+.pages-box ul {
+  list-style: none;
+  margin: 0.6rem 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.pages-box li.page-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.25rem;
+}
+
+.pages-box .info {
+  display: flex;
+  flex-direction: column;
+}
+
+.page-name {
+  font-weight: 800;
+  color: $BAKANO-DARK;
+  font-size: 1rem;
+  overflow-wrap: anywhere;
+}
+
+.page-id {
+  font-size: 0.85rem;
+  color: lighten($BAKANO-DARK, 24%);
+  margin-left: 0.25rem;
+}
+
+.pages-box .category {
+  font-size: 0.85rem;
+  color: lighten($BAKANO-DARK, 24%);
+}
+
+.pages-box .actions .btn-connect {
+  min-width: 120px;
+}
+
+.pages-box .empty-state {
+  padding: 12px;
+  border: 1px dashed #cbd5e1;
+  border-radius: 8px;
+  background: #f8fafc;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.pages-box .empty-state p {
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #475569;
+}
+
+/* Connected summary */
+.connected-summary .summary-box {
+  margin-top: 0.5rem;
+  border: 1px solid lighten($BAKANO-DARK, 86%);
+  border-radius: 14px;
+  padding: 0.75rem;
+  background: $BAKANO-LIGHT;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+/* Status column */
+.status-column {
+  border: 1px solid lighten($BAKANO-DARK, 88%);
+  border-radius: 16px;
+  background: $BAKANO-LIGHT;
+  padding: 0.75rem 0.9rem;
+}
+
+.status-column h6 {
+  margin: 0 0 0.5rem;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 800;
+  color: $BAKANO-DARK;
+}
+
+.status-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.status-list li {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  border-radius: 10px;
+  padding: 0.5rem 0.6rem;
+  border: 1px solid transparent;
+}
+
+.status-list li i {
+  font-size: 1rem;
+}
+
+.status-list li div {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.15;
+}
+
+.status-list li div span {
+  font-weight: 700;
+  color: $BAKANO-DARK;
+}
+
+.status-list li div small {
+  color: lighten($BAKANO-DARK, 25%);
+}
+
+.status-list li.connected {
+  background: #ecfdf5;
+  color: #065f46;
+  border-color: #a7f3d0;
+}
+
+.status-list li.pending {
+  background: #fffbeb;
+  color: #92400e;
+  border-color: #fde68a;
+}
+
+.status-list li.disconnected {
+  background: #f8fafc;
+  color: #334155;
+  border-color: #cbd5e1;
+}
+
+/* Animations (used by modal, keep reusable names) */
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes popIn {
+  from { opacity: 0; transform: translateY(8px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+/* Responsive tweaks for very small screens */
+@media (max-width: 480px) {
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+  }
+
+  .pages-box li.page-item {
+    gap: 0.5rem;
+    padding: 0.4rem 0.2rem;
+  }
+
+  .pages-box .actions .btn-connect {
+    min-width: 100px;
+  }
+}

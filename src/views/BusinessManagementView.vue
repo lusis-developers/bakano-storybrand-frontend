@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useBusiness } from '@/composables/useBusiness'
 import { useConfirmationDialog } from '@/composables/useConfirmationDialog'
 import { useToast } from '@/composables/useToast'
 import BusinessCard from '@/components/business/BusinessCard.vue'
 import BusinessForm from '@/components/business/BusinessForm.vue'
+import { useIntegrationStore } from '@/stores/integration.store'
 
 import SearchableSelect from '@/components/shared/SearchableSelect.vue'
 import BusinessLimitAlert from '@/components/BusinessLimitAlert.vue'
@@ -32,6 +33,7 @@ const {
 
 const { reveal: showConfirmation } = useConfirmationDialog()
 const { triggerToast: showToast } = useToast()
+const integrationStore = useIntegrationStore()
 
 // Estado local
 const showCreateForm = ref(false)
@@ -43,6 +45,14 @@ const searchTerm = ref('')
 const selectedBusinessId = ref<string | number | null>(null)
 const filterStatus = ref<'all' | 'active' | 'inactive'>('all')
 const viewMode = ref<'grid' | 'list'>('grid')
+
+// Nota: los estados de conexión se muestran directamente en cada tarjeta de negocio.
+// Se mantiene el store para cargas y compatibilidad general, pero no se muestran en el header.
+
+const resolveBusinessId = (): string | undefined => {
+  const id = selectedBusinessId.value ?? currentBusiness.value?.id ?? businesses.value[0]?.id
+  return typeof id === 'number' ? String(id) : (id as string | undefined)
+}
 
 // Computed
 const filteredBusinesses = computed(() => {
@@ -172,6 +182,18 @@ const clearBusinessSearch = () => {
 onMounted(async () => {
   await fetchBusinesses()
 })
+
+// Cargar integraciones cuando haya un negocio seleccionado o disponible
+watch([businesses, selectedBusinessId, currentBusiness], async () => {
+  const id = resolveBusinessId()
+  if (id) {
+    try {
+      await integrationStore.loadIntegrations(id)
+    } catch (e) {
+      // Silenciar error aquí; se mostraría en componentes específicos si es necesario
+    }
+  }
+}, { immediate: true })
 </script>
 
 <template>
@@ -383,7 +405,7 @@ onMounted(async () => {
   h1 {
     font-size: 2rem;
     font-weight: 700;
-    color: #1e293b;
+    color: $BAKANO-DARK;
     margin: 0.5rem 0 0.25rem 0;
 
     @media (max-width: 768px) {
@@ -392,7 +414,7 @@ onMounted(async () => {
   }
 
   .subtitle {
-    color: #64748b;
+    color: rgba($BAKANO-DARK, 0.6);
     margin: 0;
     font-size: 1rem;
   }
@@ -452,8 +474,8 @@ onMounted(async () => {
   width: 24px;
   height: 24px;
   border: none;
-  background: #f1f5f9;
-  color: #64748b;
+  background: $BAKANO-LIGHT;
+  color: rgba($BAKANO-DARK, 0.7);
   border-radius: 4px;
   cursor: pointer;
   display: flex;
@@ -464,8 +486,8 @@ onMounted(async () => {
   z-index: 10;
 
   &:hover {
-    background: #e2e8f0;
-    color: #374151;
+    background: rgba($BAKANO-DARK, 0.06);
+    color: $BAKANO-DARK;
   }
   
   i {
@@ -493,13 +515,13 @@ onMounted(async () => {
 
   &:focus {
     outline: none;
-    border-color: #667eea;
+    border-color: $BAKANO-PINK;
   }
 }
 
 .view-toggle {
   display: flex;
-  border: 1px solid #e2e8f0;
+  border: 1px solid rgba($BAKANO-DARK, 0.12);
   border-radius: 8px;
   overflow: hidden;
 }
@@ -513,16 +535,16 @@ onMounted(async () => {
   transition: all 0.2s ease;
 
   &:hover {
-    background: #f1f5f9;
+    background: $BAKANO-LIGHT;
   }
 
   &.active {
-    background: #667eea;
+    background: $BAKANO-PINK;
     color: white;
   }
 
   &:not(:last-child) {
-    border-right: 1px solid #e2e8f0;
+    border-right: 1px solid rgba($BAKANO-DARK, 0.12);
   }
   
   i {
@@ -552,12 +574,12 @@ onMounted(async () => {
   h3 {
     font-size: 1.25rem;
     font-weight: 600;
-    color: #1e293b;
+    color: $BAKANO-DARK;
     margin: 1rem 0 0.5rem 0;
   }
 
   p {
-    color: #64748b;
+    color: rgba($BAKANO-DARK, 0.6);
     margin-bottom: 1.5rem;
     max-width: 400px;
   }
@@ -566,8 +588,8 @@ onMounted(async () => {
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 4px solid #e2e8f0;
-  border-top: 4px solid #667eea;
+  border: 4px solid rgba($BAKANO-DARK, 0.12);
+  border-top: 4px solid $BAKANO-PINK;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -587,7 +609,7 @@ onMounted(async () => {
 .no-results-icon {
   font-size: 3rem;
   margin-bottom: 1rem;
-  color: #64748b;
+  color: rgba($BAKANO-DARK, 0.6);
   
   i {
     font-size: 3rem;
@@ -653,34 +675,34 @@ onMounted(async () => {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: $BAKANO-PINK;
   color: white;
 
   &:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 12px rgba($BAKANO-PINK, 0.3);
   }
 }
 
 .btn-outline {
   background: transparent;
-  color: #667eea;
-  border: 1px solid #667eea;
+  color: $BAKANO-DARK;
+  border: 1px solid rgba($BAKANO-DARK, 0.2);
 
   &:hover:not(:disabled) {
-    background: #667eea;
-    color: white;
+    background: rgba($BAKANO-DARK, 0.06);
+    color: $BAKANO-DARK;
   }
 }
 
 .btn-ghost {
   background: transparent;
-  color: #64748b;
+  color: rgba($BAKANO-DARK, 0.7);
   border: 1px solid transparent;
 
   &:hover:not(:disabled) {
-    background: #f1f5f9;
-    color: #1e293b;
+    background: $BAKANO-LIGHT;
+    color: $BAKANO-DARK;
   }
 }
 
@@ -693,4 +715,5 @@ onMounted(async () => {
   font-size: 1rem;
   line-height: 1;
 }
+
 </style>
