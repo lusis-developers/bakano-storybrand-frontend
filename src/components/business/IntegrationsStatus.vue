@@ -5,6 +5,8 @@ import FacebookStep from './integrations/FacebookStep.vue'
 import InstagramStep from './integrations/InstagramStep.vue'
 import { useBusinessStore } from '@/stores/business.store'
 import { useFacebookSDK } from '@/composables/useFacebookSDK'
+import { useToast } from '@/composables/useToast'
+import InfoBanner from '@/components/globals/InfoBanner.vue'
 import useIntegrationStore from '@/stores/integration.store'
 import facebookService from '@/services/facebook.service'
 import type { IBusiness } from '@/types/business.types'
@@ -19,6 +21,21 @@ import type {
 // Estado base
 const businessStore = useBusinessStore()
 const { isLoading: isSDKLoading, error: sdkError, login } = useFacebookSDK()
+const { triggerToast } = useToast()
+// Helper para garantizar que los toasts reciban un string
+const safeToast = (
+  msg: string | null | undefined,
+  type: 'success' | 'info' | 'error',
+  duration?: number,
+) => {
+  const text = (msg ?? '').trim() ||
+    (type === 'success'
+      ? 'Operación realizada correctamente.'
+      : type === 'info'
+        ? 'Información'
+        : 'Ha ocurrido un error.');
+  triggerToast(text, type, duration)
+}
 
 const isWizardOpen = ref(false)
 const isConnecting = ref(false)
@@ -135,6 +152,12 @@ const openWizard = async () => {
   isWizardOpen.value = true
   connectionError.value = null
   successMessage.value = null
+  // Aviso preventivo por bloqueadores de contenido
+  triggerToast(
+    'Si no ves las ventanas de autorización, desactiva bloqueadores de contenido para este sitio o prueba desde otro navegador.',
+    'info',
+    5000,
+  )
   // Limpiar listados transitorios, pero conservar el estado conectado si ya existe
   userPages.value = []
   instagramSuccessMessage.value = null
@@ -156,12 +179,22 @@ const closeWizard = () => {
 const startRelinkingFacebook = () => {
   if (isSDKLoading.value || isConnecting.value) return
   isRelinkingFacebook.value = true
+  triggerToast(
+    'Reintentando conexión de Facebook. Si no aparece el diálogo, desactiva bloqueadores o prueba otro navegador.',
+    'info',
+    5000,
+  )
   connectFacebook()
 }
 
 const startRelinkingInstagram = () => {
   if (isConnectingInstagram.value) return
   isRelinkingInstagram.value = true
+  triggerToast(
+    'Reintentando conexión de Instagram. Si no se abre la autorización, desactiva bloqueadores o prueba otro navegador.',
+    'info',
+    5000,
+  )
   connectInstagramFlow()
 }
 
@@ -199,6 +232,7 @@ const connectFacebook = async () => {
       if (match) {
         await selectPage(match)
         successMessage.value = `¡Listo! Detectamos tu página pendiente y la vinculamos automáticamente.`
+        safeToast(successMessage.value, 'success')
         return
       }
     }
@@ -207,8 +241,10 @@ const connectFacebook = async () => {
       userPages.value.length > 0
         ? `¡Listo! Encontramos ${userPages.value.length} página(s) asociadas a tu cuenta.`
         : '¡Listo! Conexión realizada. No encontramos páginas asociadas.'
+    safeToast(successMessage.value, 'success')
   } catch (err: any) {
     connectionError.value = sdkError.value || err?.message || 'Error al conectar Facebook'
+    safeToast(connectionError.value, 'error', 6000)
   } finally {
     isConnecting.value = false
   }
@@ -239,11 +275,13 @@ const selectPage = async (page: IIntegrationPage) => {
 
     const { message, integration, page: selectedPage } = await integrationStore.finalizeFacebookPage(businessId, page)
     successMessage.value = message || `Integración finalizada para la página "${page.name}".`
+    safeToast(successMessage.value, 'success')
     facebookConnectedIntegration.value = integration || null
     connectedFacebookPage.value = selectedPage || null
     isRelinkingFacebook.value = false
   } catch (err: any) {
     connectionError.value = err?.message || 'Error al finalizar la integración con la página'
+    safeToast(connectionError.value, 'error', 6000)
   } finally {
     savingPageId.value = null
   }
@@ -269,8 +307,10 @@ const connectInstagramFlow = async () => {
     instagramAccounts.value = accounts || []
 
     instagramSuccessMessage.value = message || '¡Listo! Selecciona tu cuenta de Instagram a vincular.'
+    safeToast(instagramSuccessMessage.value, 'success')
   } catch (err: any) {
     instagramErrorMessage.value = err?.message || 'Error al conectar Instagram'
+    safeToast(instagramErrorMessage.value, 'error', 6000)
   } finally {
     isConnectingInstagram.value = false
   }
@@ -296,6 +336,7 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
     )
     instagramSuccessMessage.value =
       message || `Instagram conectado correctamente: @${account.instagramUsername}`
+    safeToast(instagramSuccessMessage.value, 'success')
     // Opcional: podríamos reflejar integración de Instagram si se necesita en la UI
     if (integration) {
       // Nada extra por ahora; el store ya se actualiza internamente
@@ -312,6 +353,7 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
     isRelinkingInstagram.value = false
   } catch (err: any) {
     instagramErrorMessage.value = err?.message || 'Error al vincular la cuenta de Instagram'
+    safeToast(instagramErrorMessage.value, 'error', 6000)
   } finally {
     savingInstagramId.value = null
   }
@@ -339,6 +381,11 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
           </div>
 
           <div class="modal-body">
+            <!-- Banner informativo reutilizable -->
+            <InfoBanner
+              type="info"
+              message="Si no ves las ventanas de autorización, desactiva bloqueadores de contenido para este sitio o prueba desde otro navegador."
+            />
             <div class="wizard-layout">
               <!-- Columna de estado de conexión -->
               <ConnectionStatusColumn
