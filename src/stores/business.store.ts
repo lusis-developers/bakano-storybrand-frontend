@@ -272,6 +272,23 @@ export const useBusinessStore = defineStore('business', () => {
     currentBusiness.value = business
   }
 
+  // Asegura que exista un negocio seleccionado; si no hay, usa el primero disponible
+  const ensureCurrentBusiness = async (): Promise<IBusiness | null> => {
+    if (currentBusiness.value) return currentBusiness.value
+
+    // Si no hay negocios cargados, intentar obtenerlos
+    if (businesses.value.length === 0) {
+      await fetchBusinesses()
+    }
+
+    const first = businesses.value[0]
+    if (first) {
+      currentBusiness.value = first
+      return first
+    }
+    return null
+  }
+
   // Función para resetear el estado
   const resetState = () => {
     // Limpiar el array manteniendo la reactividad
@@ -319,6 +336,7 @@ export const useBusinessStore = defineStore('business', () => {
     deleteBusiness,
     toggleBusinessStatus,
     setCurrentBusiness,
+    ensureCurrentBusiness,
     resetState,
     searchBusinessesByName,
     clearErrors,
