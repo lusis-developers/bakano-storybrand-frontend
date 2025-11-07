@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import { useOnboardingStore } from '@/stores/onboarding.store'
 import { useBusinessStore } from '@/stores/business.store'
 import { useContentStore } from '@/stores/content.store'
 import { useScriptsStore } from '@/stores/scripts.store'
+import { useIntegrationStore } from '@/stores/integration.store'
 import { useToast } from '@/composables/useToast'
 import ContentService from '@/services/content.service'
 
@@ -15,6 +16,7 @@ const onboardingStore = useOnboardingStore()
 const businessStore = useBusinessStore()
 const contentStore = useContentStore()
 const scriptsStore = useScriptsStore()
+const integrationStore = useIntegrationStore()
 const { triggerToast } = useToast()
 const router = useRouter()
 
@@ -69,6 +71,13 @@ const initializeDashboard = async () => {
       const businessId = businessStore.businesses[0].id
       await contentStore.fetchContentByBusiness(businessId)
 
+      // Cargar actividad de Instagram (últimos 10 posts + insights)
+      try {
+        await integrationStore.loadInstagramPosts(businessId, 10)
+      } catch (e) {
+        console.warn('No se pudo cargar actividad de Instagram:', e)
+      }
+
       if (contentStore.currentContent && contentStore.currentContent._id) {
         hasExistingContent.value = true
         existingContentId.value = contentStore.currentContent._id
@@ -81,6 +90,11 @@ const initializeDashboard = async () => {
     isLoading.value = false
   }
 }
+
+// Totales derivados de Instagram para el Resumen de Actividad
+const igTotalPosts = computed(() => integrationStore.instagramTotalPosts)
+const igTotalReach = computed(() => integrationStore.instagramTotalReach)
+const igTotalEngagement = computed(() => integrationStore.instagramTotalEngagement)
 
 // Funciones
 const loadUserStatistics = async () => {
@@ -230,6 +244,31 @@ function logout() {
                 <div class="stat-content">
                   <h3>{{ userStatistics?.scriptsByType.ad || 0 }}</h3>
                   <p>Scripts de Anuncios</p>
+                </div>
+              </div>
+
+              <!-- Métricas de Instagram (últimos 10 posts) -->
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fab fa-instagram"></i></div>
+                <div class="stat-content">
+                  <h3>{{ igTotalPosts || 0 }}</h3>
+                  <p>Posts de Instagram</p>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
+                <div class="stat-content">
+                  <h3>{{ igTotalReach || 0 }}</h3>
+                  <p>Alcance (últimos 10)</p>
+                </div>
+              </div>
+
+              <div class="stat-card">
+                <div class="stat-icon"><i class="fas fa-heart"></i></div>
+                <div class="stat-content">
+                  <h3>{{ igTotalEngagement || 0 }}</h3>
+                  <p>Engagement (últimos 10)</p>
                 </div>
               </div>
             </div>
