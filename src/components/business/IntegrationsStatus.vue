@@ -39,6 +39,7 @@ const safeToast = (
 
 const isWizardOpen = ref(false)
 const isConnecting = ref(false)
+const showInfoBanner = ref(true)
 const connectionError = ref<string | null>(null)
 const successMessage = ref<string | null>(null)
 const userPages = ref<IIntegrationPage[]>([])
@@ -383,7 +384,11 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
           <div class="modal-body">
             <!-- Banner informativo reutilizable -->
             <InfoBanner
-              type="info"
+              v-if="showInfoBanner"
+              type="warning"
+              closable
+              :autoCloseMs="6000"
+              @close="showInfoBanner = false"
               message="Si no ves las ventanas de autorización, desactiva bloqueadores de contenido para este sitio o prueba desde otro navegador."
             />
             <div class="wizard-layout">
