@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
+import SelectedBusinessIndicator from '@/components/globals/SelectedBusinessIndicator.vue'
 
 const authStore = useAuthStore()
 const isMenuOpen = ref(false)
@@ -54,6 +55,7 @@ const handleLogout = () => {
 
           <!-- User Menu -->
           <div v-else class="nav__auth-user">
+            <SelectedBusinessIndicator class="nav__business-indicator" @requestCloseHeader="closeMenu" />
             <div class="nav__user-menu">
               <button 
                 @click="toggleUserMenu" 
@@ -267,6 +269,16 @@ const handleLogout = () => {
     &-user {
       position: relative;
     }
+  }
+
+  &__business-indicator {
+    margin-right: 0.75rem;
+  }
+
+  &__auth-user {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
   }
 
   &__user-menu {
