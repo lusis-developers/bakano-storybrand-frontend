@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref } from 'vue'
+import { computed, ref, onMounted, nextTick, watch } from 'vue'
 import { useToast } from '@/composables/useToast'
 import { chatStore } from '@/stores/chat.store'
 import { useBusinessStore } from '@/stores/business.store'
@@ -16,6 +16,29 @@ const messages = computed(() => chat.messages)
 const isSending = computed(() => chat.loading.sending)
 const isReplying = computed(() => chat.loading.replying)
 const currentChatId = computed(() => chat.currentChatId)
+
+// Scroll handling
+const streamEl = ref<HTMLElement | null>(null)
+function scrollToBottom() {
+  const el = streamEl.value
+  if (!el) return
+  el.scrollTop = el.scrollHeight
+}
+
+onMounted(async () => {
+  await nextTick()
+  scrollToBottom()
+})
+
+// Auto-scroll when messages change or when typing state toggles
+watch(messages, async () => {
+  await nextTick()
+  scrollToBottom()
+})
+watch(isReplying, async () => {
+  await nextTick()
+  scrollToBottom()
+})
 
 function formatDate(value?: string): string {
   if (!value) return '—'
@@ -52,6 +75,8 @@ async function sendMessage() {
   if (!sent) return
 
   input.value = ''
+  await nextTick()
+  scrollToBottom()
 
   // Generar respuesta del asistente automáticamente
   await chat.generateAssistantReply()
@@ -119,8 +144,13 @@ function renderMarkdown(md: string): string {
 
 <template>
   <section class="chat-panel">
-    <h2>Chat</h2>
-    <div class="chat-stream">
+    <h2 class="chat-title">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="chat-title__icon">
+        <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Conversación
+    </h2>
+    <div class="chat-stream" ref="streamEl">
       <div v-if="messages.length === 0" class="empty">
         <p>
           {{ currentChatId ? 'Aún no hay mensajes en esta conversación.' : 'Inicia una nueva conversación para comenzar.' }}
@@ -132,6 +162,15 @@ function renderMarkdown(md: string): string {
           <div class="bubble-text" v-else>{{ m.content }}</div>
           <div class="bubble-meta">{{ formatDate(m.createdAt) }}</div>
         </div>
+        <!-- Typing indicator as assistant bubble -->
+        <div v-if="isReplying" class="chat-bubble assistant typing">
+          <div class="bubble-text">
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+            <span class="typing-dot"></span>
+          </div>
+          <div class="bubble-meta">Escribiendo…</div>
+        </div>
       </div>
     </div>
 
@@ -141,10 +180,12 @@ function renderMarkdown(md: string): string {
         type="text"
         placeholder="Escribe tu mensaje"
         :disabled="isSending || isReplying"
+        @keydown.enter.prevent="sendMessage"
       />
       <button class="btn btn-primary" :disabled="isSending || isReplying" @click="sendMessage">
-        <i class="fas fa-paper-plane"></i>
-        {{ isSending || isReplying ? 'Enviando...' : 'Enviar' }}
+        <span class="btn-loader" v-if="isSending || isReplying"></span>
+        <i v-else class="fas fa-paper-plane"></i>
+        <span class="btn-text">{{ isSending || isReplying ? 'Enviando…' : 'Enviar' }}</span>
       </button>
     </div>
   </section>
@@ -159,10 +200,17 @@ function renderMarkdown(md: string): string {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 
-.chat-panel h2 {
-  font-size: 1rem;
+.chat-title {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.95rem;
   color: $BAKANO-DARK;
   margin-bottom: 0.5rem;
+  font-weight: 600;
+}
+.chat-title__icon {
+  color: lighten($BAKANO-DARK, 20%);
 }
 
 .chat-stream {
@@ -176,6 +224,7 @@ function renderMarkdown(md: string): string {
   border: 1px solid lighten($BAKANO-DARK, 83%);
   border-radius: 12px;
   overscroll-behavior: contain;
+  scroll-behavior: smooth;
 }
 
 .empty {
@@ -191,6 +240,7 @@ function renderMarkdown(md: string): string {
   line-height: 1.55;
   word-break: break-word;
   white-space: pre-wrap;
+  animation: bubbleIn 160ms ease-out;
 }
 .chat-bubble.user {
   align-self: flex-end;
@@ -207,6 +257,14 @@ function renderMarkdown(md: string): string {
   border: 1px solid lighten($BAKANO-DARK, 83%);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
   border-top-left-radius: 4px;
+}
+
+.chat-bubble.assistant.typing {
+  .bubble-text {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
 }
 
 /* Better readability for Markdown inside assistant bubble */
@@ -268,6 +326,10 @@ function renderMarkdown(md: string): string {
       border-color: lighten($BAKANO-PINK, 20%);
       box-shadow: 0 0 0 2px lighten($BAKANO-PINK, 40%);
     }
+    &:disabled {
+      opacity: 0.8;
+      background: lighten($BAKANO-DARK, 98.5%);
+    }
   }
 }
 
@@ -278,6 +340,9 @@ function renderMarkdown(md: string): string {
   font-weight: 600;
   border: none;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
 }
 .btn-primary {
   background: $BAKANO-PINK;
@@ -292,5 +357,40 @@ function renderMarkdown(md: string): string {
     cursor: not-allowed;
     box-shadow: none;
   }
+}
+
+.btn-loader {
+  width: 16px;
+  height: 16px;
+  border: 2px solid rgba(255, 255, 255, 0.7);
+  border-top-color: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+.typing-dot {
+  width: 6px;
+  height: 6px;
+  background: lighten($BAKANO-DARK, 20%);
+  border-radius: 50%;
+  display: inline-block;
+  animation: typing 1.2s ease-in-out infinite;
+}
+.typing-dot:nth-child(2) { animation-delay: 0.2s; }
+.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes typing {
+  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
+  40% { transform: translateY(-3px); opacity: 1; }
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+@keyframes bubbleIn {
+  from { transform: translateY(4px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
 }
 </style>
