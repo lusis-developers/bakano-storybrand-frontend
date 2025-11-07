@@ -1,11 +1,12 @@
 <script setup lang="ts">
-import { computed } from 'vue';
+import { computed, ref, onMounted } from 'vue';
 
 interface Props {
   type?: 'info' | 'warning' | 'success' | 'error'
   message: string
   icon?: string
   closable?: boolean
+  autoCloseMs?: number
 }
 const props = defineProps<Props>()
 const emit = defineEmits<{ (e: 'close'): void }>()
@@ -24,13 +25,38 @@ const iconClass = computed(() => {
       return 'fa-solid fa-circle-info'
   }
 })
+
+const roleAttr = computed(() => {
+  switch (props.type) {
+    case 'warning':
+    case 'error':
+      return 'alert'
+    default:
+      return 'status'
+  }
+})
+
+const isVisible = ref(true)
+
+const close = () => {
+  isVisible.value = false
+  emit('close')
+}
+
+onMounted(() => {
+  if (typeof props.autoCloseMs === 'number' && props.autoCloseMs > 0) {
+    setTimeout(() => {
+      if (isVisible.value) close()
+    }, props.autoCloseMs)
+  }
+})
 </script>
 
 <template>
-  <div class="info-banner" :class="props.type || 'info'" role="status">
+  <div v-if="isVisible" class="info-banner" :class="props.type || 'info'" :role="roleAttr">
     <i :class="iconClass" aria-hidden="true"></i>
     <span class="text">{{ props.message }}</span>
-    <button v-if="props.closable" class="close" type="button" @click="emit('close')" aria-label="Cerrar">×</button>
+    <button v-if="props.closable" class="close" type="button" @click="close" aria-label="Cerrar">×</button>
   </div>
   
 </template>
@@ -84,5 +110,6 @@ const iconClass = computed(() => {
   font-size: 1.1rem;
   cursor: pointer;
   line-height: 1;
+  padding: 0 0.25rem;
 }
 </style>
