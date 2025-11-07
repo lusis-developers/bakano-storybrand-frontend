@@ -56,6 +56,65 @@ async function sendMessage() {
   // Generar respuesta del asistente automáticamente
   await chat.generateAssistantReply()
 }
+
+// Minimal Markdown renderer for assistant replies (bold, italics, lists, paragraphs)
+function renderMarkdown(md: string): string {
+  const escapeHtml = (s: string) =>
+    s
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;')
+
+  const formatInline = (s: string) => {
+    let t = escapeHtml(s)
+    // Bold **text**
+    t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    // Italic *text*
+    t = t.replace(/(^|\s)\*(.+?)\*(\s|$)/g, '$1<em>$2</em>$3')
+    return t
+  }
+
+  const lines = md.split(/\r?\n/)
+  let html = ''
+  let inOl = false
+  let inUl = false
+
+  const closeLists = () => {
+    if (inOl) { html += '</ol>'; inOl = false }
+    if (inUl) { html += '</ul>'; inUl = false }
+  }
+
+  for (const raw of lines) {
+    const line = raw.trimEnd()
+    if (/^\s*$/.test(line)) {
+      // Blank line: close lists, paragraph break handled implicitly
+      closeLists()
+      continue
+    }
+    const olMatch = line.match(/^\s*(\d+)\.\s+(.*)$/)
+    const ulMatch = line.match(/^\s*[-*]\s+(.*)$/)
+
+    if (olMatch) {
+      if (!inOl) { closeLists(); html += '<ol>'; inOl = true }
+      html += `<li>${formatInline(olMatch[2])}</li>`
+      continue
+    }
+    if (ulMatch) {
+      if (!inUl) { closeLists(); html += '<ul>'; inUl = true }
+      html += `<li>${formatInline(ulMatch[1])}</li>`
+      continue
+    }
+
+    // Default paragraph
+    closeLists()
+    html += `<p>${formatInline(line)}</p>`
+  }
+
+  closeLists()
+  return html
+}
 </script>
 
 <template>
@@ -69,7 +128,8 @@ async function sendMessage() {
       </div>
       <div v-else>
         <div v-for="(m, idx) in messages" :key="idx" class="chat-bubble" :class="m.role">
-          <div class="bubble-text">{{ m.content }}</div>
+          <div class="bubble-text" v-if="m.role === 'assistant'" v-html="renderMarkdown(m.content)"></div>
+          <div class="bubble-text" v-else>{{ m.content }}</div>
           <div class="bubble-meta">{{ formatDate(m.createdAt) }}</div>
         </div>
       </div>
@@ -147,6 +207,26 @@ async function sendMessage() {
   border: 1px solid lighten($BAKANO-DARK, 83%);
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
   border-top-left-radius: 4px;
+}
+
+/* Better readability for Markdown inside assistant bubble */
+.chat-bubble.assistant .bubble-text {
+  p {
+    margin: 0.25rem 0;
+  }
+  ul, ol {
+    margin: 0.375rem 0 0.375rem 1rem;
+  }
+  li {
+    margin: 0.25rem 0;
+  }
+  strong {
+    font-weight: 700;
+    color: darken($BAKANO-DARK, 5%);
+  }
+  em {
+    font-style: italic;
+  }
 }
 
 .bubble-meta {
