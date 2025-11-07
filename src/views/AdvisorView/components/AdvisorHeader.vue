@@ -17,21 +17,24 @@ function newChat() {
 
 <template>
   <header class="advisor-header">
-    <div class="header-left">
+    <div class="header-top">
       <button class="btn btn-ghost btn-sm" @click="goBack">
         <i class="fas fa-arrow-left" aria-hidden="true"></i>
         Volver al Dashboard
       </button>
+    </div>
+
+    <div class="header-bottom">
       <div class="title-block">
         <h1>Asesor IA 24/7</h1>
-        <p class="subtitle">Interactúa con tu asistente y genera respuestas en tiempo real</p>
       </div>
-    </div>
-    <div class="header-actions">
-      <button class="btn btn-primary" @click="newChat">
-        <i class="fas fa-comments" aria-hidden="true"></i>
-        Nueva conversación
-      </button>
+      <div class="actions-row">
+        <p class="subtitle">Interactúa con tu asistente y genera respuestas en tiempo real</p>
+        <button class="btn btn-primary" @click="newChat">
+          <i class="fas fa-comments" aria-hidden="true"></i>
+          Nueva conversación
+        </button>
+      </div>
     </div>
   </header>
 </template>
@@ -39,13 +42,27 @@ function newChat() {
 <style lang="scss" scoped>
 .advisor-header {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
+  flex-direction: column;
+  max-width: 1440px;
+  margin: 0 auto;
+  gap: 0.75rem;
   margin-bottom: 1rem;
 }
 
-.header-left {
+.header-top {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.header-bottom {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.actions-row {
   display: flex;
   align-items: center;
   gap: 0.75rem;
@@ -58,11 +75,12 @@ function newChat() {
     color: $BAKANO-DARK;
     margin: 0;
   }
-  .subtitle {
-    margin: 0.25rem 0 0;
-    color: lighten($BAKANO-DARK, 35%);
-    font-size: 0.875rem;
-  }
+}
+
+.subtitle {
+  margin: 0;
+  color: lighten($BAKANO-DARK, 35%);
+  font-size: 0.875rem;
 }
 
 .btn {
@@ -76,19 +94,23 @@ function newChat() {
   align-items: center;
   gap: 0.5rem;
 }
+
 .btn-primary {
   background: $BAKANO-PINK;
   color: white;
   transition: background 0.2s ease-in-out;
+
   &:hover {
     background: darken($BAKANO-PINK, 5%);
   }
 }
+
 .btn-outline {
   background: transparent;
   color: $BAKANO-PINK;
   border: 1px solid $BAKANO-PINK;
   transition: all 0.2s ease-in-out;
+
   &:hover {
     background: lighten($BAKANO-PINK, 40%);
   }
