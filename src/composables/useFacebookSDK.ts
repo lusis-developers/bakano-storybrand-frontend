@@ -1,4 +1,5 @@
 import { ref, readonly } from 'vue'
+import { useToast } from '@/composables/useToast'
 
 const isSDKLoaded = ref(false)
 const isLoadingSDK = ref(false)
@@ -11,16 +12,32 @@ const FACEBOOK_APP_ID = import.meta.env.VITE_FACEBOOK_APP_ID
  * @returns {Promise<void>}
  */
 const loadAndInitSDK = (): Promise<void> => {
+  const { triggerToast } = useToast()
   // Si ya se está cargando o ya se cargó, no hacemos nada.
   if (isSDKLoaded.value || isLoadingSDK.value) {
     return isSDKLoaded.value
       ? Promise.resolve()
-      : new Promise((resolve) => {
-          // Si está cargando, esperamos a que termine.
+      : new Promise((resolve, reject) => {
+          // Si está cargando, esperamos a que termine, pero con timeout de seguridad.
+          const start = Date.now()
+          const maxWaitMs = 15000 // 15s para considerar bloqueo por navegador/adblock
           const interval = setInterval(() => {
             if (isSDKLoaded.value) {
               clearInterval(interval)
               resolve()
+            } else if (Date.now() - start > maxWaitMs) {
+              clearInterval(interval)
+              isLoadingSDK.value = false
+              triggerToast(
+                'No se pudo inicializar el SDK de Facebook en el tiempo esperado. Puede ser un bloqueo del navegador o de un content blocker. Desactívalo para este sitio o intenta desde otro navegador.',
+                'error',
+                6000,
+              )
+              reject(
+                new Error(
+                  'No se pudo inicializar el SDK de Facebook en el tiempo esperado. Posible bloqueo del navegador o de un "content blocker". Desactiva bloqueadores para este sitio o intenta desde otro navegador.',
+                ),
+              )
             }
           }, 100)
         })
@@ -30,6 +47,22 @@ const loadAndInitSDK = (): Promise<void> => {
 
   return new Promise((resolve, reject) => {
     // Definimos la función global que el SDK llamará cuando esté listo.
+    let finished = false
+    const timeoutMs = 15000
+    const timeoutId = window.setTimeout(() => {
+      if (finished) return
+      finished = true
+      isLoadingSDK.value = false
+      const msg =
+        'El SDK de Facebook demora más de lo habitual o fue bloqueado por el navegador. Desactiva bloqueadores de contenido para este sitio o usa otro navegador e inténtalo nuevamente.'
+      useToast().triggerToast(msg, 'error', 6000)
+      reject(
+        new Error(
+          'El SDK de Facebook demora más de lo habitual o fue bloqueado por el navegador. Por favor desactiva bloqueadores de contenido para este sitio o usa otro navegador e inténtalo nuevamente.',
+        ),
+      )
+    }, timeoutMs)
+
     ;(window as any).fbAsyncInit = function () {
       ;(window as any).FB.init({
         appId: FACEBOOK_APP_ID,
@@ -40,6 +73,8 @@ const loadAndInitSDK = (): Promise<void> => {
 
       isSDKLoaded.value = true
       isLoadingSDK.value = false
+      finished = true
+      window.clearTimeout(timeoutId)
       resolve()
     }
 
@@ -55,7 +90,16 @@ const loadAndInitSDK = (): Promise<void> => {
       js.src = 'https://connect.facebook.net/es_LA/sdk.js' // Usamos español latinoamericano
       js.onerror = () => {
         isLoadingSDK.value = false
-        reject(new Error('No se pudo cargar el SDK de Facebook.'))
+        useToast().triggerToast(
+          'No se pudo cargar el SDK de Facebook. Tu navegador o un content blocker podría estar impidiendo la carga. Desactiva bloqueadores para este sitio o intenta desde otro navegador.',
+          'error',
+          6000,
+        )
+        reject(
+          new Error(
+            'No se pudo cargar el SDK de Facebook. Es posible que tu navegador o un "content blocker" esté impidiendo la carga. Desactiva bloqueadores para este sitio o intenta desde otro navegador.',
+          ),
+        )
       }
       if (fjs && fjs.parentNode) {
         fjs.parentNode.insertBefore(js, fjs)
@@ -80,6 +124,8 @@ export function useFacebookSDK() {
       await loadAndInitSDK()
     } catch (err) {
       error.value = err instanceof Error ? err.message : 'Error de inicialización del SDK.'
+      // Mostrar toast para informar al usuario
+      useToast().triggerToast(String(error.value), 'error', 6000)
       throw error.value
     }
 
@@ -89,8 +135,23 @@ export function useFacebookSDK() {
         'color: #3b5998; font-weight: bold;',
         permissions.join(', '),
       )
+      // Fallback por si el diálogo de login no se abre (bloqueadores de contenido, restricciones del navegador)
+      let done = false
+      const loginTimeoutMs = 20000 // 20s
+      const loginTimeoutId = window.setTimeout(() => {
+        if (done) return
+        done = true
+        const errorMessage =
+          'No se abrió el diálogo de Facebook Login en el tiempo esperado. Es posible que tu navegador o un bloqueador de contenido esté impidiendo la ventana de autorización. Desactiva bloqueadores para este sitio o prueba en otro navegador.'
+        error.value = errorMessage
+        useToast().triggerToast(errorMessage, 'error', 6000)
+        reject(new Error(errorMessage))
+      }, loginTimeoutMs)
       ;(window as any).FB.login(
         (response: any) => {
+          if (done) return
+          done = true
+          window.clearTimeout(loginTimeoutId)
           console.log(
             '%c[FACEBOOK SDK] Respuesta completa de FB.login:',
             'color: #3b5998; font-weight: bold;',
@@ -108,8 +169,10 @@ export function useFacebookSDK() {
               'color: red; font-weight: bold;',
             )
             console.error('[FACEBOOK SDK] Estado recibido:', response.status)
-            const errorMessage = 'El usuario canceló el login o no autorizó completamente.'
+            const errorMessage =
+              'El usuario canceló el login o no autorizó completamente. Si no viste el diálogo de autorización, desactiva bloqueadores de contenido para este sitio o prueba en otro navegador.'
             error.value = errorMessage
+            useToast().triggerToast(errorMessage, 'error', 6000)
             reject(new Error(errorMessage))
           }
         },
