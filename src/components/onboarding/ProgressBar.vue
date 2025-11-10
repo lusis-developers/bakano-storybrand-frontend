@@ -78,7 +78,7 @@ const steps = computed(() => {
 .progress-bar {
   width: 100%;
   height: 8px;
-  background: #e2e8f0;
+  background: lighten($BAKANO-DARK, 75%);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 1rem;
@@ -86,7 +86,7 @@ const steps = computed(() => {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #667eea, #764ba2);
+  background: $BAKANO-PINK;
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -107,13 +107,13 @@ const steps = computed(() => {
 
 .current-step {
   font-weight: 600;
-  color: #1e293b;
+  color: $BAKANO-DARK;
   font-size: 0.875rem;
 }
 
 .progress-percentage {
   font-size: 0.75rem;
-  color: #64748b;
+  color: lighten($BAKANO-DARK, 35%);
 }
 
 // Step Indicators
@@ -179,38 +179,38 @@ const steps = computed(() => {
 // Step States
 .step-indicator.completed {
   .step-circle {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: $BAKANO-PINK;
     color: white;
   }
 
   .step-title {
-    color: #667eea;
+    color: $BAKANO-PINK;
     font-weight: 600;
   }
 }
 
 .step-indicator.current {
   .step-circle {
-    background: linear-gradient(135deg, #667eea, #764ba2);
+    background: $BAKANO-PINK;
     color: white;
-    box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.2);
+    box-shadow: 0 0 0 4px rgba($BAKANO-PINK, 0.2);
   }
 
   .step-title {
-    color: #1e293b;
+    color: $BAKANO-DARK;
     font-weight: 600;
   }
 }
 
 .step-indicator.pending {
   .step-circle {
-    background: #f1f5f9;
-    color: #94a3b8;
-    border: 2px solid #e2e8f0;
+    background: lighten($BAKANO-LIGHT, 2%);
+    color: lighten($BAKANO-DARK, 50%);
+    border: 2px solid lighten($BAKANO-DARK, 75%);
   }
 
   .step-title {
-    color: #94a3b8;
+    color: lighten($BAKANO-DARK, 50%);
   }
 }
 
