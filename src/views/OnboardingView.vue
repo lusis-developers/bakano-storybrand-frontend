@@ -223,10 +223,10 @@ onMounted(() => {
 <style lang="scss" scoped>
 .onboarding-container {
   min-height: 100vh;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: $BAKANO-LIGHT;
 
   @media (max-width: 768px) {
-    background: linear-gradient(180deg, #667eea 0%, #764ba2 100%);
+    background: $BAKANO-LIGHT;
   }
 }
 
@@ -245,7 +245,7 @@ onMounted(() => {
 // Header
 .onboarding-header {
   padding: 2rem 0;
-  color: white;
+  color: $BAKANO-DARK;
 
   @media (max-width: 768px) {
     padding: 1.5rem 0;
@@ -277,7 +277,7 @@ onMounted(() => {
 
 .subtitle {
   font-size: 1.125rem;
-  opacity: 0.9;
+  color: lighten($BAKANO-DARK, 35%);
 
   @media (max-width: 768px) {
     font-size: 1rem;
@@ -293,7 +293,7 @@ onMounted(() => {
 
 .progress-bar {
   height: 8px;
-  background: rgba(255, 255, 255, 0.2);
+  background: lighten($BAKANO-DARK, 75%);
   border-radius: 4px;
   overflow: hidden;
   margin-bottom: 1rem;
@@ -301,7 +301,7 @@ onMounted(() => {
 
 .progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #4ade80, #22c55e);
+  background: $BAKANO-PINK;
   border-radius: 4px;
   transition: width 0.3s ease;
 }
@@ -316,7 +316,7 @@ onMounted(() => {
   width: 40px;
   height: 40px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.2);
+  background: lighten($BAKANO-LIGHT, 2%);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -328,12 +328,12 @@ onMounted(() => {
   }
 
   &.active {
-    background: #4ade80;
+    background: $BAKANO-PINK;
     transform: scale(1.1);
   }
 
   &.completed {
-    background: #22c55e;
+    background: $BAKANO-PINK;
   }
 }
 
@@ -389,7 +389,7 @@ onMounted(() => {
   h2 {
     font-size: 1.875rem;
     font-weight: 700;
-    color: #1f2937;
+    color: $BAKANO-DARK;
     margin-bottom: 0.5rem;
 
     @media (max-width: 768px) {
@@ -398,7 +398,7 @@ onMounted(() => {
   }
 
   p {
-    color: #6b7280;
+    color: lighten($BAKANO-DARK, 35%);
     font-size: 1rem;
 
     @media (max-width: 768px) {
@@ -415,7 +415,7 @@ onMounted(() => {
   align-items: center;
   margin-top: 3rem;
   padding-top: 2rem;
-  border-top: 1px solid #e5e7eb;
+  border-top: 1px solid lighten($BAKANO-DARK, 75%);
 
   @media (max-width: 768px) {
     margin-top: 2rem;
@@ -449,21 +449,21 @@ onMounted(() => {
 }
 
 .btn-primary {
-  background: linear-gradient(135deg, #667eea, #764ba2);
+  background: $BAKANO-PINK;
   color: white;
 
   &:hover:not(:disabled) {
     transform: translateY(-1px);
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 10px 15px -3px rgba($BAKANO-PINK, 0.2);
   }
 }
 
 .btn-secondary {
-  background: #f3f4f6;
-  color: #374151;
+  background: lighten($BAKANO-LIGHT, 4%);
+  color: $BAKANO-DARK;
 
   &:hover {
-    background: #e5e7eb;
+    background: lighten($BAKANO-LIGHT, 8%);
   }
 }
 
