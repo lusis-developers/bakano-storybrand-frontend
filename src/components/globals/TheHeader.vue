@@ -43,6 +43,13 @@ const handleLogout = () => {
           <span class="nav__version" aria-label="Versión de la plataforma">v{{ appVersion }}</span>
         </RouterLink>
 
+        <!-- Main Navigation -->
+        <div class="nav__menu">
+          <RouterLink to="/pricing" class="nav__link" @click="closeMenu">
+            Precios
+          </RouterLink>
+        </div>
+
         <div class="nav__auth">
           <div v-if="!authStore.isAuthenticated" class="nav__auth-guest">
             <RouterLink to="/login" class="nav__auth-link" @click="closeMenu">
@@ -107,6 +114,10 @@ const handleLogout = () => {
       <!-- Mobile Navigation -->
       <div class="nav__mobile" :class="{ 'nav__mobile--open': isMenuOpen }">
         <div class="nav__mobile-menu">
+          <!-- Mobile Links -->
+          <RouterLink to="/pricing" class="nav__mobile-link" @click="closeMenu">
+            Precios
+          </RouterLink>
           <!-- Mobile Auth Section -->
           <div class="nav__mobile-auth">
             <div v-if="!authStore.isAuthenticated" class="nav__mobile-auth-guest">
