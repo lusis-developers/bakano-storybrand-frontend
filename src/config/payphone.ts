@@ -82,5 +82,6 @@ export const dollarsToCents = (dollars: number): number => {
 export const generateTransactionId = (productId: string): string => {
   const timestamp = Date.now()
   const random = Math.random().toString(36).substring(2, 8)
-  return `NPA-${productId}-${timestamp}-${random}`
+  // Prefijo ajustado para este proyecto
+  return `storybrand-${productId}-${timestamp}-${random}`
 }
