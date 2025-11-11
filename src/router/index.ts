@@ -26,6 +26,12 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresVerified: true },
     },
     {
+      path: '/pay-response',
+      name: 'pay-response',
+      component: () => import('../views/PayResponseView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/pricing',
       name: 'pricing',
       component: () => import('../views/PricingView.vue'),
