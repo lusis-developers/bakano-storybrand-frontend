@@ -55,12 +55,29 @@ onMounted(() => {
   if (!subscriptionsStore.availablePlans.length && !subscriptionsStore.loading.plans) {
     subscriptionsStore.fetchAvailablePlans()
   }
+  // Si está autenticado, obtener su suscripción para personalizar las CTAs
+  if (authStore.isAuthenticated && !subscriptionsStore.loading.me) {
+    subscriptionsStore.fetchMySubscription()
+  }
 })
 
 const isAuthenticated = computed(() => authStore.isAuthenticated)
 const plans = computed(() => subscriptionsStore.availablePlans)
 const isLoadingPlans = computed(() => subscriptionsStore.loading.plans)
 const plansError = computed(() => subscriptionsStore.errors.plans)
+const currentSnapshotPlan = computed(() => subscriptionsStore.currentPlan)
+const isActiveSubscription = computed(() => subscriptionsStore.isActive || currentSnapshotPlan.value !== 'free')
+
+// Mapear plan del snapshot del store a los slugs de la UI
+const mapStorePlanToSlug = (p: string | undefined) => {
+  if (!p) return 'free'
+  const low = String(p).toLowerCase()
+  if (low === 'starter') return 'starter'
+  // En este proyecto, el plan "Advanced" representa paid tiers "pro"/"enterprise" en backend
+  if (low === 'pro' || low === 'enterprise' || low === 'advanced') return 'advanced'
+  return low
+}
+const currentPlanSlug = computed(() => mapStorePlanToSlug(currentSnapshotPlan.value))
 
 const slugify = (name: string) => name.toLowerCase().replace(/\s+/g, '-')
 const intervalLabel = (interval: string) => (interval === 'year' ? 'año' : 'mes')
@@ -73,38 +90,66 @@ const planFeaturesByName: Record<string, string[]> = {
   Advanced: ['Hasta 10 marcas', 'Todo lo del Starter', 'Soporte prioritario'],
 }
 
-// Decorar los planes obtenidos con features e indicador de popular
+// Decorar los planes obtenidos con features e indicador de popular, y marcar si es el actual
 const processedPlans = computed(() => {
-  return plans.value.map((p) => ({
-    ...p,
-    features: planFeaturesByName[p.name] ?? [],
-    isPopular: p.name === 'Starter',
-  })) as PricingPlan[]
+  return plans.value.map((p) => {
+    const slug = slugify(p.name)
+    const acquired = slug === currentPlanSlug.value && isActiveSubscription.value
+    return {
+      ...p,
+      features: planFeaturesByName[p.name] ?? [],
+      isPopular: p.name === 'Starter',
+      // Extras para UI
+      slug,
+      acquired,
+    }
+  }) as (PricingPlan & { slug: string; acquired: boolean })[]
 })
 
-const badgeText = (plan: PricingPlan) => {
+const badgeText = (plan: any) => {
+  if (plan.acquired) return 'Tu plan'
   if (plan.price === 0) return 'Gratis'
   if (plan.isPopular) return 'Popular'
   return ''
 }
 
-const ctaToForPlan = (plan: PricingPlan) => {
-  const planSlug = slugify(plan.name)
-  // Si es el plan Free, dirigir al dashboard con ?plan=free cuando ya está loggeado
+const ctaToForPlan = (plan: any) => {
+  const planSlug = plan.slug || slugify(plan.name)
+
+  // Si es el plan Free
   if (plan.price === 0) {
     return isAuthenticated.value
       ? { name: 'dashboard', query: { plan: 'free' } }
       : { name: 'register' }
   }
-  // Para planes de pago: si está loggeado, ir a la página del plan para preparar el pago; si no, registro
+
+  // Si está autenticado y ya adquirió este plan
+  if (isAuthenticated.value && plan.acquired) {
+    return { name: 'dashboard' }
+  }
+
+  // Si tiene alguna suscripción activa (no free): solo permitir adquirir Advanced
+  if (isAuthenticated.value && isActiveSubscription.value) {
+    return planSlug === 'advanced'
+      ? { name: 'plan', params: { slug: 'advanced' } }
+      : { name: 'plan', params: { slug: 'advanced' } } // Forzar redirección a Advanced
+  }
+
+  // Si no tiene suscripción activa: permitir adquirir el plan elegido
   return isAuthenticated.value
     ? { name: 'plan', params: { slug: planSlug } }
     : { name: 'register' }
 }
 
-const ctaLabelForPlan = (plan: PricingPlan) => {
+const ctaLabelForPlan = (plan: any) => {
   if (plan.price === 0) return isAuthenticated.value ? 'Ir al dashboard' : 'Comenzar'
-  // Para planes de pago, siempre mostrar "Adquirir" (registro si no está loggeado, dashboard si sí)
+
+  if (isAuthenticated.value && plan.acquired) return 'Tu plan actual'
+
+  if (isAuthenticated.value && isActiveSubscription.value) {
+    return plan.slug === 'advanced' ? 'Mejorar a Advanced' : 'Ver Advanced'
+  }
+
   return 'Adquirir'
 }
 </script>
