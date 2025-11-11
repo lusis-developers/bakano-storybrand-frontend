@@ -32,6 +32,12 @@ const router = createRouter({
       meta: { public: true },
     },
     {
+      path: '/pricing/:slug',
+      name: 'plan',
+      component: () => import('../views/PlanView.vue'),
+      meta: { requiresAuth: true },
+    },
+    {
       path: '/login',
       name: 'login',
       component: () => import('../views/LoginView.vue'),
