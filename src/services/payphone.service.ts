@@ -28,6 +28,29 @@ class PayphoneService {
     const data = (await res.json()) as PayphoneResponse
     return data
   }
+
+  /**
+   * Confirma una transacción de Payphone (POST /button/Confirm)
+   * @param id Transaction ID provisto por Payphone en el querystring (id=...)
+   */
+  async confirmButton(id: string): Promise<any> {
+    const res = await fetch(PAYPHONE_CONFIG.BUTTON_CONFIRM_URL, {
+      method: 'POST',
+      headers: PAYPHONE_CONFIG.DEFAULT_HEADERS,
+      body: JSON.stringify({ id }),
+    })
+
+    const text = await res.text()
+    if (!res.ok) {
+      throw new Error(`Payphone Confirm failed: ${res.status} ${text}`)
+    }
+
+    try {
+      return JSON.parse(text)
+    } catch (_) {
+      return { raw: text }
+    }
+  }
 }
 
 const payphoneService = new PayphoneService()
