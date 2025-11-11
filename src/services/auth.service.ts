@@ -1,5 +1,6 @@
 import APIBase from './httpBase'
 import type { AxiosResponse } from 'axios'
+import type { User } from '@/types/user.types'
 
 // Interfaces para tipado fuerte
 export interface RegisterRequest {
@@ -18,22 +19,8 @@ export interface LoginRequest {
   rememberMe?: boolean
 }
 
-export interface User {
-  _id: string
-  firstName: string
-  lastName: string
-  email: string
-  birthDate?: string
-  businesses: string[]
-  role: 'admin' | 'client'
-  isVerified: boolean
-  verificationToken?: string
-  verificationTokenExpires?: string
-  createdAt: string
-  updatedAt: string
-  fullName?: string
-  age?: number
-}
+// Nota: El tipo User se centraliza en src/types/user.types.ts para escalabilidad
+export type { User } from '@/types/user.types'
 
 export interface AuthResponse {
   user: User

@@ -88,7 +88,10 @@ function handleSubmit() {
     <div class="confirmation-content">
       <!-- Resumen del Perfil -->
       <div class="summary-section">
-        <h3>👤 Perfil Personal</h3>
+        <h3>
+          <i class="fa-solid fa-user" aria-hidden="true"></i>
+          Perfil Personal
+        </h3>
         <div class="summary-grid">
           <div class="summary-item">
             <span class="label">Puesto:</span>
@@ -111,7 +114,10 @@ function handleSubmit() {
       
       <!-- Resumen del Negocio -->
       <div class="summary-section">
-        <h3>🏢 Información del Negocio</h3>
+        <h3>
+          <i class="fa-solid fa-building" aria-hidden="true"></i>
+          Información del Negocio
+        </h3>
         <div class="summary-grid">
           <div class="summary-item">
             <span class="label">Industria:</span>
@@ -134,7 +140,10 @@ function handleSubmit() {
       
       <!-- Resumen de Preferencias -->
       <div class="summary-section">
-        <h3>⚙️ Preferencias</h3>
+        <h3>
+          <i class="fa-solid fa-sliders" aria-hidden="true"></i>
+          Preferencias
+        </h3>
         <div class="summary-grid">
           <div class="summary-item">
             <span class="label">Comunicación:</span>
@@ -198,6 +207,11 @@ function handleSubmit() {
     display: flex;
     align-items: center;
     gap: 0.5rem;
+
+    i {
+      color: $BAKANO-PINK;
+      font-size: 1rem;
+    }
   }
 }
 
