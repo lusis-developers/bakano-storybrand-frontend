@@ -58,11 +58,16 @@ export function useInstagramSDK() {
     const perms = permissions?.length
       ? permissions
       : [
-          'instagram_basic', // permiso base en Facebook Graph (no confundir con instagram_business_basic del Instagram Login)
+          // --- Permisos de Página (Obligatorios para IG Business) ---
           'pages_show_list',
           'pages_read_engagement',
-          'instagram_manage_insights',
-          'instagram_content_publish',
+          'pages_manage_posts', // Añadido por si acaso
+
+          // --- Permisos de Instagram Business (Nombres modernos) ---
+          'instagram_basic',
+          'instagram_content_publish', // El que necesitas probar
+          'instagram_manage_comments',
+          'instagram_manage_messages',
         ]
     try {
       const token = await login(perms)
