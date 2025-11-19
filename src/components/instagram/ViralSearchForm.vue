@@ -9,7 +9,7 @@ const emit = defineEmits<{
 const input = ref('')
 const saved = ref<string[]>([])
 const resultsType = ref<'posts' | 'stories'>('stories')
-const resultsLimit = ref<number>(20)
+const resultsLimit = ref<number>(5)
 const keywordSearch = ref<boolean>(true)
 const { triggerToast } = useToast()
 
@@ -107,10 +107,8 @@ const submit = () => {
           <button :class="['seg-btn', { active: resultsType==='stories' }]" @click="resultsType='stories'">Stories</button>
         </div>
         <select class="select" v-model.number="resultsLimit" aria-label="Límite">
+          <option :value="5">5</option>
           <option :value="10">10</option>
-          <option :value="20">20</option>
-          <option :value="50">50</option>
-          <option :value="100">100</option>
         </select>
         <label class="toggle">
           <input type="checkbox" v-model="keywordSearch" />
