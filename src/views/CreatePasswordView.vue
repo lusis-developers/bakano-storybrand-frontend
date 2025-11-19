@@ -1,12 +1,13 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { authService } from '@/services/auth.service'
+import { useAuthStore } from '@/stores/auth.store'
 import { useToast } from '@/composables/useToast'
 
 const route = useRoute()
 const router = useRouter()
 const toast = useToast()
+const authStore = useAuthStore()
 
 const token = ref<string>(String(route.params.token || ''))
 const password = ref('')
@@ -15,6 +16,7 @@ const showPassword = ref(false)
 const showConfirm = ref(false)
 const isSubmitting = ref(false)
 const error = ref<string | null>(null)
+const businessId = computed(() => String(route.query.businessId || route.query.b || ''))
 
 function validate(): boolean {
   error.value = null
@@ -46,14 +48,16 @@ async function submit() {
   if (!validate()) return
   isSubmitting.value = true
   try {
-    await authService.resetPassword({ token: token.value, password: password.value, confirmPassword: confirmPassword.value })
-    toast.triggerToast('Contraseña creada correctamente', 'success')
-    const businessId = String(route.query.businessId || route.query.b || '')
-    if (businessId) {
-      router.push({ path: '/login', query: { next: `/accept-invite/${businessId}` } })
-    } else {
-      router.push('/login')
-    }
+    const res = await authStore.resetPassword({ token: token.value, password: password.value, confirmPassword: confirmPassword.value })
+    const msg = res?.message || 'Contraseña creada correctamente'
+    toast.triggerToast(msg, 'success', 3500)
+    setTimeout(() => {
+      if (businessId.value) {
+        router.push({ path: '/login', query: { next: `/accept-invite/${businessId.value}` } })
+      } else {
+        router.push('/login')
+      }
+    }, 1200)
   } catch (e: any) {
     error.value = e?.message || 'No se pudo crear la contraseña'
     toast.triggerToast(error.value || 'Error', 'error')
@@ -100,6 +104,10 @@ async function submit() {
         <div class="tips">
           <p><i class="fas fa-shield-halved"></i> Usa al menos 8 caracteres, mayúsculas, minúsculas y números.</p>
           <p><i class="fas fa-lock"></i> Después iniciarás sesión para aceptar la invitación.</p>
+          <RouterLink v-if="businessId" :to="`/accept-invite/${businessId}`" class="back-link">
+            <i class="fas fa-arrow-left" aria-hidden="true"></i>
+            Volver a la invitación del negocio
+          </RouterLink>
         </div>
       </div>
     </div>
@@ -135,6 +143,8 @@ async function submit() {
 
 .tips { margin-top: 1rem; color: lighten($BAKANO-DARK, 35%); font-size: 0.9rem; display: grid; gap: 0.25rem; }
 .tips i { color: $BAKANO-PINK; }
+.back-link { display: inline-flex; align-items: center; gap: 0.35rem; text-decoration: none; font-weight: 600; color: $BAKANO-PINK; margin-top: 0.25rem; }
+.back-link:hover { color: darken($BAKANO-PINK, 8%); }
 
 @media (max-width: 480px) {
   .card { padding: 20px; }
