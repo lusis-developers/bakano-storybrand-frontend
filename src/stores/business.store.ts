@@ -7,6 +7,9 @@ import type {
   IUpdateBusinessRequest,
   IBusinessLoadingState,
   IBusinessErrorState,
+  ITeamMember,
+  TeamRole,
+  TeamAuditResponse,
 } from '@/types/business.types'
 
 export const useBusinessStore = defineStore('business', () => {
@@ -311,6 +314,164 @@ export const useBusinessStore = defineStore('business', () => {
     return businesses.value.filter((business) => business.name.toLowerCase().includes(term))
   }
 
+  const inviteTeamMember = async (
+    businessId: string,
+    email: string,
+    role: TeamRole = 'collaborator',
+  ): Promise<IBusiness | null> => {
+    loading.value.creating = true
+    errors.value.create = null
+
+    try {
+      const response = await businessService.inviteTeamMember(businessId, { email, role })
+      if (response.data) {
+        const updated = response.data
+        const index = businesses.value.findIndex((b) => b.id === businessId)
+        if (index !== -1) {
+          businesses.value[index] = updated
+        }
+        if (currentBusiness.value?.id === businessId) {
+          currentBusiness.value = updated
+        }
+        return updated
+      }
+      throw new Error(response.message || 'Error al invitar miembro del equipo')
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Error desconocido al invitar miembro del equipo'
+      errors.value.create = errorMessage
+      console.error('Error inviting team member:', error)
+      return null
+    } finally {
+      loading.value.creating = false
+    }
+  }
+
+  const acceptTeamInvite = async (businessId: string): Promise<IBusiness | null> => {
+    loading.value.updating = true
+    errors.value.update = null
+
+    try {
+      const response = await businessService.acceptTeamInvite(businessId)
+      if (response.data) {
+        const updated = response.data
+        const index = businesses.value.findIndex((b) => b.id === businessId)
+        if (index !== -1) {
+          businesses.value[index] = updated
+        }
+        if (currentBusiness.value?.id === businessId) {
+          currentBusiness.value = updated
+        }
+        return updated
+      }
+      throw new Error(response.message || 'Error al aceptar invitación')
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Error desconocido al aceptar invitación'
+      errors.value.update = errorMessage
+      console.error('Error accepting team invite:', error)
+      return null
+    } finally {
+      loading.value.updating = false
+    }
+  }
+
+  const fetchTeamMembers = async (businessId: string): Promise<ITeamMember[]> => {
+    try {
+      const response = await businessService.listTeamMembers(businessId)
+      return response.data || []
+    } catch (error: any) {
+      console.error('Error listing team members:', error)
+      return []
+    }
+  }
+
+  const updateTeamMemberRole = async (
+    businessId: string,
+    userId: string,
+    role: TeamRole,
+  ): Promise<IBusiness | null> => {
+    loading.value.updating = true
+    errors.value.update = null
+
+    try {
+      const response = await businessService.updateTeamMemberRole(businessId, userId, role)
+      if (response.data) {
+        const updated = response.data
+        const index = businesses.value.findIndex((b) => b.id === businessId)
+        if (index !== -1) {
+          businesses.value[index] = updated
+        }
+        if (currentBusiness.value?.id === businessId) {
+          currentBusiness.value = updated
+        }
+        return updated
+      }
+      throw new Error(response.message || 'Error al actualizar rol del miembro')
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Error desconocido al actualizar rol del miembro'
+      errors.value.update = errorMessage
+      console.error('Error updating team member role:', error)
+      return null
+    } finally {
+      loading.value.updating = false
+    }
+  }
+
+  const revokeTeamMember = async (
+    businessId: string,
+    userId: string,
+  ): Promise<IBusiness | null> => {
+    loading.value.deleting = true
+    errors.value.delete = null
+
+    try {
+      const response = await businessService.revokeTeamMember(businessId, userId)
+      if (response.data) {
+        const updated = response.data
+        const index = businesses.value.findIndex((b) => b.id === businessId)
+        if (index !== -1) {
+          businesses.value[index] = updated
+        }
+        if (currentBusiness.value?.id === businessId) {
+          currentBusiness.value = updated
+        }
+        return updated
+      }
+      throw new Error(response.message || 'Error al revocar miembro')
+    } catch (error: any) {
+      const errorMessage = error?.message || 'Error desconocido al revocar miembro'
+      errors.value.delete = errorMessage
+      console.error('Error revoking team member:', error)
+      return null
+    } finally {
+      loading.value.deleting = false
+    }
+  }
+
+  const fetchTeamAudit = async (
+    businessId: string,
+    page = 1,
+    limit = 10,
+  ): Promise<TeamAuditResponse['data'] | null> => {
+    try {
+      const response = await businessService.listTeamAudit(businessId, page, limit)
+      return response.data
+    } catch (error: any) {
+      console.error('Error listing team audit:', error)
+      return null
+    }
+  }
+
+  const canCreateBusiness = async (): Promise<boolean> => {
+    try {
+      const response = await businessService.canCreateBusiness()
+      const flag = (response.allowed ?? response.canCreate) ?? false
+      return !!flag
+    } catch (error: any) {
+      console.error('Error checking can create business:', error)
+      return false
+    }
+  }
+
   return {
     // Estado
     businesses,
@@ -335,6 +496,13 @@ export const useBusinessStore = defineStore('business', () => {
     updateBusiness,
     deleteBusiness,
     toggleBusinessStatus,
+    inviteTeamMember,
+    acceptTeamInvite,
+    fetchTeamMembers,
+    updateTeamMemberRole,
+    revokeTeamMember,
+    fetchTeamAudit,
+    canCreateBusiness,
     setCurrentBusiness,
     ensureCurrentBusiness,
     resetState,
