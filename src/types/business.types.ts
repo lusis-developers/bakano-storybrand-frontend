@@ -25,6 +25,18 @@ export interface ITeamMember {
   joinedAt?: string
 }
 
+export interface IPendingInvitation {
+  businessId: string
+  businessName: string
+  role: TeamRole
+  invitedAt?: string
+}
+
+export interface PendingInvitationsResponse {
+  success: boolean
+  data: IPendingInvitation[]
+}
+
 // Interface principal del negocio (frontend)
 export interface IBusiness {
   _id: string

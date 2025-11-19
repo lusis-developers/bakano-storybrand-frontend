@@ -10,6 +10,7 @@ import type {
   ITeamMember,
   TeamRole,
   TeamAuditResponse,
+  IPendingInvitation,
 } from '@/types/business.types'
 
 export const useBusinessStore = defineStore('business', () => {
@@ -28,6 +29,7 @@ export const useBusinessStore = defineStore('business', () => {
     update: null,
     delete: null,
   })
+  const pendingInvitations = ref<IPendingInvitation[]>([])
 
   const activeBusinesses = computed(() => businesses.value.filter((business) => business.isActive))
 
@@ -36,6 +38,7 @@ export const useBusinessStore = defineStore('business', () => {
   )
 
   const businessCount = computed(() => businesses.value.length)
+  const pendingInvitationsCount = computed(() => pendingInvitations.value.length)
 
   const activeBusinessCount = computed(() => activeBusinesses.value.length)
 
@@ -304,6 +307,7 @@ export const useBusinessStore = defineStore('business', () => {
       deleting: false,
     }
     clearErrors()
+    pendingInvitations.value = []
   }
 
   // Función para buscar negocios por nombre
@@ -371,6 +375,22 @@ export const useBusinessStore = defineStore('business', () => {
       return null
     } finally {
       loading.value.updating = false
+    }
+  }
+
+  const fetchPendingInvitations = async (): Promise<IPendingInvitation[]> => {
+    loading.value.fetching = true
+    errors.value.fetch = null
+    try {
+      const res = await businessService.listPendingInvitationsForUser()
+      pendingInvitations.value = res.data || []
+      return pendingInvitations.value
+    } catch (error: any) {
+      const message = error?.message || 'Error al cargar invitaciones pendientes'
+      errors.value.fetch = message
+      return []
+    } finally {
+      loading.value.fetching = false
     }
   }
 
@@ -478,11 +498,13 @@ export const useBusinessStore = defineStore('business', () => {
     currentBusiness,
     loading,
     errors,
+    pendingInvitations,
 
     // Getters
     activeBusinesses,
     inactiveBusinesses,
     businessCount,
+    pendingInvitationsCount,
     activeBusinessCount,
     hasBusinesses,
     isLoading,
@@ -498,6 +520,7 @@ export const useBusinessStore = defineStore('business', () => {
     toggleBusinessStatus,
     inviteTeamMember,
     acceptTeamInvite,
+    fetchPendingInvitations,
     fetchTeamMembers,
     updateTeamMemberRole,
     revokeTeamMember,

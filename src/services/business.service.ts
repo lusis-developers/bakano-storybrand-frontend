@@ -12,7 +12,8 @@ import type {
   TeamActionResponse,
   TeamRole,
   TeamAuditResponse,
-  CanCreateBusinessResponse
+  CanCreateBusinessResponse,
+  PendingInvitationsResponse
 } from '@/types/business.types'
 
 class BusinessService extends APIBase {
@@ -211,6 +212,17 @@ class BusinessService extends APIBase {
     try {
       const response: AxiosResponse<CanCreateBusinessResponse> = await this.get<CanCreateBusinessResponse>(
         `${this.endpoint}/quota/can-create`
+      )
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async listPendingInvitationsForUser(): Promise<PendingInvitationsResponse> {
+    try {
+      const response: AxiosResponse<PendingInvitationsResponse> = await this.get<PendingInvitationsResponse>(
+        'team/invitations/pending'
       )
       return response.data
     } catch (error) {
