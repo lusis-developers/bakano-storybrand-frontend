@@ -383,7 +383,7 @@ export const useBusinessStore = defineStore('business', () => {
     errors.value.fetch = null
     try {
       const res = await businessService.listPendingInvitationsForUser()
-      pendingInvitations.value = res.data || []
+      pendingInvitations.value = res.data?.invitations || []
       return pendingInvitations.value
     } catch (error: any) {
       const message = error?.message || 'Error al cargar invitaciones pendientes'
