@@ -29,12 +29,26 @@ export interface IPendingInvitation {
   businessId: string
   businessName: string
   role: TeamRole
+  status: TeamStatus
   invitedAt?: string
+  invitedBy?: {
+    id: string
+    name: string
+    email: string
+  }
 }
 
 export interface PendingInvitationsResponse {
-  success: boolean
-  data: IPendingInvitation[]
+  message: string
+  data: {
+    invitations: IPendingInvitation[]
+    pagination: {
+      page: number
+      limit: number
+      total: number
+      totalPages: number
+    }
+  }
 }
 
 // Interface principal del negocio (frontend)
