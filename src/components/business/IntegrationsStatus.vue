@@ -213,6 +213,7 @@ const connectFacebook = async () => {
       'pages_read_engagement',
       'read_insights',
       'pages_manage_posts',
+      'ads_management'
     ])
 
     const businessId =

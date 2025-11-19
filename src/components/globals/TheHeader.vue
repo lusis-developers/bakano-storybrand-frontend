@@ -36,15 +36,32 @@ const handleLogout = () => {
         <!-- Logo -->
         <RouterLink :to="authStore.isAuthenticated ? '/dashboard' : '/'" class="nav__logo" @click="closeMenu">
           <img 
-            src="@/assets/logos/bakano-dark.png" 
+            src="@/assets/logos/bakano-dark-small.png" 
             alt="Bakano" 
-            class="nav__logo-img"
+            class="nav__logo-img nav__logo-img--desktop"
+          />
+          <img 
+            src="@/assets/logos/bakano-dark-small.png" 
+            alt="Bakano" 
+            class="nav__logo-img nav__logo-img--mobile"
           />
           <span class="nav__version" aria-label="Versión de la plataforma">v{{ appVersion }}</span>
         </RouterLink>
 
         <!-- Main Navigation -->
         <div class="nav__menu">
+          <RouterLink to="/dashboard" class="nav__link" @click="closeMenu">
+            Dashboard
+          </RouterLink>
+          <RouterLink to="/business" class="nav__link" @click="closeMenu">
+            Negocios
+          </RouterLink>
+          <RouterLink to="/social/manager" class="nav__link" @click="closeMenu">
+            Social Manager
+          </RouterLink>
+          <RouterLink to="/advisor" class="nav__link" @click="closeMenu">
+            Asesor IA
+          </RouterLink>
           <RouterLink to="/pricing" class="nav__link" @click="closeMenu">
             Precios
           </RouterLink>
@@ -114,7 +131,20 @@ const handleLogout = () => {
       <!-- Mobile Navigation -->
       <div class="nav__mobile" :class="{ 'nav__mobile--open': isMenuOpen }">
         <div class="nav__mobile-menu">
+          <SelectedBusinessIndicator class="nav__mobile-business-indicator" @requestCloseHeader="closeMenu" />
           <!-- Mobile Links -->
+          <RouterLink to="/dashboard" class="nav__mobile-link" @click="closeMenu">
+            Dashboard
+          </RouterLink>
+          <RouterLink to="/business" class="nav__mobile-link" @click="closeMenu">
+            Negocios
+          </RouterLink>
+          <RouterLink to="/social/manager" class="nav__mobile-link" @click="closeMenu">
+            Social Manager
+          </RouterLink>
+          <RouterLink to="/advisor" class="nav__mobile-link" @click="closeMenu">
+            Asesor IA
+          </RouterLink>
           <RouterLink to="/pricing" class="nav__mobile-link" @click="closeMenu">
             Precios
           </RouterLink>
@@ -201,6 +231,18 @@ const handleLogout = () => {
 
       @media (min-width: 768px) {
         height: 40px;
+      }
+      &--mobile {
+        display: inline-block;
+        @media (min-width: 768px) {
+          display: none;
+        }
+      }
+      &--desktop {
+        display: none;
+        @media (min-width: 768px) {
+          display: inline-block;
+        }
       }
     }
   }
@@ -522,6 +564,9 @@ const handleLogout = () => {
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
+      .nav__mobile-business-indicator {
+        margin-bottom: 0.5rem;
+      }
     }
 
     &-link {

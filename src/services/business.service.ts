@@ -6,7 +6,13 @@ import type {
   IUpdateBusinessRequest,
   IBusinessResponse,
   IBusinessListResponse,
-  IBusinessByContentIdResponse
+  IBusinessByContentIdResponse,
+  InviteTeamRequest,
+  TeamMembersResponse,
+  TeamActionResponse,
+  TeamRole,
+  TeamAuditResponse,
+  CanCreateBusinessResponse
 } from '@/types/business.types'
 
 class BusinessService extends APIBase {
@@ -125,6 +131,86 @@ class BusinessService extends APIBase {
       const response: AxiosResponse<IBusinessResponse> = await this.patch<IBusinessResponse>(
         `${this.endpoint}/${businessId}`,
         { isActive }
+      )
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async inviteTeamMember(businessId: string, payload: InviteTeamRequest): Promise<TeamActionResponse> {
+    try {
+      const response: AxiosResponse<TeamActionResponse> = await this.post<TeamActionResponse>(
+        `${this.endpoint}/${businessId}/team/invite`,
+        payload
+      )
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async acceptTeamInvite(businessId: string): Promise<TeamActionResponse> {
+    try {
+      const response: AxiosResponse<TeamActionResponse> = await this.post<TeamActionResponse>(
+        `${this.endpoint}/${businessId}/team/accept`,
+        {}
+      )
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async listTeamMembers(businessId: string): Promise<TeamMembersResponse> {
+    try {
+      const response: AxiosResponse<TeamMembersResponse> = await this.get<TeamMembersResponse>(
+        `${this.endpoint}/${businessId}/team`
+      )
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async updateTeamMemberRole(businessId: string, userId: string, role: TeamRole): Promise<TeamActionResponse> {
+    try {
+      const response: AxiosResponse<TeamActionResponse> = await this.patch<TeamActionResponse>(
+        `${this.endpoint}/${businessId}/team/${userId}/role`,
+        { role }
+      )
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async revokeTeamMember(businessId: string, userId: string): Promise<TeamActionResponse> {
+    try {
+      const response: AxiosResponse<TeamActionResponse> = await this.delete<TeamActionResponse>(
+        `${this.endpoint}/${businessId}/team/${userId}/revoke`
+      )
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async listTeamAudit(businessId: string, page = 1, limit = 10): Promise<TeamAuditResponse> {
+    try {
+      const response: AxiosResponse<TeamAuditResponse> = await this.get<TeamAuditResponse>(
+        `${this.endpoint}/${businessId}/team/audit?page=${page}&limit=${limit}`
+      )
+      return response.data
+    } catch (error) {
+      throw error
+    }
+  }
+
+  async canCreateBusiness(): Promise<CanCreateBusinessResponse> {
+    try {
+      const response: AxiosResponse<CanCreateBusinessResponse> = await this.get<CanCreateBusinessResponse>(
+        `${this.endpoint}/quota/can-create`
       )
       return response.data
     } catch (error) {
