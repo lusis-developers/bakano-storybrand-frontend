@@ -6,6 +6,25 @@ export interface IBusinessAddress {
   country?: string
 }
 
+export interface IUserLite {
+  _id: string
+  firstName: string
+  lastName: string
+  email: string
+}
+
+export type TeamRole = 'owner' | 'admin' | 'collaborator' | 'viewer'
+export type TeamStatus = 'invited' | 'active' | 'removed'
+
+export interface ITeamMember {
+  user: string | IUserLite
+  role: TeamRole
+  status: TeamStatus
+  invitedBy?: string | IUserLite
+  invitedAt?: string
+  joinedAt?: string
+}
+
 // Interface principal del negocio (frontend)
 export interface IBusiness {
   _id: string
@@ -17,8 +36,9 @@ export interface IBusiness {
   phone?: string
   email?: string
   address?: IBusinessAddress
-  owner: string
-  employees?: string[]
+  owner: string | IUserLite
+  employees?: (string | IUserLite)[]
+  teamMembers?: ITeamMember[]
   integrations?: string[]
   isActive: boolean
   createdAt: string
@@ -137,4 +157,53 @@ export interface IBusinessPaginatedResponse {
   message: string
   data?: IBusiness[]
   pagination?: IBusinessPagination
+}
+
+export interface InviteTeamRequest {
+  email: string
+  role?: TeamRole
+}
+
+export interface TeamMembersResponse {
+  message: string
+  data: ITeamMember[]
+}
+
+export interface TeamActionResponse {
+  message: string
+  data?: IBusiness
+}
+
+export type TeamAuditAction = 'invited' | 'accepted' | 'role_updated' | 'revoked'
+
+export interface ITeamAuditEvent {
+  _id: string
+  business: string
+  actor: string | IUserLite
+  targetUser: string | IUserLite
+  action: TeamAuditAction
+  role?: TeamRole
+  createdAt: string
+}
+
+export interface IPaginationMeta {
+  currentPage: number
+  totalPages: number
+  totalEvents: number
+  hasNextPage: boolean
+  hasPrevPage: boolean
+}
+
+export interface TeamAuditResponse {
+  message: string
+  data: {
+    events: ITeamAuditEvent[]
+    pagination: IPaginationMeta
+  }
+}
+
+export interface CanCreateBusinessResponse {
+  message: string
+  canCreate?: boolean
+  allowed?: boolean
 }
