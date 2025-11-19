@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import { ref } from 'vue'
+import { useToast } from '@/composables/useToast'
 
 const emit = defineEmits<{
   search: [payload: { hashtags: string[]; resultsType: 'posts' | 'stories'; resultsLimit: number; keywordSearch?: boolean }]
@@ -10,10 +11,22 @@ const saved = ref<string[]>([])
 const resultsType = ref<'posts' | 'stories'>('stories')
 const resultsLimit = ref<number>(20)
 const keywordSearch = ref<boolean>(true)
+const { triggerToast } = useToast()
+
+const sanitizeToken = (t: string): string => {
+  return t.trim().replace(/^#/, '').replace(/[^A-Za-z0-9_]+/g, '').toLowerCase()
+}
 
 const addKeyword = () => {
-  const v = input.value.trim().replace(/^#/, '')
-  if (!v) return
+  const raw = input.value
+  const v = sanitizeToken(raw)
+  if (!v) {
+    triggerToast('Palabra inválida: usa letras, números o _ sin espacios', 'error', 4000)
+    return
+  }
+  if (v !== raw.trim().replace(/^#/, '')) {
+    triggerToast(`Corregido a #${v}`, 'info', 3000)
+  }
   if (!saved.value.includes(v)) saved.value.push(v)
   input.value = ''
 }
@@ -27,14 +40,31 @@ const clearKeywords = () => {
 }
 
 const submit = () => {
-  const list = saved.value.length
+  const base = saved.value.length
     ? saved.value
     : input.value
         .split(/[,\s]+/)
-        .map((p) => p.trim().replace(/^#/, ''))
+        .map((p) => p.trim())
         .filter((p) => p.length > 0)
-  if (!list.length) return
-  emit('search', { hashtags: list, resultsType: resultsType.value, resultsLimit: resultsLimit.value, keywordSearch: keywordSearch.value })
+
+  const sanitized = base.map(sanitizeToken).filter((p) => p.length > 0)
+
+  if (!sanitized.length) {
+    triggerToast('Agrega palabras válidas sin espacios ni símbolos', 'error', 4000)
+    return
+  }
+
+  const corrected = base.filter((b, i) => sanitizeToken(b) !== b.replace(/^#/, '').toLowerCase())
+  if (corrected.length) {
+    triggerToast('Se corrigieron palabras inválidas para Instagram', 'info', 3000)
+  }
+
+  emit('search', {
+    hashtags: Array.from(new Set(sanitized)),
+    resultsType: resultsType.value,
+    resultsLimit: resultsLimit.value,
+    keywordSearch: keywordSearch.value,
+  })
 }
 </script>
 
