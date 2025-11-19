@@ -222,7 +222,7 @@ class BusinessService extends APIBase {
   async listPendingInvitationsForUser(): Promise<PendingInvitationsResponse> {
     try {
       const response: AxiosResponse<PendingInvitationsResponse> = await this.get<PendingInvitationsResponse>(
-        'team/invitations/pending'
+        `${this.endpoint}/team/invitations/pending`
       )
       return response.data
     } catch (error) {
