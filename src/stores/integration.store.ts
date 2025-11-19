@@ -13,6 +13,7 @@ import type {
   IGetIntegrationsResponse,
   IFacebookPageInfo,
   IInstagramLinkedAccount,
+  IInstagramViralItem,
 } from '@/types/integration.types'
 import type { IntegrationType } from '@/types/integration.types'
 
@@ -35,6 +36,9 @@ export const useIntegrationStore = defineStore('integrations', () => {
   const igPostsError = ref<string | null>(null)
   const instagramPosts = ref<import('@/types/integration.types').IInstagramPost[]>([])
   const igIntegrationMissing = ref(false)
+  const igViralLoading = ref(false)
+  const igViralError = ref<string | null>(null)
+  const instagramViralItems = ref<IInstagramViralItem[]>([])
 
   // Composable del SDK de Facebook
   const { isLoading: isSDKLoading, error: sdkError, login } = useFacebookSDK()
@@ -64,6 +68,7 @@ export const useIntegrationStore = defineStore('integrations', () => {
   const instagramTotalEngagement = computed(() =>
     instagramPosts.value.reduce((sum, p) => sum + (p?.insights?.engagement || 0), 0),
   )
+  const instagramViralCount = computed(() => instagramViralItems.value.length)
 
   const getIntegrationByType = (type: IntegrationType): IIntegrationRecord | undefined => {
     return integrations.value.find((i) => i.type === type)
@@ -253,6 +258,29 @@ export const useIntegrationStore = defineStore('integrations', () => {
     }
   }
 
+  const fetchInstagramViralPosts = async (
+    filters: { hashtags: string[]; resultsType?: 'posts' | 'stories'; resultsLimit?: number; keywordSearch?: boolean },
+  ) => {
+    igViralLoading.value = true
+    igViralError.value = null
+    try {
+      const response = await instagramService.getInstagramViralPostsByHashtags(filters.hashtags, {
+        resultsType: filters.resultsType,
+        resultsLimit: filters.resultsLimit,
+        keywordSearch: filters.keywordSearch,
+      })
+      instagramViralItems.value = response.items || []
+      return response
+    } catch (err: any) {
+      const message = err?.message || 'Error al obtener posts virales de Instagram'
+      igViralError.value = message
+      console.error('[IntegrationStore] error en fetchInstagramViralPosts:', err)
+      throw new Error(message)
+    } finally {
+      igViralLoading.value = false
+    }
+  }
+
   /**
    * Finaliza la vinculación con una cuenta de Instagram específica (Business)
    */
@@ -342,6 +370,7 @@ export const useIntegrationStore = defineStore('integrations', () => {
     finalizeInstagramAccount,
     loadIntegrations,
     loadInstagramPosts,
+    fetchInstagramViralPosts,
     clearError,
     clearPages,
     clearInstagramError,
@@ -359,6 +388,10 @@ export const useIntegrationStore = defineStore('integrations', () => {
     instagramTotalReach,
     instagramTotalEngagement,
     igIntegrationMissing,
+    igViralLoading,
+    igViralError,
+    instagramViralItems,
+    instagramViralCount,
   }
 })
 

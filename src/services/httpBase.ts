@@ -133,11 +133,13 @@ class APIBase {
   protected async get<T>(
     endpoint: string,
     headers?: { [key: string]: string },
+    config?: AxiosRequestConfig,
   ): Promise<AxiosResponse<T>> {
     const url = this.buildUrl(endpoint)
     try {
       return await this.axiosInstance.get<T>(url, {
         headers: headers ? headers : this.getHeaders(),
+        ...config,
       })
     } catch (error: unknown) {
       if (axios.isAxiosError(error) && error.response) {
