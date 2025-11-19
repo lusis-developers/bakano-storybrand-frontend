@@ -7,6 +7,8 @@ import { useToast } from '@/composables/useToast'
 import BusinessCard from '@/components/business/BusinessCard.vue'
 import BusinessForm from '@/components/business/BusinessForm.vue'
 import { useIntegrationStore } from '@/stores/integration.store'
+import useSubscriptionsStore from '@/stores/subscriptions.store'
+import { useAuthStore } from '@/stores/auth.store'
 
 import SearchableSelect from '@/components/shared/SearchableSelect.vue'
 import BusinessLimitAlert from '@/components/BusinessLimitAlert.vue'
@@ -28,18 +30,22 @@ const {
   updateBusiness,
   deleteBusiness,
   setCurrentBusiness,
-  clearErrors
+  clearErrors,
+  canCreateBusiness
 } = useBusiness()
 
 const { reveal: showConfirmation } = useConfirmationDialog()
 const { triggerToast: showToast } = useToast()
 const integrationStore = useIntegrationStore()
+const subscriptionsStore = useSubscriptionsStore()
+const authStore = useAuthStore()
 
 // Estado local
 const showCreateForm = ref(false)
 const showEditForm = ref(false)
 
 const showBusinessLimitAlert = ref(false)
+const canCreate = ref<boolean>(true)
 const selectedBusiness = ref<IBusiness | null>(null)
 const searchTerm = ref('')
 const selectedBusinessId = ref<string | number | null>(null)
@@ -86,13 +92,15 @@ const filteredBusinesses = computed(() => {
 const hasFilteredResults = computed(() => filteredBusinesses.value.length > 0)
 
 // Métodos
-const handleCreateBusiness = () => {
-  // Check if user already has a business
-  if (businesses.value.length > 0) {
+const handleCreateBusiness = async () => {
+  const allowed = await canCreateBusiness()
+  canCreate.value = allowed
+  if (!allowed || businesses.value.length > 0) {
+    // cargar planes para mostrar en el modal
+    try { await subscriptionsStore.fetchAvailablePlans() } catch (_) {}
     showBusinessLimitAlert.value = true
     return
   }
-  
   clearErrors()
   selectedBusiness.value = null
   showCreateForm.value = true
@@ -170,6 +178,61 @@ const handleCloseBusinessLimitAlert = () => {
   showBusinessLimitAlert.value = false
 }
 
+// ===== Upgrade Flow (redirigir a pago) =====
+const isAuthenticated = computed(() => authStore.isAuthenticated)
+const currentSnapshotPlan = computed(() => subscriptionsStore.currentPlan)
+const isActiveSubscription = computed(() => subscriptionsStore.isActive || currentSnapshotPlan.value !== 'free')
+
+const slugify = (name: string) => name.toLowerCase().replace(/\s+/g, '-')
+const mapStorePlanToSlug = (p: string | undefined) => {
+  if (!p) return 'free'
+  const low = String(p).toLowerCase()
+  if (low === 'starter') return 'starter'
+  if (low === 'pro' || low === 'enterprise' || low === 'advanced') return 'advanced'
+  return low
+}
+const currentPlanSlug = computed(() => mapStorePlanToSlug(currentSnapshotPlan.value))
+
+const ctaToForPlan = (plan: any) => {
+  const planSlug = plan?.slug || slugify(plan?.name || '')
+
+  if (plan?.price === 0) {
+    return isAuthenticated.value
+      ? { name: 'dashboard', query: { plan: 'free' } }
+      : { name: 'register' }
+  }
+
+  if (isAuthenticated.value && plan?.acquired) {
+    return { name: 'dashboard' }
+  }
+
+  if (isAuthenticated.value && isActiveSubscription.value) {
+    return planSlug === 'advanced'
+      ? { name: 'plan', params: { slug: 'advanced' } }
+      : { name: 'plan', params: { slug: 'advanced' } }
+  }
+
+  return isAuthenticated.value
+    ? { name: 'plan', params: { slug: planSlug } }
+    : { name: 'register' }
+}
+
+const handleUpgrade = async (plan?: any) => {
+  try {
+    if (!subscriptionsStore.availablePlans.length && !subscriptionsStore.loading.plans) {
+      await subscriptionsStore.fetchAvailablePlans()
+    }
+  } catch (_) {}
+
+  if (!plan) {
+    router.push({ name: 'pricing' })
+    return
+  }
+
+  const to = ctaToForPlan(plan)
+  router.push(to)
+}
+
 const goToDashboard = () => {
   router.push('/dashboard')
 }
@@ -181,6 +244,7 @@ const clearBusinessSearch = () => {
 // Lifecycle
 onMounted(async () => {
   await fetchBusinesses()
+  canCreate.value = await canCreateBusiness()
 })
 
 // Cargar integraciones cuando haya un negocio seleccionado o disponible
@@ -193,6 +257,7 @@ watch([businesses, selectedBusinessId, currentBusiness], async () => {
       // Silenciar error aquí; se mostraría en componentes específicos si es necesario
     }
   }
+  canCreate.value = await canCreateBusiness()
 }, { immediate: true })
 </script>
 
@@ -358,7 +423,9 @@ watch([businesses, selectedBusinessId, currentBusiness], async () => {
     <!-- Business Limit Alert -->
     <BusinessLimitAlert
       :visible="showBusinessLimitAlert"
+      :plans="subscriptionsStore.availablePlans"
       @close="handleCloseBusinessLimitAlert"
+      @upgrade="handleUpgrade"
     />
   </div>
 </template>
