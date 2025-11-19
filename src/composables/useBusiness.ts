@@ -60,6 +60,10 @@ export function useBusiness() {
     return await businessStore.toggleBusinessStatus(businessId, isActive)
   }
 
+  const canCreateBusiness = async (): Promise<boolean> => {
+    return await businessStore.canCreateBusiness()
+  }
+
   const setCurrentBusiness = (business: IBusiness | null): void => {
     businessStore.setCurrentBusiness(business)
   }
@@ -216,6 +220,7 @@ export function useBusiness() {
     searchBusinessesByName,
     clearErrors,
     clearError,
+    canCreateBusiness,
     
     // Utilidades
     getBusinessById,
