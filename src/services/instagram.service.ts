@@ -5,7 +5,7 @@ import type {
   IInstagramFinalizeResponse,
   IInstagramLinkedAccount,
 } from '@/types/integration.types'
-import type { IInstagramPostsResponse } from '@/types/integration.types'
+import type { IInstagramPostsResponse, IInstagramViralPostsResponse } from '@/types/integration.types'
 
 class InstagramService extends APIBase {
   private readonly endpoint = 'integrations'
@@ -164,6 +164,35 @@ class InstagramService extends APIBase {
         }
       }
       const message = error?.message || 'Error al obtener posts e insights de Instagram'
+      throw new Error(message)
+    }
+  }
+
+  /**
+   * Obtiene posts virales de Instagram por hashtags usando el scraper.
+   * Backend: GET /integrations/instagram/viral?hashtags=a,b&resultsType=posts&resultsLimit=20
+   */
+  async getInstagramViralPostsByHashtags(
+    hashtags: string[],
+    options?: { resultsType?: 'posts' | 'stories'; resultsLimit?: number; keywordSearch?: boolean },
+  ): Promise<IInstagramViralPostsResponse> {
+    try {
+      const hs = (hashtags || []).map((h) => h.trim()).filter((h) => h.length > 0)
+      const qs = new URLSearchParams()
+      if (hs.length) qs.set('hashtags', hs.join(','))
+      const typeOpt = options?.resultsType ?? 'stories'
+      if (typeOpt) qs.set('resultsType', typeOpt)
+      if (typeof options?.resultsLimit === 'number') qs.set('resultsLimit', String(options.resultsLimit))
+      if (typeof options?.keywordSearch !== 'undefined') {
+        qs.set('keywordSearch', String(!!options.keywordSearch))
+      } else {
+        qs.set('keywordSearch', 'true')
+      }
+      const endpoint = `${this.endpoint}/instagram/viral${qs.toString() ? `?${qs.toString()}` : ''}`
+      const response = await this.get<IInstagramViralPostsResponse>(endpoint, undefined, { timeout: 60000 })
+      return response.data
+    } catch (error: any) {
+      const message = error?.message || 'Error al obtener posts virales de Instagram'
       throw new Error(message)
     }
   }
