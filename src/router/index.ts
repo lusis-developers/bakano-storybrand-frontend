@@ -114,6 +114,18 @@ const router = createRouter({
       component: () => import('../views/AdvisorView/index.vue'),
       meta: { requiresAuth: true, requiresVerified: true },
     },
+    {
+      path: '/create-password/:token',
+      name: 'create-password',
+      component: () => import('../views/CreatePasswordView.vue'),
+      meta: { public: true },
+    },
+    {
+      path: '/accept-invite/:businessId',
+      name: 'accept-invite',
+      component: () => import('../views/AcceptInviteView.vue'),
+      meta: { public: true },
+    },
   ],
 })
 
