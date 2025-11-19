@@ -126,6 +126,12 @@ const router = createRouter({
       component: () => import('../views/AcceptInviteView.vue'),
       meta: { public: true },
     },
+    {
+      path: '/team/invitations',
+      name: 'pending-invitations',
+      component: () => import('../views/PendingInvitationsView.vue'),
+      meta: { requiresAuth: true },
+    },
   ],
 })
 
