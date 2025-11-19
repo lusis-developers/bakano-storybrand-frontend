@@ -156,3 +156,23 @@ export interface IInstagramPostsResponse {
   // Cliente: bandera opcional para indicar que falta integración (cuando el backend responde 404)
   missingIntegration?: boolean
 }
+
+// ===== Instagram Viral (Hashtags) =====
+export interface IInstagramViralItem {
+  caption: string
+  ownerFullName?: string
+  ownerUsername?: string
+  url?: string
+  commentsCount?: number
+  firstComment?: string
+  likesCount?: number
+  timestamp?: string
+  hashtags: string[]
+}
+
+export interface IInstagramViralPostsResponse {
+  message: string
+  filters: { hashtags: string[]; resultsType: 'posts' | 'stories'; resultsLimit: number }
+  items: IInstagramViralItem[]
+  count: number
+}
