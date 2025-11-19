@@ -2,8 +2,11 @@
 import { computed, ref, onMounted } from 'vue'
 import type { IBusiness } from '@/types/business.types'
 import IntegrationsStatus from './IntegrationsStatus.vue'
+import TeamInviteControls from './TeamInviteControls.vue'
 import integrationService from '@/services/integration.service'
 import type { IIntegrationRecord } from '@/types/integration.types'
+import TeamMembersControls from './TeamMembersControls.vue'
+import TeamAuditControls from './TeamAuditControls.vue'
 
 interface Props {
   business: IBusiness
@@ -236,6 +239,11 @@ onMounted(() => {
       <!-- Integrations Status -->
       <div class="integrations-wrapper">
         <IntegrationsStatus :business="business" @connect-facebook="$emit('connect-facebook')" />
+        <TeamInviteControls :business="business" />
+        <div class="team-actions-row">
+          <TeamMembersControls :business="business" />
+          <TeamAuditControls :business="business" />
+        </div>
       </div>
     </div>
 
@@ -720,6 +728,13 @@ onMounted(() => {
   margin-top: 1.5rem;
   border-top: 1px solid lighten($BAKANO-DARK, 90%);
   padding-top: 1.5rem;
+}
+
+.team-actions-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
 }
 
 // Integrations inline badges (minimalist palette)
