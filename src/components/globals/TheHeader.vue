@@ -1,9 +1,11 @@
 <script setup lang="ts">
-import { ref } from 'vue'
+import { ref, onMounted, watch, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import SelectedBusinessIndicator from '@/components/globals/SelectedBusinessIndicator.vue'
+import { useBusinessStore } from '@/stores/business.store'
 
 const authStore = useAuthStore()
+const businessStore = useBusinessStore()
 const isMenuOpen = ref(false)
 const isUserMenuOpen = ref(false)
 
@@ -27,6 +29,18 @@ const handleLogout = () => {
   authStore.logout()
   closeMenu()
 }
+
+onMounted(() => {
+  if (authStore.isAuthenticated) {
+    businessStore.fetchPendingInvitations()
+  }
+})
+
+watch(() => authStore.isAuthenticated, (v) => {
+  if (v) businessStore.fetchPendingInvitations()
+})
+
+const pendingCount = computed(() => businessStore.pendingInvitationsCount)
 </script>
 
 <template>
@@ -61,6 +75,10 @@ const handleLogout = () => {
           </RouterLink>
           <RouterLink to="/advisor" class="nav__link" @click="closeMenu">
             Asesor IA
+          </RouterLink>
+          <RouterLink to="/team/invitations" class="nav__link" @click="closeMenu">
+            Invitaciones
+            <span v-if="pendingCount" class="nav__badge">{{ pendingCount }}</span>
           </RouterLink>
           <RouterLink to="/pricing" class="nav__link" @click="closeMenu">
             Precios
@@ -144,6 +162,10 @@ const handleLogout = () => {
           </RouterLink>
           <RouterLink to="/advisor" class="nav__mobile-link" @click="closeMenu">
             Asesor IA
+          </RouterLink>
+          <RouterLink to="/team/invitations" class="nav__mobile-link" @click="closeMenu">
+            Invitaciones
+            <span v-if="pendingCount" class="nav__badge">{{ pendingCount }}</span>
           </RouterLink>
           <RouterLink to="/pricing" class="nav__mobile-link" @click="closeMenu">
             Precios
@@ -487,6 +509,22 @@ const handleLogout = () => {
         border-radius: 1px;
       }
     }
+  }
+
+  &__badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 18px;
+    height: 18px;
+    padding: 0 6px;
+    margin-left: 6px;
+    border-radius: 999px;
+    background: $BAKANO-PINK;
+    color: #fff;
+    font-size: 0.75rem;
+    line-height: 1;
+    font-weight: 700;
   }
 
   &__toggle {
