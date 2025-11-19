@@ -30,10 +30,26 @@
             </ul>
 
             <footer class="plan-card__cta">
+              <div class="terms">
+                <label class="terms__label">
+                  <input
+                    class="terms__checkbox"
+                    type="checkbox"
+                    :checked="acceptTerms"
+                    @change="acceptTerms = ($event.target as HTMLInputElement).checked"
+                  />
+                  <span>
+                    Acepto la
+                    <a href="https://bakano.ec/politicas-privacidad" target="_blank" rel="noopener">Política de Privacidad</a>
+                    y el
+                    <a href="https://bakano.ec/aviso-legal" target="_blank" rel="noopener">Aviso Legal</a>
+                  </span>
+                </label>
+              </div>
               <button
                 class="btn btn--payphone btn--lg btn--block btn--with-icon"
                 @click="preparePayment"
-                :disabled="preparing"
+                :disabled="preparing || !acceptTerms"
                 aria-label="Pagar con Payphone"
               >
                 <span class="btn__icon" aria-hidden="true">
@@ -75,6 +91,7 @@ const planName = computed(() => slug.value.charAt(0).toUpperCase() + slug.value.
 const loading = ref(true)
 const error = ref<string | null>(null)
 const preparing = ref(false)
+const acceptTerms = ref(false)
 
 onMounted(async () => {
   // Si no está autenticado, regresar al registro
@@ -113,6 +130,7 @@ const preparePayment = async () => {
     preparing.value = true
 
     if (!currentPlan.value) throw new Error('Plan inválido')
+    if (!acceptTerms.value) throw new Error('Debes aceptar la Política de Privacidad y el Aviso Legal para continuar')
 
     // Precio a cobrar: siempre el precio del plan
     const dollars = currentPlan.value.price
@@ -275,6 +293,12 @@ const preparePayment = async () => {
   gap: 12px;
   flex-direction: column;
 }
+
+.terms { width: 100%; display: flex; justify-content: center; }
+.terms__label { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: lighten($BAKANO-DARK, 35%); }
+.terms__checkbox { width: 18px; height: 18px; accent-color: $BAKANO-PINK; }
+.terms a { color: $BAKANO-PINK; text-decoration: none; }
+.terms a:hover { text-decoration: underline; }
 
 .btn {
   display: inline-block;
