@@ -132,6 +132,12 @@ const router = createRouter({
       component: () => import('../views/PendingInvitationsView.vue'),
       meta: { requiresAuth: true },
     },
+    {
+      path: '/inspiration/instagram-viral',
+      name: 'instagram-viral',
+      component: () => import('../views/InstagramViralInspirationView.vue'),
+      meta: { requiresAuth: true, requiresVerified: true },
+    },
   ],
 })
 
