@@ -117,7 +117,7 @@ class AuthService extends APIBase {
   async resetPassword(resetData: ResetPasswordRequest): Promise<{ message: string }> {
     try {
       const response: AxiosResponse<{ message: string }> = await this.post<{ message: string }>(
-        'auth/reset-password',
+        'auth/set-password',
         resetData,
       )
       return response.data
