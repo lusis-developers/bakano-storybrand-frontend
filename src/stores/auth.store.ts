@@ -1,7 +1,7 @@
 import { defineStore } from 'pinia'
 import { ref, computed } from 'vue'
 import { useRouter } from 'vue-router'
-import { authService, type LoginRequest, type RegisterRequest } from '@/services/auth.service'
+import { authService, type LoginRequest, type RegisterRequest, type ResetPasswordRequest } from '@/services/auth.service'
 import type { User } from '@/types/user.types'
 import { useToast } from '@/composables/useToast'
 
@@ -189,6 +189,21 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function resetPassword(resetData: ResetPasswordRequest) {
+    loading.value = true
+    error.value = null
+
+    try {
+      const response = await authService.resetPassword(resetData)
+      return response
+    } catch (err: any) {
+      error.value = err.message || 'Error al restablecer contraseña'
+      throw err
+    } finally {
+      loading.value = false
+    }
+  }
+
   function logout() {
     // Limpiar estado
     user.value = null
@@ -244,6 +259,7 @@ export const useAuthStore = defineStore('auth', () => {
     logout,
     verifyUser,
     resendVerification,
+    resetPassword,
     initializeFromStorage,
   }
 })
