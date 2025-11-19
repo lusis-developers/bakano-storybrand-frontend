@@ -92,6 +92,12 @@ export const useAuthStore = defineStore('auth', () => {
         'success',
       )
 
+      const nextPath = String(router.currentRoute.value.query.next || '')
+      if (nextPath) {
+        router.push(nextPath)
+        return response
+      }
+
       // Lógica de redirección inteligente
       if (response.user.isVerified) {
         // Verificar si el usuario ya completó el onboarding
