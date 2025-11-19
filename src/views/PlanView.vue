@@ -37,15 +37,16 @@
                 aria-label="Pagar con Payphone"
               >
                 <span class="btn__icon" aria-hidden="true">
-                  <!-- Simple credit card icon -->
-                  <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M2 7a3 3 0 0 1 3-3h14a3 3 0 0 1 3 3v10a3 3 0 0 1-3 3H5a3 3 0 0 1-3-3V7zm3-1h14a1 1 0 0 1 1 1v1H4V7a1 1 0 0 1 1-1zm-1 5h16v6a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1v-6zm3 4a1 1 0 1 0 0 2h3a1 1 0 1 0 0-2H7z" />
-                  </svg>
+                  <i class="fas fa-credit-card"></i>
                 </span>
                 <span class="btn__label">
                   {{ preparing ? 'Preparando pago...' : 'Pagar ahora con Payphone' }}
                 </span>
               </button>
+              <div class="plan-card__trust">
+                <span class="trust-item"><i class="fas fa-lock"></i> Pago seguro con Payphone</span>
+                <span class="trust-item"><i class="fas fa-shield-halved"></i> Cancela cuando quieras</span>
+              </div>
               <p v-if="error" class="plan-card__error">{{ error }}</p>
             </footer>
           </article>
@@ -272,6 +273,7 @@ const preparePayment = async () => {
   display: flex;
   align-items: center;
   gap: 12px;
+  flex-direction: column;
 }
 
 .btn {
@@ -290,6 +292,7 @@ const preparePayment = async () => {
   box-shadow: 0 10px 20px rgba(247, 115, 0, 0.28);
   transition: transform 0.15s ease, box-shadow 0.15s ease, filter 0.15s ease;
   border: 1px solid rgba(247, 115, 0, 0.6);
+  animation: payPulse 2.6s ease-in-out infinite;
 }
 
 .btn--payphone:hover:not(:disabled) {
@@ -301,6 +304,7 @@ const preparePayment = async () => {
 .btn--payphone:disabled {
   opacity: 0.7;
   cursor: not-allowed;
+  animation: none;
 }
 
 .btn--payphone:focus-visible {
@@ -327,6 +331,30 @@ const preparePayment = async () => {
 .btn__icon {
   display: inline-flex;
   align-items: center;
+}
+
+.plan-card__trust {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  font-size: 12px;
+  color: lighten($BAKANO-DARK, 35%);
+}
+
+.plan-card__trust .trust-item i {
+  color: $BAKANO-PINK;
+}
+
+@keyframes payPulse {
+  0%, 100% {
+    transform: translateY(0);
+    box-shadow: 0 10px 20px rgba(247, 115, 0, 0.28);
+  }
+  50% {
+    transform: translateY(-1px);
+    box-shadow: 0 14px 26px rgba(247, 115, 0, 0.35);
+  }
 }
 
 .plan-card__error {
