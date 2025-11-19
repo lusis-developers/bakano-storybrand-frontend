@@ -34,15 +34,15 @@ const handleScrollToScripts = () => {
     
     <div class="progress-connector disabled"></div>
     
-    <div class="progress-step disabled">
+    <RouterLink to="/inspiration/instagram-viral" class="progress-step link">
       <div class="step-circle">
-        <i class="fas fa-rocket"></i>
+        <i class="fas fa-magnifying-glass"></i>
       </div>
       <div class="step-label">
-        <h4>Lanzar Campañas</h4>
-        <p>Usar scripts en marketing</p>
+        <h4>Buscar Inspiración</h4>
+        <p>Explora contenido viral por palabras clave</p>
       </div>
-    </div>
+    </RouterLink>
   </div>
 </template>
 
@@ -135,6 +135,26 @@ const handleScrollToScripts = () => {
 
     .step-label p {
       color: #cbd5e1;
+    }
+  }
+
+  &.link {
+    text-decoration: none;
+    color: inherit;
+    .step-circle {
+      background: #f1f5f9;
+      color: #1e293b;
+      border-color: #e2e8f0;
+    }
+    .step-label h4 {
+      color: #1e293b;
+    }
+    &:hover {
+      transform: translateY(-2px);
+      .step-circle {
+        transform: scale(1.05);
+        box-shadow: 0 4px 15px rgba(26, 32, 44, 0.1);
+      }
     }
   }
 }
