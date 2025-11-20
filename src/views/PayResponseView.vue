@@ -114,11 +114,18 @@ onMounted(async () => {
     // Activar suscripción si está aprobado (best-effort)
     if (isApproved.value && planSlug.value) {
       try {
+        const identityRaw = localStorage.getItem('pending_subscription_identity')
+        const identity = identityRaw ? JSON.parse(identityRaw) : null
+
         await subscriptionsService.startSubscription({
           plan: planSlug.value as any,
           billingInterval: 'monthly',
           provider: 'payphone',
+          nationalId: identity?.nationalId,
+          phone: identity?.phone,
+          address: identity?.address,
         })
+        localStorage.removeItem('pending_subscription_identity')
       } catch (_) {
         // Silenciar errores aquí; el backend puede activar vía webhook igualmente
       }

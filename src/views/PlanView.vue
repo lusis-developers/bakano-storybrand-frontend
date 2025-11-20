@@ -1,76 +1,3 @@
-<template>
-  <section class="plan">
-    <div class="container">
-      <div class="plan__wrap">
-        <header class="plan__header">
-          <h1 class="plan__title">{{ planName }}</h1>
-          <p class="plan__subtitle">Elige el plan ideal para tu negocio</p>
-        </header>
-
-        <div v-if="loading" class="plan__loading">Cargando plan...</div>
-        <div v-else>
-          <div v-if="!currentPlan" class="plan__error">No se encontró el plan solicitado.</div>
-
-          <article v-else class="plan-card">
-            <header class="plan-card__head">
-              <div class="plan-card__title-row">
-                <h2 class="plan-card__title">{{ currentPlan.name }}</h2>
-                <span v-if="currentPlan.name === 'Starter'" class="plan-card__badge">Popular</span>
-              </div>
-
-              <div class="plan-card__price">
-                <span class="plan-card__currency">{{ currencySymbol(currency) }}</span>
-                <span class="plan-card__amount">{{ planPrice }}</span>
-                <span class="plan-card__period">/mes</span>
-              </div>
-            </header>
-
-            <ul class="plan-card__features">
-              <li class="feature" v-for="(feat, i) in features" :key="i">{{ feat }}</li>
-            </ul>
-
-            <footer class="plan-card__cta">
-              <div class="terms">
-                <label class="terms__label">
-                  <input
-                    class="terms__checkbox"
-                    type="checkbox"
-                    :checked="acceptTerms"
-                    @change="acceptTerms = ($event.target as HTMLInputElement).checked"
-                  />
-                  <span>
-                    Acepto la
-                    <a href="https://bakano.ec/politicas-privacidad" target="_blank" rel="noopener">Política de Privacidad</a>
-                    y el
-                    <a href="https://bakano.ec/aviso-legal" target="_blank" rel="noopener">Aviso Legal</a>
-                  </span>
-                </label>
-              </div>
-              <button
-                class="btn btn--payphone btn--lg btn--block btn--with-icon"
-                @click="preparePayment"
-                :disabled="preparing || !acceptTerms"
-                aria-label="Pagar con Payphone"
-              >
-                <span class="btn__icon" aria-hidden="true">
-                  <i class="fas fa-credit-card"></i>
-                </span>
-                <span class="btn__label">
-                  {{ preparing ? 'Preparando pago...' : 'Pagar ahora con Payphone' }}
-                </span>
-              </button>
-              <div class="plan-card__trust">
-                <span class="trust-item"><i class="fas fa-lock"></i> Pago seguro con Payphone</span>
-                <span class="trust-item"><i class="fas fa-shield-halved"></i> Cancela cuando quieras</span>
-              </div>
-              <p v-if="error" class="plan-card__error">{{ error }}</p>
-            </footer>
-          </article>
-        </div>
-      </div>
-    </div>
-  </section>
-</template>
 
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
@@ -92,6 +19,10 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const preparing = ref(false)
 const acceptTerms = ref(false)
+const nationalId = ref('')
+const phone = ref('')
+const address = ref<{ street: string; city: string; state?: string; zipCode?: string; country: string }>({ street: '', city: '', state: '', zipCode: '', country: '' })
+const identityError = ref<string | null>(null)
 
 onMounted(async () => {
   // Si no está autenticado, regresar al registro
@@ -127,10 +58,38 @@ const currencySymbol = (cur: string) => (cur === 'USD' ? '$' : cur)
 const preparePayment = async () => {
   try {
     error.value = null
+    identityError.value = null
     preparing.value = true
 
     if (!currentPlan.value) throw new Error('Plan inválido')
     if (!acceptTerms.value) throw new Error('Debes aceptar la Política de Privacidad y el Aviso Legal para continuar')
+
+    const phoneRegex = /^[\+]?[1-9][\d]{6,15}$/
+    const hasAddress = !!(address.value.street && address.value.city && address.value.country)
+    if (!nationalId.value || nationalId.value.trim().length < 5) {
+      identityError.value = 'Ingresa una cédula válida (mínimo 5 caracteres)'
+      throw new Error(identityError.value)
+    }
+    if (!phone.value || !phoneRegex.test(phone.value)) {
+      identityError.value = 'Ingresa un teléfono válido (ej: +593987654321)'
+      throw new Error(identityError.value)
+    }
+    if (!hasAddress) {
+      identityError.value = 'Dirección requerida: incluye calle, ciudad y país'
+      throw new Error(identityError.value)
+    }
+
+    localStorage.setItem('pending_subscription_identity', JSON.stringify({
+      nationalId: nationalId.value.trim(),
+      phone: phone.value.trim(),
+      address: {
+        street: address.value.street?.trim(),
+        city: address.value.city?.trim(),
+        state: address.value.state?.trim(),
+        zipCode: address.value.zipCode?.trim(),
+        country: address.value.country?.trim(),
+      },
+    }))
 
     // Precio a cobrar: siempre el precio del plan
     const dollars = currentPlan.value.price
@@ -166,6 +125,129 @@ const preparePayment = async () => {
   }
 }
 </script>
+
+<template>
+  <section class="plan">
+    <div class="container">
+      <div class="plan__wrap">
+        <header class="plan__header">
+          <h1 class="plan__title">{{ planName }}</h1>
+          <p class="plan__subtitle">Elige el plan ideal para tu negocio</p>
+        </header>
+
+        <div v-if="loading" class="plan__loading">Cargando plan...</div>
+        <div v-else>
+          <div v-if="!currentPlan" class="plan__error">No se encontró el plan solicitado.</div>
+
+          <article v-else class="plan-card">
+            <header class="plan-card__head">
+              <div class="plan-card__title-row">
+                <h2 class="plan-card__title">{{ currentPlan.name }}</h2>
+                <span v-if="currentPlan.name === 'Starter'" class="plan-card__badge">Popular</span>
+              </div>
+
+              <div class="plan-card__price">
+                <span class="plan-card__currency">{{ currencySymbol(currency) }}</span>
+                <span class="plan-card__amount">{{ planPrice }}</span>
+                <span class="plan-card__period">/mes</span>
+              </div>
+            </header>
+
+            <ul class="plan-card__features">
+              <li class="feature" v-for="(feat, i) in features" :key="i">{{ feat }}</li>
+            </ul>
+
+        <footer class="plan-card__cta">
+          <div class="identity">
+            <div class="identity__row">
+              <label class="identity__label" for="nationalId">Cédula</label>
+              <input
+                id="nationalId"
+                class="identity__input"
+                type="text"
+                placeholder="Ingrese su cédula"
+                v-model.trim="nationalId"
+                inputmode="numeric"
+                autocomplete="off"
+              />
+            </div>
+            <div class="identity__row">
+              <label class="identity__label" for="phone">Teléfono</label>
+              <input
+                id="phone"
+                class="identity__input"
+                type="tel"
+                placeholder="Ej: +593987654321"
+                v-model.trim="phone"
+                autocomplete="tel"
+              />
+            </div>
+            <div class="identity__grid">
+              <div class="identity__row">
+                <label class="identity__label" for="street">Calle</label>
+                <input id="street" class="identity__input" type="text" v-model.trim="address.street" placeholder="Calle y número" />
+              </div>
+              <div class="identity__row">
+                <label class="identity__label" for="city">Ciudad</label>
+                <input id="city" class="identity__input" type="text" v-model.trim="address.city" placeholder="Ciudad" />
+              </div>
+              <div class="identity__row">
+                <label class="identity__label" for="state">Provincia/Estado</label>
+                <input id="state" class="identity__input" type="text" v-model.trim="address.state" placeholder="Provincia/Estado" />
+              </div>
+              <div class="identity__row">
+                <label class="identity__label" for="zip">Código Postal</label>
+                <input id="zip" class="identity__input" type="text" v-model.trim="address.zipCode" placeholder="Código postal" />
+              </div>
+              <div class="identity__row">
+                <label class="identity__label" for="country">País</label>
+                <input id="country" class="identity__input" type="text" v-model.trim="address.country" placeholder="País" />
+              </div>
+            </div>
+            <p v-if="identityError" class="identity__error">{{ identityError }}</p>
+          </div>
+          <div class="terms">
+            <label class="terms__label">
+              <input
+                class="terms__checkbox"
+                type="checkbox"
+                :checked="acceptTerms"
+                @change="acceptTerms = ($event.target as HTMLInputElement).checked"
+              />
+                  <span>
+                    Acepto la
+                    <a href="https://bakano.ec/politicas-privacidad" target="_blank" rel="noopener">Política de Privacidad</a>
+                    y el
+                    <a href="https://bakano.ec/aviso-legal" target="_blank" rel="noopener">Aviso Legal</a>
+                  </span>
+                </label>
+              </div>
+              <button
+                class="btn btn--payphone btn--lg btn--block btn--with-icon"
+                @click="preparePayment"
+                :disabled="preparing || !acceptTerms"
+                aria-label="Pagar con Payphone"
+              >
+                <span class="btn__icon" aria-hidden="true">
+                  <i class="fas fa-credit-card"></i>
+                </span>
+                <span class="btn__label">
+                  {{ preparing ? 'Preparando pago...' : 'Pagar ahora con Payphone' }}
+                </span>
+              </button>
+              <div class="plan-card__trust">
+                <span class="trust-item"><i class="fas fa-lock"></i> Pago seguro con Payphone</span>
+                <span class="trust-item"><i class="fas fa-shield-halved"></i> Cancela cuando quieras</span>
+              </div>
+              <p v-if="error" class="plan-card__error">{{ error }}</p>
+            </footer>
+          </article>
+        </div>
+      </div>
+    </div>
+  </section>
+</template>
+
 
 <style scoped lang="scss">
 .plan {
@@ -294,11 +376,72 @@ const preparePayment = async () => {
   flex-direction: column;
 }
 
-.terms { width: 100%; display: flex; justify-content: center; }
-.terms__label { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: lighten($BAKANO-DARK, 35%); }
-.terms__checkbox { width: 18px; height: 18px; accent-color: $BAKANO-PINK; }
-.terms a { color: $BAKANO-PINK; text-decoration: none; }
-.terms a:hover { text-decoration: underline; }
+.identity {
+  width: 100%;
+  display: grid;
+  gap: 10px;
+}
+
+.identity__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.identity__row {
+  display: grid;
+  grid-template-columns: 140px 1fr;
+  gap: 8px;
+  align-items: center;
+}
+
+.identity__label {
+  color: lighten($BAKANO-DARK, 35%);
+  font-size: 12px;
+}
+
+.identity__input {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid lighten($BAKANO-DARK, 80%);
+  border-radius: 10px;
+  font-size: 14px;
+}
+
+.identity__error {
+  color: darken($BAKANO-PINK, 10%);
+  font-size: 12px;
+  text-align: center;
+}
+
+.terms {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.terms__label {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 12px;
+  color: lighten($BAKANO-DARK, 35%);
+}
+
+.terms__checkbox {
+  width: 18px;
+  height: 18px;
+  accent-color: $BAKANO-PINK;
+}
+
+.terms a {
+  color: $BAKANO-PINK;
+  text-decoration: none;
+}
+
+.terms a:hover {
+  text-decoration: underline;
+}
 
 .btn {
   display: inline-block;
@@ -371,10 +514,13 @@ const preparePayment = async () => {
 }
 
 @keyframes payPulse {
-  0%, 100% {
+
+  0%,
+  100% {
     transform: translateY(0);
     box-shadow: 0 10px 20px rgba(247, 115, 0, 0.28);
   }
+
   50% {
     transform: translateY(-1px);
     box-shadow: 0 14px 26px rgba(247, 115, 0, 0.35);
@@ -399,9 +545,18 @@ const preparePayment = async () => {
   .plan-card__features {
     grid-template-columns: 1fr;
   }
+
   .plan-card__head {
     flex-direction: column;
     align-items: flex-start;
+  }
+
+  .identity__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .identity__row {
+    grid-template-columns: 1fr;
   }
 }
 </style>
