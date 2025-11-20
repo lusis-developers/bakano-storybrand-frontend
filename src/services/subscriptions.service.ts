@@ -69,6 +69,9 @@ export interface StartSubscriptionRequest {
   priceId?: string
   amount?: number
   currency?: string
+  nationalId?: string
+  phone?: string
+  address?: { street?: string; city?: string; state?: string; zipCode?: string; country?: string }
 }
 
 export interface StartSubscriptionResponse {
