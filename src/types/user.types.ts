@@ -18,13 +18,13 @@ export interface UserSubscription {
   customerId?: string
   subscriptionId?: string
   billingInterval?: BillingInterval
-  currentPeriodStart?: string
-  currentPeriodEnd?: string
-  trialStart?: string
-  trialEnd?: string
+  currentPeriodStart?: string | Date
+  currentPeriodEnd?: string | Date
+  trialStart?: string | Date
+  trialEnd?: string | Date
   cancelAtPeriodEnd?: boolean
-  canceledAt?: string
-  nextBillingDate?: string
+  canceledAt?: string | Date
+  nextBillingDate?: string | Date
   paymentMethodId?: string
   providerMetadata?: Record<string, any>
 }
@@ -35,16 +35,16 @@ export interface User {
   firstName: string
   lastName: string
   email: string
-  birthDate?: string
+  birthDate?: string | Date
   businesses: string[]
   role: 'admin' | 'client'
   isVerified: boolean
   verificationToken?: string
-  verificationTokenExpires?: string
+  verificationTokenExpires?: string | Date
   onboarding?: string | null
   subscription?: UserSubscription
-  createdAt: string
-  updatedAt: string
+  createdAt: string | Date
+  updatedAt: string | Date
   fullName?: string
   age?: number
 }
