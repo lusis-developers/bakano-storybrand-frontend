@@ -29,15 +29,63 @@
               <li class="feature" v-for="(feat, i) in features" :key="i">{{ feat }}</li>
             </ul>
 
-            <footer class="plan-card__cta">
-              <div class="terms">
-                <label class="terms__label">
-                  <input
-                    class="terms__checkbox"
-                    type="checkbox"
-                    :checked="acceptTerms"
-                    @change="acceptTerms = ($event.target as HTMLInputElement).checked"
-                  />
+        <footer class="plan-card__cta">
+          <div class="identity">
+            <div class="identity__row">
+              <label class="identity__label" for="nationalId">Cédula</label>
+              <input
+                id="nationalId"
+                class="identity__input"
+                type="text"
+                placeholder="Ingrese su cédula"
+                v-model.trim="nationalId"
+                inputmode="numeric"
+                autocomplete="off"
+              />
+            </div>
+            <div class="identity__row">
+              <label class="identity__label" for="phone">Teléfono</label>
+              <input
+                id="phone"
+                class="identity__input"
+                type="tel"
+                placeholder="Ej: +593987654321"
+                v-model.trim="phone"
+                autocomplete="tel"
+              />
+            </div>
+            <div class="identity__grid">
+              <div class="identity__row">
+                <label class="identity__label" for="street">Calle</label>
+                <input id="street" class="identity__input" type="text" v-model.trim="address.street" placeholder="Calle y número" />
+              </div>
+              <div class="identity__row">
+                <label class="identity__label" for="city">Ciudad</label>
+                <input id="city" class="identity__input" type="text" v-model.trim="address.city" placeholder="Ciudad" />
+              </div>
+              <div class="identity__row">
+                <label class="identity__label" for="state">Provincia/Estado</label>
+                <input id="state" class="identity__input" type="text" v-model.trim="address.state" placeholder="Provincia/Estado" />
+              </div>
+              <div class="identity__row">
+                <label class="identity__label" for="zip">Código Postal</label>
+                <input id="zip" class="identity__input" type="text" v-model.trim="address.zipCode" placeholder="Código postal" />
+              </div>
+              <div class="identity__row">
+                <label class="identity__label" for="country">País</label>
+                <input id="country" class="identity__input" type="text" v-model.trim="address.country" placeholder="País" />
+              </div>
+            </div>
+            <p v-if="identityError" class="identity__error">{{ identityError }}</p>
+          </div>
+          <div class="terms">
+            <label class="terms__label">
+              <input
+                class="terms__checkbox"
+                type="checkbox"
+                :checked="acceptTerms"
+                @change="acceptTerms = ($event.target as HTMLInputElement).checked"
+              />
                   <span>
                     Acepto la
                     <a href="https://bakano.ec/politicas-privacidad" target="_blank" rel="noopener">Política de Privacidad</a>
@@ -92,6 +140,10 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const preparing = ref(false)
 const acceptTerms = ref(false)
+const nationalId = ref('')
+const phone = ref('')
+const address = ref<{ street: string; city: string; state?: string; zipCode?: string; country: string }>({ street: '', city: '', state: '', zipCode: '', country: '' })
+const identityError = ref<string | null>(null)
 
 onMounted(async () => {
   // Si no está autenticado, regresar al registro
@@ -127,10 +179,38 @@ const currencySymbol = (cur: string) => (cur === 'USD' ? '$' : cur)
 const preparePayment = async () => {
   try {
     error.value = null
+    identityError.value = null
     preparing.value = true
 
     if (!currentPlan.value) throw new Error('Plan inválido')
     if (!acceptTerms.value) throw new Error('Debes aceptar la Política de Privacidad y el Aviso Legal para continuar')
+
+    const phoneRegex = /^[\+]?[1-9][\d]{6,15}$/
+    const hasAddress = !!(address.value.street && address.value.city && address.value.country)
+    if (!nationalId.value || nationalId.value.trim().length < 5) {
+      identityError.value = 'Ingresa una cédula válida (mínimo 5 caracteres)'
+      throw new Error(identityError.value)
+    }
+    if (!phone.value || !phoneRegex.test(phone.value)) {
+      identityError.value = 'Ingresa un teléfono válido (ej: +593987654321)'
+      throw new Error(identityError.value)
+    }
+    if (!hasAddress) {
+      identityError.value = 'Dirección requerida: incluye calle, ciudad y país'
+      throw new Error(identityError.value)
+    }
+
+    localStorage.setItem('pending_subscription_identity', JSON.stringify({
+      nationalId: nationalId.value.trim(),
+      phone: phone.value.trim(),
+      address: {
+        street: address.value.street?.trim(),
+        city: address.value.city?.trim(),
+        state: address.value.state?.trim(),
+        zipCode: address.value.zipCode?.trim(),
+        country: address.value.country?.trim(),
+      },
+    }))
 
     // Precio a cobrar: siempre el precio del plan
     const dollars = currentPlan.value.price
@@ -294,6 +374,13 @@ const preparePayment = async () => {
   flex-direction: column;
 }
 
+.identity { width: 100%; display: grid; gap: 10px; }
+.identity__grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.identity__row { display: grid; grid-template-columns: 140px 1fr; gap: 8px; align-items: center; }
+.identity__label { color: lighten($BAKANO-DARK, 35%); font-size: 12px; }
+.identity__input { width: 100%; padding: 10px 12px; border: 1px solid lighten($BAKANO-DARK, 80%); border-radius: 10px; font-size: 14px; }
+.identity__error { color: darken($BAKANO-PINK, 10%); font-size: 12px; text-align: center; }
+
 .terms { width: 100%; display: flex; justify-content: center; }
 .terms__label { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; color: lighten($BAKANO-DARK, 35%); }
 .terms__checkbox { width: 18px; height: 18px; accent-color: $BAKANO-PINK; }
@@ -403,5 +490,7 @@ const preparePayment = async () => {
     flex-direction: column;
     align-items: flex-start;
   }
+  .identity__grid { grid-template-columns: 1fr; }
+  .identity__row { grid-template-columns: 1fr; }
 }
 </style>
