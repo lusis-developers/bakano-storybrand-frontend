@@ -146,40 +146,140 @@ const goPricing = () => router.push({ name: 'pricing' })
   background: linear-gradient(180deg, lighten($BAKANO-LIGHT, 4%) 0%, $BAKANO-LIGHT 100%);
   padding: 56px 0;
 }
+
 .container {
   max-width: 820px;
   margin: 0 auto;
   padding: 0 20px;
 }
+
 .card {
   background: #fff;
   border-radius: 16px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.06);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.06);
   padding: 24px;
 }
-.card__header { text-align: center; margin-bottom: 16px; }
-.card__title { margin: 0; font-size: 26px; font-weight: 800; color: $BAKANO-DARK; }
-.card__subtitle { color: lighten($BAKANO-DARK, 35%); }
-.card__loading { text-align: center; color: $BAKANO-DARK; }
-.card__error { color: darken($BAKANO-PINK, 10%); background: rgba($BAKANO-PINK, 0.08); border: 1px solid rgba($BAKANO-PINK, 0.3); padding: 12px; border-radius: 10px; }
 
-.result__status { display: flex; align-items: center; gap: 12px; padding: 12px; border-radius: 12px; margin-bottom: 16px; }
-.result__status.success { background: rgba(68, 189, 81, 0.08); border: 1px solid rgba(68, 189, 81, 0.3); color: #2f9e44; }
-.result__status.pending { background: rgba(250, 184, 47, 0.08); border: 1px solid rgba(250, 184, 47, 0.3); color: #b08900; }
-.result__status.error { background: rgba(244, 63, 94, 0.08); border: 1px solid rgba(244, 63, 94, 0.3); color: #c0003b; }
-.result__title { margin: 0; font-weight: 800; }
-.result__desc { margin: 2px 0 0; color: lighten($BAKANO-DARK, 30%); }
+.card__header {
+  text-align: center;
+  margin-bottom: 16px;
+}
 
-.details { display: grid; grid-template-columns: 1fr; gap: 8px; margin: 12px 0 20px; }
-.details__row { display: grid; grid-template-columns: 200px 1fr; gap: 10px; align-items: center; }
-.details dt { color: lighten($BAKANO-DARK, 30%); }
-.details dd { color: $BAKANO-DARK; margin: 0; font-weight: 700; }
+.card__title {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 800;
+  color: $BAKANO-DARK;
+}
 
-.actions { display: flex; gap: 10px; }
-.btn { display: inline-block; padding: 12px 18px; border-radius: 12px; font-weight: 700; text-align: center; }
-.btn--primary { background: #f77300; color: #fff; box-shadow: 0 10px 20px rgba(247,115,0,0.28); border: 1px solid rgba(247,115,0,0.6); }
-.btn--secondary { background: #fff; color: $BAKANO-DARK; border: 1px solid lighten($BAKANO-DARK, 80%); }
-.btn--primary:hover { transform: translateY(-1px); box-shadow: 0 14px 26px rgba(247,115,0,0.35); }
+.card__subtitle {
+  color: lighten($BAKANO-DARK, 35%);
+}
+
+.card__loading {
+  text-align: center;
+  color: $BAKANO-DARK;
+}
+
+.card__error {
+  color: darken($BAKANO-PINK, 10%);
+  background: rgba($BAKANO-PINK, 0.08);
+  border: 1px solid rgba($BAKANO-PINK, 0.3);
+  padding: 12px;
+  border-radius: 10px;
+}
+
+.result__status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.result__status.success {
+  background: rgba(68, 189, 81, 0.08);
+  border: 1px solid rgba(68, 189, 81, 0.3);
+  color: #2f9e44;
+}
+
+.result__status.pending {
+  background: rgba(250, 184, 47, 0.08);
+  border: 1px solid rgba(250, 184, 47, 0.3);
+  color: #b08900;
+}
+
+.result__status.error {
+  background: rgba(244, 63, 94, 0.08);
+  border: 1px solid rgba(244, 63, 94, 0.3);
+  color: #c0003b;
+}
+
+.result__title {
+  margin: 0;
+  font-weight: 800;
+}
+
+.result__desc {
+  margin: 2px 0 0;
+  color: lighten($BAKANO-DARK, 30%);
+}
+
+.details {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 8px;
+  margin: 12px 0 20px;
+}
+
+.details__row {
+  display: grid;
+  grid-template-columns: 200px 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.details dt {
+  color: lighten($BAKANO-DARK, 30%);
+}
+
+.details dd {
+  color: $BAKANO-DARK;
+  margin: 0;
+  font-weight: 700;
+}
+
+.actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn {
+  display: inline-block;
+  padding: 12px 18px;
+  border-radius: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.btn--primary {
+  background: #f77300;
+  color: #fff;
+  box-shadow: 0 10px 20px rgba(247, 115, 0, 0.28);
+  border: 1px solid rgba(247, 115, 0, 0.6);
+}
+
+.btn--secondary {
+  background: #fff;
+  color: $BAKANO-DARK;
+  border: 1px solid lighten($BAKANO-DARK, 80%);
+}
+
+.btn--primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 26px rgba(247, 115, 0, 0.35);
+}
 </style>
 
 <script lang="ts">
