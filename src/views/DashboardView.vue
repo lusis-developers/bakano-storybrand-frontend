@@ -8,7 +8,7 @@ import { useContentStore } from '@/stores/content.store'
 import { useScriptsStore } from '@/stores/scripts.store'
 import { useIntegrationStore } from '@/stores/integration.store'
 import { useToast } from '@/composables/useToast'
-import FacebookMetricsPanel from '@/components/metrics/FacebookMetricsPanel.vue'
+import SocialMetricsPanel from '@/components/metrics/SocialMetricsPanel.vue'
 import ContentService from '@/services/content.service'
 
 // Composables
@@ -23,6 +23,8 @@ const router = useRouter()
 
 // Estado local
 const isLoading = ref(true)
+const metricsPlatform = ref<'facebook' | 'instagram'>('facebook')
+const panelLoading = ref(false)
 const hasExistingContent = ref(false)
 const existingContentId = ref<string | null>(null)
 const userStatistics = ref<{
@@ -213,7 +215,35 @@ function logout() {
             </div>
           </section>
 
-          <FacebookMetricsPanel />
+          <div class="metrics-toggle">
+            <button
+              class="toggle-btn"
+              :class="{ active: metricsPlatform === 'facebook' }"
+              @click="metricsPlatform = 'facebook'"
+              :disabled="panelLoading"
+              aria-label="Ver métricas de Facebook"
+            >
+              <i class="fab fa-facebook"></i>
+              <span>Facebook</span>
+            </button>
+            <button
+              class="toggle-btn"
+              :class="{ active: metricsPlatform === 'instagram' }"
+              @click="metricsPlatform = 'instagram'"
+              :disabled="panelLoading"
+              aria-label="Ver métricas de Instagram"
+            >
+              <i class="fab fa-instagram"></i>
+              <span>Instagram</span>
+            </button>
+          </div>
+
+          <SocialMetricsPanel :platform="metricsPlatform" @loading-start="panelLoading = true" @loading-end="panelLoading = false" />
+
+          <div v-if="panelLoading" class="global-loading-overlay" aria-live="polite" aria-busy="true">
+            <div class="overlay-spinner"></div>
+            <p>Cargando métricas...</p>
+          </div>
           
           
         </div>
@@ -225,7 +255,6 @@ function logout() {
 <style lang="scss" scoped>
 .dashboard-container {
   min-height: 100vh;
-  background: $BAKANO-LIGHT;
 }
 
 .container {
@@ -330,6 +359,35 @@ function logout() {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+}
+
+.metrics-toggle {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: $BAKANO-DARK;
+  cursor: pointer;
+}
+
+.toggle-btn.active {
+  background: $BAKANO-PINK;
+  border-color: $BAKANO-PINK;
+  color: white;
+}
+
+.toggle-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 // Welcome Section
@@ -695,4 +753,32 @@ function logout() {
   }
 }
 
-// Limpieza: se removieron estilos de la sección del Asesor IA ya que ahora es una vista independiente.</style>
+// Limpieza: se removieron estilos de la sección del Asesor IA ya que ahora es una vista independiente.
+.global-loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(2px);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.overlay-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e2e8f0;
+  border-top: 4px solid $BAKANO-PINK;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.global-loading-overlay p {
+  margin: 0;
+  color: #475569;
+  font-weight: 600;
+}
+</style>
