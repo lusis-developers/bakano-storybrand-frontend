@@ -5,7 +5,7 @@ import type {
   IIntegrationRecord,
   IFacebookPageInfo,
 } from '@/types/integration.types'
-import type { CreatePostPayload, PublishTextPostResponse, PublishPhotoPostResponse, PublishVideoPostResponse, CreateVideoPostPayload, ScheduledPostsResponse, ScheduledPostsQuery } from '@/types/facebook.types'
+import type { CreatePostPayload, PublishTextPostResponse, PublishPhotoPostResponse, PublishVideoPostResponse, CreateVideoPostPayload, ScheduledPostsResponse, ScheduledPostsQuery, FacebookPageMetricsResponse } from '@/types/facebook.types'
 
 class FacebookService extends APIBase {
   private readonly endpoint = 'integrations'
@@ -180,6 +180,44 @@ class FacebookService extends APIBase {
       return response.data
     } catch (error: any) {
       const message = error?.message || 'Error al obtener los posts programados de Facebook'
+      throw new Error(message)
+    }
+  }
+
+  /**
+   * Métricas de la página de Facebook para un negocio.
+   * Backend: GET /integrations/facebook/metrics/:businessId
+   * Filtros opcionales: period, since, until, date_preset, view, months, tz, offsetMinutes
+   */
+  async getPageMetrics(
+    businessId: string,
+    query?: Partial<{
+      period: string
+      since: string
+      until: string
+      date_preset: string
+      view: string
+      months: string | number
+      tz: string
+      offsetMinutes: string | number
+    }>,
+  ): Promise<FacebookPageMetricsResponse> {
+    try {
+      const params = new URLSearchParams()
+      if (query?.period) params.append('period', String(query.period))
+      if (query?.since) params.append('since', String(query.since))
+      if (query?.until) params.append('until', String(query.until))
+      if (query?.date_preset) params.append('date_preset', String(query.date_preset))
+      if (query?.view) params.append('view', String(query.view))
+      if (typeof query?.months !== 'undefined') params.append('months', String(query.months))
+      if (query?.tz) params.append('tz', String(query.tz))
+      if (typeof query?.offsetMinutes !== 'undefined') params.append('offsetMinutes', String(query.offsetMinutes))
+
+      const endpoint = `${this.endpoint}/facebook/metrics/${businessId}${params.toString() ? `?${params.toString()}` : ''}`
+      const response = await this.get<FacebookPageMetricsResponse>(endpoint)
+      return response.data
+    } catch (error: any) {
+      const message = error?.message || 'Error al obtener métricas de la página de Facebook'
       throw new Error(message)
     }
   }
