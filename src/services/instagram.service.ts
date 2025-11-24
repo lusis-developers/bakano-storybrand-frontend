@@ -196,6 +196,61 @@ class InstagramService extends APIBase {
       throw new Error(message)
     }
   }
+
+  /**
+   * Métricas de la cuenta de Instagram (page metrics) para un negocio.
+   * Backend: GET /integrations/instagram/metrics/:businessId
+   */
+  async getPageMetrics(
+    businessId: string,
+    query?: Partial<{
+      period: string
+      since: string
+      until: string
+      date_preset: string
+      view: string
+      months: string | number
+      tz: string
+      offsetMinutes: string | number
+      series: string | boolean
+      breakdown: string
+    }>,
+  ): Promise<any> {
+    const params = new URLSearchParams()
+    if (query?.period) params.append('period', String(query.period))
+    if (query?.since) params.append('since', String(query.since))
+    if (query?.until) params.append('until', String(query.until))
+    if (query?.date_preset) params.append('date_preset', String(query.date_preset))
+    if (query?.view) params.append('view', String(query.view))
+    if (typeof query?.months !== 'undefined') params.append('months', String(query.months))
+    if (query?.tz) params.append('tz', String(query.tz))
+    if (typeof query?.offsetMinutes !== 'undefined') params.append('offsetMinutes', String(query.offsetMinutes))
+    if (typeof query?.series !== 'undefined') params.append('series', String(query.series))
+    if (query?.breakdown) params.append('breakdown', String(query.breakdown))
+
+    const endpoint = `${this.endpoint}/instagram/metrics/${businessId}${params.toString() ? `?${params.toString()}` : ''}`
+    const response = await this.get<any>(endpoint)
+    return response.data
+  }
+
+  /**
+   * Métricas de crecimiento de seguidores de Instagram.
+   * Backend: GET /integrations/instagram/followers/:businessId
+   */
+  async getFollowersGrowth(
+    businessId: string,
+    query?: Partial<{ tz: string; offsetMinutes: string | number; series: string | boolean; compare: string }>,
+  ): Promise<any> {
+    const params = new URLSearchParams()
+    if (query?.tz) params.append('tz', String(query.tz))
+    if (typeof query?.offsetMinutes !== 'undefined') params.append('offsetMinutes', String(query.offsetMinutes))
+    if (typeof query?.series !== 'undefined') params.append('series', String(query.series))
+    if (query?.compare) params.append('compare', String(query.compare))
+
+    const endpoint = `${this.endpoint}/instagram/followers/${businessId}${params.toString() ? `?${params.toString()}` : ''}`
+    const response = await this.get<any>(endpoint)
+    return response.data
+  }
 }
 
 const instagramService = new InstagramService()
