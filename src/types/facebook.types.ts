@@ -98,3 +98,46 @@ export interface ScheduledAttachment {
 export interface ScheduledAttachments {
   data: ScheduledAttachment[]
 }
+
+// Métricas de página (insights)
+export interface FacebookInsightPoint {
+  date: string
+  time: string
+  value: number
+}
+
+export interface FacebookMetric {
+  total: number
+  averagePerDay: number
+  series: FacebookInsightPoint[]
+}
+
+export interface FacebookInsightsBlock {
+  period: string
+  date_preset?: string
+  range?: { since?: string; until?: string }
+  timezone: string
+  metrics: Record<string, FacebookMetric>
+}
+
+export interface FacebookPageMetricsData {
+  page: { id: string; name?: string }
+  followers: any
+  insights: FacebookInsightsBlock
+}
+
+export interface FacebookPageMetricsFilters {
+  plan: 'free' | 'starter' | 'pro' | 'enterprise'
+  maxMonthsByPlan: number
+  maxDaysByPlan: number
+  view: 'week' | 'month' | 'custom' | string
+  monthsApplied?: number
+  adjusted?: boolean
+  metricsRequested?: string[]
+}
+
+export interface FacebookPageMetricsResponse {
+  message: string
+  data: FacebookPageMetricsData
+  filters: FacebookPageMetricsFilters
+}
