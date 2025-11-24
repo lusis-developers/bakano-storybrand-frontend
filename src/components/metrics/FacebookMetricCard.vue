@@ -9,13 +9,17 @@ const height = 180
 const padding = { left: 12, right: 12, top: 16, bottom: 28 }
 const pink = '#E6285C'
 
+const series = computed(() => (Array.isArray(props.metric.series) ? props.metric.series : []))
+const hasSeries = computed(() => series.value.length > 0)
+
 const maxY = computed(() => {
-  const m = props.metric
-  return m.series.reduce((max, p) => (p.value > max ? p.value : max), 0) || 1
+  const fromSeries = series.value.reduce((max, p) => (p.value > max ? p.value : max), 0)
+  const total = typeof props.metric.total === 'number' ? props.metric.total : 0
+  return Math.max(fromSeries, total, 1)
 })
 
 const points = computed(() => {
-  const m = props.metric.series
+  const m = series.value
   const w = width - padding.left - padding.right
   const h = height - padding.top - padding.bottom
   const n = Math.max(1, m.length)
@@ -39,8 +43,27 @@ const areaD = computed(() => {
   return `${pathD.value} L ${pts[pts.length - 1].x},${baseY} L ${pts[0].x},${baseY} Z`
 })
 
-const firstLabel = computed(() => props.metric.series[0]?.date || '')
-const lastLabel = computed(() => props.metric.series[props.metric.series.length - 1]?.date || '')
+const firstLabel = computed(() => series.value[0]?.date || '')
+const lastLabel = computed(() => series.value[series.value.length - 1]?.date || '')
+
+const chartW = computed(() => width - padding.left - padding.right)
+const chartH = computed(() => height - padding.top - padding.bottom)
+const fbMax = computed(() => Math.max(Number(props.metric.total || 0), Number(props.metric.averagePerDay || 0), 1))
+const fallbackBars = computed(() => {
+  const w = chartW.value
+  const h = chartH.value
+  const total = Number(props.metric.total || 0)
+  const avg = Number(props.metric.averagePerDay || 0)
+  const totalH = (total / fbMax.value) * h
+  const avgH = (avg / fbMax.value) * h
+  const x1 = padding.left + w * 0.33
+  const x2 = padding.left + w * 0.66
+  const baseY = padding.top + h
+  return [
+    { label: 'Total', value: total, x: x1, y: baseY - totalH, height: totalH },
+    { label: 'Prom/día', value: avg, x: x2, y: baseY - avgH, height: avgH },
+  ]
+})
 </script>
 
 <template>
@@ -60,20 +83,27 @@ const lastLabel = computed(() => props.metric.series[props.metric.series.length 
             <stop offset="100%" :stop-color="pink" stop-opacity="0" />
           </linearGradient>
         </defs>
+        <template v-if="hasSeries">
+          <path :d="areaD" fill="url(#grad)" />
+          <path :d="pathD" :stroke="pink" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" />
 
-        <path :d="areaD" fill="url(#grad)" />
-        <path :d="pathD" :stroke="pink" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" />
+          <g v-for="p in points" :key="p.date + p.time">
+            <circle :cx="p.x" :cy="p.y" r="3" :fill="pink" />
+          </g>
 
-        <g v-for="p in points" :key="p.date + p.time">
-          <circle :cx="p.x" :cy="p.y" r="3" :fill="pink" />
-        </g>
-
-        <text :x="padding.left" :y="height - 4" class="axis-label">{{ firstLabel }}</text>
-        <text :x="width - padding.right - 40" :y="height - 4" class="axis-label" text-anchor="end">{{ lastLabel }}</text>
+          <text :x="padding.left" :y="height - 4" class="axis-label">{{ firstLabel }}</text>
+          <text :x="width - padding.right - 40" :y="height - 4" class="axis-label" text-anchor="end">{{ lastLabel }}</text>
+        </template>
+        <template v-else>
+          <g v-for="b in fallbackBars" :key="b.label">
+            <rect :x="b.x - 18" :y="b.y" :width="36" :height="b.height" :fill="pink" rx="8" />
+            <text :x="b.x" :y="height - 18" class="axis-label" text-anchor="middle">{{ b.label }}</text>
+            <text :x="b.x" :y="height - 6" class="axis-label" text-anchor="middle">{{ b.value }}</text>
+          </g>
+        </template>
       </svg>
     </div>
   </div>
-  
 </template>
 
 <style lang="scss" scoped>
