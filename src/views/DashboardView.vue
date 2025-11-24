@@ -8,6 +8,7 @@ import { useContentStore } from '@/stores/content.store'
 import { useScriptsStore } from '@/stores/scripts.store'
 import { useIntegrationStore } from '@/stores/integration.store'
 import { useToast } from '@/composables/useToast'
+import FacebookMetricsPanel from '@/components/metrics/FacebookMetricsPanel.vue'
 import ContentService from '@/services/content.service'
 
 // Composables
@@ -212,124 +213,9 @@ function logout() {
             </div>
           </section>
 
-          <!-- Stats Section -->
-          <section class="stats-section">
-            <h2>Resumen de Actividad</h2>
-            <!-- Aviso de integración faltante (sin redirección automática) -->
-            <div v-if="integrationStore.igIntegrationMissing" class="integration-alert">
-              <div class="alert-content">
-                <i class="fas fa-plug" aria-hidden="true"></i>
-                <span>
-                  Para ver tus métricas sociales aquí, primero conecta tus redes (Facebook e Instagram)
-                  desde la Gestión de Negocios.
-                </span>
-              </div>
-              <button class="btn btn-primary" @click="router.push('/business')">
-                Ir a Gestión de Negocios
-              </button>
-            </div>
-            
-            <div class="stats-grid">
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
-                <div class="stat-content">
-                  <h3>{{ userStatistics?.totalScripts || 0 }}</h3>
-                  <p>Scripts Creados</p>
-                </div>
-              </div>
-              
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-building"></i></div>
-                <div class="stat-content">
-                  <h3>{{ userStatistics?.totalBusinesses || 0 }}</h3>
-                  <p>Negocios Registrados</p>
-                </div>
-              </div>
-              
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
-                <div class="stat-content">
-                  <h3>{{ userStatistics?.scriptsByType.content || 0 }}</h3>
-                  <p>Scripts de Contenido</p>
-                </div>
-              </div>
-              
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-bullhorn"></i></div>
-                <div class="stat-content">
-                  <h3>{{ userStatistics?.scriptsByType.ad || 0 }}</h3>
-                  <p>Scripts de Anuncios</p>
-                </div>
-              </div>
-
-              <!-- Métricas de Instagram (últimos 10 posts) -->
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fab fa-instagram"></i></div>
-                <div class="stat-content">
-                  <h3>{{ igTotalPosts || 0 }}</h3>
-                  <p>Posts de Instagram</p>
-                </div>
-              </div>
-
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
-                <div class="stat-content">
-                  <h3>{{ igTotalReach || 0 }}</h3>
-                  <p>Alcance (últimos 10)</p>
-                </div>
-              </div>
-
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-heart"></i></div>
-                <div class="stat-content">
-                  <h3>{{ igTotalEngagement || 0 }}</h3>
-                  <p>Engagement (últimos 10)</p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- Recent Activity -->
-          <section class="activity-section">
-            <h2>Actividad Reciente</h2>
-            
-            <div class="activity-card">
-              <div v-if="!hasExistingContent" class="empty-state">
-                <div class="empty-icon"><i class="fas fa-rocket"></i></div>
-                <h3>¡Todo listo para comenzar!</h3>
-                <p>Has completado tu configuración inicial. Comienza creando tus primeros soundbites.</p>
-                <button 
-                  @click="handleCreateContent" 
-                  class="btn btn-primary"
-                >
-                  Crear Primeros Soundbites
-                </button>
-              </div>
-              
-              <div v-else class="existing-content-state">
-                <div class="content-icon"><i class="fas fa-check-circle"></i></div>
-                <h3>¡Soundbites generados!</h3>
-                <p>Ya tienes soundbites creados para tu marca. Puedes revisarlos o generar nuevos soundbites.</p>
-                <div class="content-actions">
-                  <button 
-                    @click="handleCreateContent" 
-                    class="btn btn-primary"
-                  >
-                    Ver Soundbites Actuales
-                  </button>
-                  <button 
-                     @click="router.push(`/content/wizard/${businessStore.businesses[0]?.id}`)"
-                     class="btn btn-outline"
-                   >
-                     Generar Nuevos Soundbites
-                   </button>
-                </div>
-              </div>
-            </div>
-          </section>
+          <FacebookMetricsPanel />
           
-          <!-- Se elimina el bloque del Asesor IA 24/7 del dashboard.
-               Ahora se ofrece como una vista dedicada accesible desde las acciones rápidas. -->
+          
         </div>
       </div>
     </main>
@@ -809,5 +695,4 @@ function logout() {
   }
 }
 
-// Limpieza: se removieron estilos de la sección del Asesor IA ya que ahora es una vista independiente.
-</style>
+// Limpieza: se removieron estilos de la sección del Asesor IA ya que ahora es una vista independiente.</style>
