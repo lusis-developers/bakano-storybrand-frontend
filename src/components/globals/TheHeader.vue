@@ -62,8 +62,8 @@ const pendingCount = computed(() => businessStore.pendingInvitationsCount)
           <span class="nav__version" aria-label="Versión de la plataforma">v{{ appVersion }}</span>
         </RouterLink>
 
-        <!-- Main Navigation -->
-        <div class="nav__menu">
+        <!-- Main Navigation (solo invitados) -->
+        <div class="nav__menu" v-if="!authStore.isAuthenticated">
           <RouterLink to="/dashboard" class="nav__link" @click="closeMenu">
             Dashboard
           </RouterLink>
@@ -146,7 +146,7 @@ const pendingCount = computed(() => businessStore.pendingInvitationsCount)
         </button>
       </div>
 
-      <!-- Mobile Navigation -->
+      <!-- Mobile Navigation (siempre disponible) -->
       <div class="nav__mobile" :class="{ 'nav__mobile--open': isMenuOpen }">
         <div class="nav__mobile-menu">
           <SelectedBusinessIndicator class="nav__mobile-business-indicator" @requestCloseHeader="closeMenu" />
@@ -254,14 +254,18 @@ const pendingCount = computed(() => businessStore.pendingInvitationsCount)
       @media (min-width: 768px) {
         height: 40px;
       }
+
       &--mobile {
         display: inline-block;
+
         @media (min-width: 768px) {
           display: none;
         }
       }
+
       &--desktop {
         display: none;
+
         @media (min-width: 768px) {
           display: inline-block;
         }
@@ -602,6 +606,7 @@ const pendingCount = computed(() => businessStore.pendingInvitationsCount)
       display: flex;
       flex-direction: column;
       gap: 0.5rem;
+
       .nav__mobile-business-indicator {
         margin-bottom: 0.5rem;
       }
