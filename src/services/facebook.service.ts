@@ -6,6 +6,7 @@ import type {
   IFacebookPageInfo,
 } from '@/types/integration.types'
 import type { CreatePostPayload, PublishTextPostResponse, PublishPhotoPostResponse, PublishVideoPostResponse, CreateVideoPostPayload, ScheduledPostsResponse, ScheduledPostsQuery, FacebookPageMetricsResponse } from '@/types/facebook.types'
+import type { FacebookAdStatisticsResponse } from '@/types/facebook.types'
 
 class FacebookService extends APIBase {
   private readonly endpoint = 'integrations'
@@ -239,6 +240,48 @@ class FacebookService extends APIBase {
   async saveAdAccount(businessId: string, adAccountId: string): Promise<{ message: string; adAccountId: string }> {
     const endpoint = `${this.endpoint}/facebook-marketing/adaccounts/${businessId}/select`
     const response = await this.post<{ message: string; adAccountId: string }>(endpoint, { adAccountId })
+    return response.data
+  }
+
+  /**
+   * Estadísticas de anuncios de Meta Ads.
+   * Backend: GET /integrations/facebook-marketing/adstats/:businessId
+   * Filtros opcionales: since, until, preset
+   */
+  async getAdStatistics(
+    businessId: string,
+    query?: Partial<{ since: string; until: string; preset: string }>,
+  ): Promise<FacebookAdStatisticsResponse> {
+    const params = new URLSearchParams()
+    if (query?.since) params.append('since', query.since)
+    if (query?.until) params.append('until', query.until)
+    if (query?.preset) params.append('preset', query.preset)
+    const endpoint = `${this.endpoint}/facebook-marketing/insights/${businessId}${params.toString() ? `?${params.toString()}` : ''}`
+    const response = await this.get<FacebookAdStatisticsResponse>(endpoint)
+    return response.data
+  }
+
+  /**
+   * Ads con links y métricas.
+   * Backend: GET /integrations/facebook-marketing/ads/:businessId
+   */
+  async getAdsWithLinksAndMetrics(
+    businessId: string,
+  ): Promise<{ message: string; ads: any[] }> {
+    const endpoint = `${this.endpoint}/facebook-marketing/ads/${businessId}`
+    const response = await this.get<{ message: string; ads: any[] }>(endpoint)
+    return response.data
+  }
+
+  /**
+   * Top Ad.
+   * Backend: GET /integrations/facebook-marketing/ads/top/:businessId
+   */
+  async getTopAd(
+    businessId: string,
+  ): Promise<{ message: string; ad: any }> {
+    const endpoint = `${this.endpoint}/facebook-marketing/ads/top/${businessId}`
+    const response = await this.get<{ message: string; ad: any }>(endpoint)
     return response.data
   }
 }

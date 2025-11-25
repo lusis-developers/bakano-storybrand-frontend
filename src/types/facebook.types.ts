@@ -141,3 +141,27 @@ export interface FacebookPageMetricsResponse {
   data: FacebookPageMetricsData
   filters: FacebookPageMetricsFilters
 }
+
+// ===== Meta Ads (Estadísticas de anuncios) =====
+export interface FacebookAdActionMetric {
+  action_type: string
+  value: string | number
+}
+
+export interface FacebookAdStatisticsItem {
+  impressions: string | number
+  reach: string | number
+  spend: string | number
+  clicks: string | number
+  cpm: string | number
+  ctr: string | number
+  actions: FacebookAdActionMetric[]
+  cost_per_action_type: FacebookAdActionMetric[]
+  date_start: string
+  date_stop: string
+}
+
+export interface FacebookAdStatisticsResponse {
+  message: string
+  statistics: FacebookAdStatisticsItem[]
+}
