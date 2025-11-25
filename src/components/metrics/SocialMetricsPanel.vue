@@ -6,6 +6,7 @@ import instagramService from '@/services/instagram.service'
 import { useToast } from '@/composables/useToast'
 import type { FacebookMetric } from '@/types/facebook.types'
 import FacebookMetricCard from '@/components/metrics/FacebookMetricCard.vue'
+import InstagramPostsPanel from '@/components/metrics/InstagramPostsPanel.vue'
 
 const businessStore = useBusinessStore()
 const { triggerToast } = useToast()
@@ -115,6 +116,7 @@ function labelOf(key: string): string {
     saves: 'Guardados',
     follows_and_unfollows: 'Seguimientos/Desfollows',
     views: 'Vistas',
+    follower_count: 'Seguidores',
   }
   const map = isInstagram.value ? igMap : fbMap
   return map[key] || key
@@ -157,7 +159,7 @@ function maxOfSeries(metric: FacebookMetric): number {
         </div>
         <label v-if="view === 'month'" class="filters__item">
           <span>Meses</span>
-          <input type="number" min="1" max="6" v-model.number="months" @change="loadMetrics" :disabled="loading" />
+          <input type="number" min="1" :max="response?.filters?.maxMonthsByPlan || 6" v-model.number="months" @change="loadMetrics" :disabled="loading" />
         </label>
         <label v-if="view === 'custom'" class="filters__item">
           <span>Desde</span>
@@ -195,6 +197,8 @@ function maxOfSeries(metric: FacebookMetric): number {
     <div v-else class="metrics-grid">
       <FacebookMetricCard v-for="[key, metric] in metricsEntries" :key="key" :title="labelOf(key)" :metric="metric" />
     </div>
+
+    <InstagramPostsPanel v-if="isInstagram" />
   </section>
 </template>
 
