@@ -221,6 +221,26 @@ class FacebookService extends APIBase {
       throw new Error(message)
     }
   }
+
+  /**
+   * Lista cuentas publicitarias del usuario para el negocio.
+   * Backend: GET /integrations/facebook-marketing/adaccounts/:businessId
+   */
+  async listAdAccounts(businessId: string): Promise<{ message: string; accounts: Array<{ id: string; account_id: string; name?: string; currency?: string; business?: { id: string; name: string } }> }> {
+    const endpoint = `${this.endpoint}/facebook-marketing/adaccounts/${businessId}`
+    const response = await this.get<{ message: string; accounts: Array<{ id: string; account_id: string; name?: string; currency?: string; business?: { id: string; name: string } }> }>(endpoint)
+    return response.data
+  }
+
+  /**
+   * Guarda la cuenta publicitaria seleccionada para el negocio.
+   * Backend: POST /integrations/facebook-marketing/adaccounts/:businessId/select
+   */
+  async saveAdAccount(businessId: string, adAccountId: string): Promise<{ message: string; adAccountId: string }> {
+    const endpoint = `${this.endpoint}/facebook-marketing/adaccounts/${businessId}/select`
+    const response = await this.post<{ message: string; adAccountId: string }>(endpoint, { adAccountId })
+    return response.data
+  }
 }
 
 const facebookService = new FacebookService()
