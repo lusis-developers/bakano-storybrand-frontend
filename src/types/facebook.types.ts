@@ -165,3 +165,32 @@ export interface FacebookAdStatisticsResponse {
   message: string
   statistics: FacebookAdStatisticsItem[]
 }
+
+// ===== Meta Ads (Top Ads con links y preview) =====
+export interface FacebookAdLinks {
+  permalinkUrl: string
+}
+
+export interface FacebookAdPreview {
+  thumbnailUrl: string
+}
+
+export interface FacebookAdMetrics extends FacebookAdStatisticsItem {
+  ad_id: string
+  ad_name: string
+}
+
+export interface FacebookAdItem {
+  id: string
+  name: string
+  links: FacebookAdLinks
+  preview: FacebookAdPreview
+  metrics: FacebookAdMetrics
+  adsetId: string
+  campaignId: string
+}
+
+export interface FacebookTopAdsResponse {
+  message: string
+  ads: FacebookAdItem[]
+}
