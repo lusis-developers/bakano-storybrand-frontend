@@ -6,7 +6,7 @@ import type {
   IFacebookPageInfo,
 } from '@/types/integration.types'
 import type { CreatePostPayload, PublishTextPostResponse, PublishPhotoPostResponse, PublishVideoPostResponse, CreateVideoPostPayload, ScheduledPostsResponse, ScheduledPostsQuery, FacebookPageMetricsResponse } from '@/types/facebook.types'
-import type { FacebookAdStatisticsResponse } from '@/types/facebook.types'
+import type { FacebookAdStatisticsResponse, FacebookTopAdsResponse } from '@/types/facebook.types'
 
 class FacebookService extends APIBase {
   private readonly endpoint = 'integrations'
@@ -282,6 +282,19 @@ class FacebookService extends APIBase {
   ): Promise<{ message: string; ad: any }> {
     const endpoint = `${this.endpoint}/facebook-marketing/ads/top/${businessId}`
     const response = await this.get<{ message: string; ad: any }>(endpoint)
+    return response.data
+  }
+
+  /**
+   * Top Ads (lista).
+   * Backend: GET /integrations/facebook-marketing/ads/top/:businessId?limit=N
+   */
+  async getTopAds(
+    businessId: string,
+    limit: number = 3,
+  ): Promise<FacebookTopAdsResponse> {
+    const endpoint = `${this.endpoint}/facebook-marketing/ads/top/${businessId}${limit ? `?limit=${limit}` : ''}`
+    const response = await this.get<FacebookTopAdsResponse>(endpoint)
     return response.data
   }
 }
