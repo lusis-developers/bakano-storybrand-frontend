@@ -3,6 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import ConnectionStatusColumn from './integrations/ConnectionStatusColumn.vue'
 import FacebookStep from './integrations/FacebookStep.vue'
 import InstagramStep from './integrations/InstagramStep.vue'
+import AdAccountStep from './integrations/AdAccountStep.vue'
 import { useBusinessStore } from '@/stores/business.store'
 import { useFacebookSDK } from '@/composables/useFacebookSDK'
 import { useToast } from '@/composables/useToast'
@@ -53,6 +54,10 @@ const instagramAccounts = ref<IInstagramLinkedAccount[]>([])
 const savingInstagramId = ref<string | null>(null)
 const connectedInstagram = ref<IInstagramProfile | null>(null)
 const isRelinkingInstagram = ref(false)
+// Ads
+const adAccountError = ref<string | null>(null)
+const adAccountSuccess = ref<string | null>(null)
+const savingAdAccountId = ref<string | null>(null)
 // Estado para permitir revincular página de Facebook cuando ya existe una conexión
 const isRelinkingFacebook = ref(false)
 
@@ -115,6 +120,10 @@ const refreshIntegrations = async () => {
             size150: sanitizeUrl(md?.picture?.size150),
           }
           : undefined,
+      }
+      // Propagar adAccountId del backend al store si existe
+      if (md?.adAccountId && typeof md.adAccountId === 'string') {
+        integrationStore.selectedAdAccountId = md.adAccountId
       }
     }
 
@@ -228,7 +237,7 @@ const connectFacebook = async () => {
 
     // Evitar vinculación automática cuando el usuario desea elegir manualmente (p. ej. al revincular)
     // Solo auto-seleccionar si el backend indica un estado pendiente explícito y NO estamos revinculando.
-    const pendingPageId = fbRecord.value?.metadata?.pageId || fbRecord.value?.metadata?.page_id
+    const pendingPageId = fbRecord.value?.metadata?.pageId || (fbRecord.value?.metadata as any)?.page_id
     if (!isRelinkingFacebook.value && isFacebookPending.value && pendingPageId && userPages.value.length) {
       const match = userPages.value.find((p) => String(p.id) === String(pendingPageId))
       if (match) {
@@ -360,6 +369,48 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
     savingInstagramId.value = null
   }
 }
+
+// Paso 3: cuentas publicitarias (Facebook Marketing)
+const loadAdAccounts = async () => {
+  adAccountError.value = null
+  adAccountSuccess.value = null
+  try {
+    const businessId =
+      props.business?._id ||
+      props.business?.id ||
+      businessStore.currentBusiness?._id ||
+      businessStore.currentBusiness?.id
+    if (!businessId) throw new Error('No hay negocio seleccionado para listar cuentas publicitarias')
+    const res = await integrationStore.listAdAccounts(businessId)
+    adAccountSuccess.value = res?.message || `Encontramos ${res?.accounts?.length || 0} cuentas publicitarias`
+    safeToast(adAccountSuccess.value, 'success')
+  } catch (err: any) {
+    adAccountError.value = err?.message || 'Error al listar cuentas publicitarias'
+    safeToast(adAccountError.value, 'error', 6000)
+  }
+}
+
+const selectAdAccount = async (acc: { id: string; account_id: string }) => {
+  try {
+    savingAdAccountId.value = acc.id
+    adAccountError.value = null
+    adAccountSuccess.value = null
+    const businessId =
+      props.business?._id ||
+      props.business?.id ||
+      businessStore.currentBusiness?._id ||
+      businessStore.currentBusiness?.id
+    if (!businessId) throw new Error('No hay negocio seleccionado para guardar la cuenta publicitaria')
+    const res = await integrationStore.saveAdAccount(businessId, acc.account_id)
+    adAccountSuccess.value = res?.message || 'Cuenta publicitaria guardada'
+    safeToast(adAccountSuccess.value, 'success')
+  } catch (err: any) {
+    adAccountError.value = err?.message || 'Error al guardar la cuenta publicitaria'
+    safeToast(adAccountError.value, 'error', 6000)
+  } finally {
+    savingAdAccountId.value = null
+  }
+}
 </script>
 
 <template>
@@ -437,6 +488,18 @@ const selectInstagramAccount = async (account: IInstagramLinkedAccount) => {
                   :onConnectInstagramFlow="connectInstagramFlow"
                   :onSelectInstagramAccount="selectInstagramAccount"
                   :onStartRelinkingInstagram="startRelinkingInstagram"
+                />
+
+                <AdAccountStep
+                  :facebookConnectedIntegration="facebookConnectedIntegration"
+                  :adAccounts="integrationStore.adAccounts"
+                  :selectedAdAccountId="integrationStore.selectedAdAccountId"
+                  :isLoadingAdAccounts="integrationStore.isLoadingAdAccounts"
+                  :isSavingAdAccount="integrationStore.isSavingAdAccount"
+                  :errorMessage="adAccountError"
+                  :successMessage="adAccountSuccess"
+                  :onLoadAdAccounts="loadAdAccounts"
+                  :onSelectAdAccount="selectAdAccount"
                 />
               </div>
             </div>
