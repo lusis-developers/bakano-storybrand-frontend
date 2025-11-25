@@ -9,6 +9,7 @@ import { useScriptsStore } from '@/stores/scripts.store'
 import { useIntegrationStore } from '@/stores/integration.store'
 import { useToast } from '@/composables/useToast'
 import SocialMetricsPanel from '@/components/metrics/SocialMetricsPanel.vue'
+import AdsMetricsPanel from '@/components/metrics/AdsMetricsPanel.vue'
 import ContentService from '@/services/content.service'
 
 // Composables
@@ -23,7 +24,7 @@ const router = useRouter()
 
 // Estado local
 const isLoading = ref(true)
-const metricsPlatform = ref<'facebook' | 'instagram'>('facebook')
+const metricsPlatform = ref<'facebook' | 'instagram' | 'ads'>('facebook')
 const panelLoading = ref(false)
 const hasExistingContent = ref(false)
 const existingContentId = ref<string | null>(null)
@@ -236,9 +237,20 @@ function logout() {
               <i class="fab fa-instagram"></i>
               <span>Instagram</span>
             </button>
+            <button
+              class="toggle-btn"
+              :class="{ active: metricsPlatform === 'ads' }"
+              @click="metricsPlatform = 'ads'"
+              :disabled="panelLoading"
+              aria-label="Ver métricas de Anuncios"
+            >
+              <i class="fas fa-bullhorn"></i>
+              <span>Anuncios</span>
+            </button>
           </div>
 
-          <SocialMetricsPanel :platform="metricsPlatform" @loading-start="panelLoading = true" @loading-end="panelLoading = false" />
+          <SocialMetricsPanel v-if="metricsPlatform !== 'ads'" :platform="metricsPlatform" @loading-start="panelLoading = true" @loading-end="panelLoading = false" />
+          <AdsMetricsPanel v-else @loading-start="panelLoading = true" @loading-end="panelLoading = false" />
 
           <div v-if="panelLoading" class="global-loading-overlay" aria-live="polite" aria-busy="true">
             <div class="overlay-spinner"></div>
