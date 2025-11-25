@@ -217,16 +217,18 @@ class InstagramService extends APIBase {
     }>,
   ): Promise<any> {
     const params = new URLSearchParams()
-    if (query?.period) params.append('period', String(query.period))
-    if (query?.since) params.append('since', String(query.since))
-    if (query?.until) params.append('until', String(query.until))
-    if (query?.date_preset) params.append('date_preset', String(query.date_preset))
-    if (query?.view) params.append('view', String(query.view))
-    if (typeof query?.months !== 'undefined') params.append('months', String(query.months))
-    if (query?.tz) params.append('tz', String(query.tz))
-    if (typeof query?.offsetMinutes !== 'undefined') params.append('offsetMinutes', String(query.offsetMinutes))
-    if (typeof query?.series !== 'undefined') params.append('series', String(query.series))
-    if (query?.breakdown) params.append('breakdown', String(query.breakdown))
+    const q = { ...query }
+    if (typeof q.series === 'undefined') q.series = true
+    if (q?.period) params.append('period', String(q.period))
+    if (q?.since) params.append('since', String(q.since))
+    if (q?.until) params.append('until', String(q.until))
+    if (q?.date_preset) params.append('date_preset', String(q.date_preset))
+    if (q?.view) params.append('view', String(q.view))
+    if (typeof q?.months !== 'undefined') params.append('months', String(q.months))
+    if (q?.tz) params.append('tz', String(q.tz))
+    if (typeof q?.offsetMinutes !== 'undefined') params.append('offsetMinutes', String(q.offsetMinutes))
+    if (typeof q?.series !== 'undefined') params.append('series', String(q.series))
+    if (q?.breakdown) params.append('breakdown', String(q.breakdown))
 
     const endpoint = `${this.endpoint}/instagram/metrics/${businessId}${params.toString() ? `?${params.toString()}` : ''}`
     const response = await this.get<any>(endpoint)
