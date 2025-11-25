@@ -64,7 +64,7 @@ export interface IIntegrationRecord {
   isActive: boolean
   isConnected: boolean
   lastSyncAt?: string | Date
-  metadata?: Record<string, any>
+  metadata?: IFacebookIntegrationMetadata | IInstagramIntegrationMetadata | Record<string, any>
   createdAt: string | Date
   updatedAt: string | Date
   // Virtual recibido desde backend
@@ -111,6 +111,30 @@ export interface IInstagramFinalizeResponse {
   message: string
   integration: IIntegrationRecord
   instagram?: IInstagramProfile
+}
+
+// ===== Metadata específicas por tipo =====
+export interface IFacebookIntegrationMetadata {
+  status?: 'connected' | 'pending' | 'disconnected' | 'error' | 'inactive' | 'pending_page_selection' | string
+  userAccessToken?: string
+  userTokenExpiresAt?: string
+  pageId?: string
+  pageName?: string
+  adAccountId?: string
+  picture?: IFacebookPagePicture
+  followersCount?: number
+}
+
+export interface IInstagramIntegrationMetadata {
+  status?: 'connected' | 'pending' | 'disconnected' | 'error' | 'inactive' | string
+  userAccessToken?: string
+  userTokenExpiresAt?: string
+  pageId?: string
+  pageName?: string
+  instagramAccountId?: string
+  instagramUsername?: string
+  instagramProfilePictureUrl?: string
+  followersCount?: number
 }
 
 // ===== Configuración extendida de integraciones =====
