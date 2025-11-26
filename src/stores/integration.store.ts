@@ -39,6 +39,11 @@ export const useIntegrationStore = defineStore('integrations', () => {
   const igViralLoading = ref(false)
   const igViralError = ref<string | null>(null)
   const instagramViralItems = ref<IInstagramViralItem[]>([])
+  const adAccounts = ref<Array<{ id: string; account_id: string; name?: string; currency?: string; business?: { id: string; name: string } }>>([])
+  const adAccountError = ref<string | null>(null)
+  const selectedAdAccountId = ref<string | null>(null)
+  const isLoadingAdAccounts = ref(false)
+  const isSavingAdAccount = ref(false)
 
   // Composable del SDK de Facebook
   const { isLoading: isSDKLoading, error: sdkError, login } = useFacebookSDK()
@@ -92,6 +97,11 @@ export const useIntegrationStore = defineStore('integrations', () => {
 
   const clearIntegrations = () => {
     integrations.value = []
+  }
+
+  const clearAdAccounts = () => {
+    adAccounts.value = []
+    adAccountError.value = null
   }
 
   const upsertIntegration = (record: IIntegrationRecord) => {
@@ -335,12 +345,53 @@ export const useIntegrationStore = defineStore('integrations', () => {
           instagramProfilePictureUrl: i?.metadata?.instagramProfilePictureUrl,
         })),
       })
+      // Inicializar selectedAdAccountId desde metadata del backend si existe
+      const fb = integrations.value.find((i) => i.type === 'facebook') as any
+      const md = fb?.metadata || {}
+      if (md?.adAccountId && typeof md.adAccountId === 'string') {
+        selectedAdAccountId.value = md.adAccountId
+      }
       return response
     } catch (err: any) {
       const message = err?.message || 'Error al obtener integraciones'
       error.value = message
       console.error('[IntegrationStore] ❌ Error en loadIntegrations:', err)
       throw new Error(message)
+    }
+  }
+
+  const listAdAccounts = async (businessId: string) => {
+    if (!businessId) throw new Error('Se requiere el ID del negocio para listar cuentas publicitarias')
+    isLoadingAdAccounts.value = true
+    adAccountError.value = null
+    try {
+      const res = await facebookService.listAdAccounts(businessId)
+      adAccounts.value = res.accounts || []
+      return res
+    } catch (err: any) {
+      const message = err?.message || 'Error al listar cuentas publicitarias'
+      adAccountError.value = message
+      throw new Error(message)
+    } finally {
+      isLoadingAdAccounts.value = false
+    }
+  }
+
+  const saveAdAccount = async (businessId: string, adAccountId: string) => {
+    if (!businessId) throw new Error('Se requiere el ID del negocio para guardar la cuenta publicitaria')
+    if (!adAccountId) throw new Error('Se requiere el ID de la cuenta publicitaria')
+    isSavingAdAccount.value = true
+    adAccountError.value = null
+    try {
+      const res = await facebookService.saveAdAccount(businessId, adAccountId)
+      selectedAdAccountId.value = res.adAccountId || adAccountId
+      return res
+    } catch (err: any) {
+      const message = err?.message || 'Error al guardar la cuenta publicitaria'
+      adAccountError.value = message
+      throw new Error(message)
+    } finally {
+      isSavingAdAccount.value = false
     }
   }
 
@@ -392,6 +443,15 @@ export const useIntegrationStore = defineStore('integrations', () => {
     igViralError,
     instagramViralItems,
     instagramViralCount,
+    // Ads
+    adAccounts,
+    adAccountError,
+    selectedAdAccountId,
+    isLoadingAdAccounts,
+    isSavingAdAccount,
+    listAdAccounts,
+    saveAdAccount,
+    clearAdAccounts,
   }
 })
 

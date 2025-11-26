@@ -8,6 +8,8 @@ import { useContentStore } from '@/stores/content.store'
 import { useScriptsStore } from '@/stores/scripts.store'
 import { useIntegrationStore } from '@/stores/integration.store'
 import { useToast } from '@/composables/useToast'
+import SocialMetricsPanel from '@/components/metrics/SocialMetricsPanel.vue'
+import AdsMetricsPanel from '@/components/metrics/AdsMetricsPanel.vue'
 import ContentService from '@/services/content.service'
 
 // Composables
@@ -22,6 +24,8 @@ const router = useRouter()
 
 // Estado local
 const isLoading = ref(true)
+const metricsPlatform = ref<'facebook' | 'instagram' | 'ads'>('facebook')
+const panelLoading = ref(false)
 const hasExistingContent = ref(false)
 const existingContentId = ref<string | null>(null)
 const userStatistics = ref<{
@@ -212,124 +216,48 @@ function logout() {
             </div>
           </section>
 
-          <!-- Stats Section -->
-          <section class="stats-section">
-            <h2>Resumen de Actividad</h2>
-            <!-- Aviso de integración faltante (sin redirección automática) -->
-            <div v-if="integrationStore.igIntegrationMissing" class="integration-alert">
-              <div class="alert-content">
-                <i class="fas fa-plug" aria-hidden="true"></i>
-                <span>
-                  Para ver tus métricas sociales aquí, primero conecta tus redes (Facebook e Instagram)
-                  desde la Gestión de Negocios.
-                </span>
-              </div>
-              <button class="btn btn-primary" @click="router.push('/business')">
-                Ir a Gestión de Negocios
-              </button>
-            </div>
-            
-            <div class="stats-grid">
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
-                <div class="stat-content">
-                  <h3>{{ userStatistics?.totalScripts || 0 }}</h3>
-                  <p>Scripts Creados</p>
-                </div>
-              </div>
-              
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-building"></i></div>
-                <div class="stat-content">
-                  <h3>{{ userStatistics?.totalBusinesses || 0 }}</h3>
-                  <p>Negocios Registrados</p>
-                </div>
-              </div>
-              
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-file-alt"></i></div>
-                <div class="stat-content">
-                  <h3>{{ userStatistics?.scriptsByType.content || 0 }}</h3>
-                  <p>Scripts de Contenido</p>
-                </div>
-              </div>
-              
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-bullhorn"></i></div>
-                <div class="stat-content">
-                  <h3>{{ userStatistics?.scriptsByType.ad || 0 }}</h3>
-                  <p>Scripts de Anuncios</p>
-                </div>
-              </div>
+          <div class="metrics-toggle">
+            <button
+              class="toggle-btn"
+              :class="{ active: metricsPlatform === 'facebook' }"
+              @click="metricsPlatform = 'facebook'"
+              :disabled="panelLoading"
+              aria-label="Ver métricas de Facebook"
+            >
+              <i class="fab fa-facebook"></i>
+              <span>Facebook</span>
+            </button>
+            <button
+              class="toggle-btn"
+              :class="{ active: metricsPlatform === 'instagram' }"
+              @click="metricsPlatform = 'instagram'"
+              :disabled="panelLoading"
+              aria-label="Ver métricas de Instagram"
+            >
+              <i class="fab fa-instagram"></i>
+              <span>Instagram</span>
+            </button>
+            <button
+              class="toggle-btn"
+              :class="{ active: metricsPlatform === 'ads' }"
+              @click="metricsPlatform = 'ads'"
+              :disabled="panelLoading"
+              aria-label="Ver métricas de Anuncios"
+            >
+              <i class="fas fa-bullhorn"></i>
+              <span>Anuncios</span>
+            </button>
+          </div>
 
-              <!-- Métricas de Instagram (últimos 10 posts) -->
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fab fa-instagram"></i></div>
-                <div class="stat-content">
-                  <h3>{{ igTotalPosts || 0 }}</h3>
-                  <p>Posts de Instagram</p>
-                </div>
-              </div>
+          <SocialMetricsPanel v-if="metricsPlatform !== 'ads'" :platform="metricsPlatform" @loading-start="panelLoading = true" @loading-end="panelLoading = false" />
+          <AdsMetricsPanel v-else @loading-start="panelLoading = true" @loading-end="panelLoading = false" />
 
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-chart-line"></i></div>
-                <div class="stat-content">
-                  <h3>{{ igTotalReach || 0 }}</h3>
-                  <p>Alcance (últimos 10)</p>
-                </div>
-              </div>
-
-              <div class="stat-card">
-                <div class="stat-icon"><i class="fas fa-heart"></i></div>
-                <div class="stat-content">
-                  <h3>{{ igTotalEngagement || 0 }}</h3>
-                  <p>Engagement (últimos 10)</p>
-                </div>
-              </div>
-            </div>
-          </section>
-
-          <!-- Recent Activity -->
-          <section class="activity-section">
-            <h2>Actividad Reciente</h2>
-            
-            <div class="activity-card">
-              <div v-if="!hasExistingContent" class="empty-state">
-                <div class="empty-icon"><i class="fas fa-rocket"></i></div>
-                <h3>¡Todo listo para comenzar!</h3>
-                <p>Has completado tu configuración inicial. Comienza creando tus primeros soundbites.</p>
-                <button 
-                  @click="handleCreateContent" 
-                  class="btn btn-primary"
-                >
-                  Crear Primeros Soundbites
-                </button>
-              </div>
-              
-              <div v-else class="existing-content-state">
-                <div class="content-icon"><i class="fas fa-check-circle"></i></div>
-                <h3>¡Soundbites generados!</h3>
-                <p>Ya tienes soundbites creados para tu marca. Puedes revisarlos o generar nuevos soundbites.</p>
-                <div class="content-actions">
-                  <button 
-                    @click="handleCreateContent" 
-                    class="btn btn-primary"
-                  >
-                    Ver Soundbites Actuales
-                  </button>
-                  <button 
-                     @click="router.push(`/content/wizard/${businessStore.businesses[0]?.id}`)"
-                     class="btn btn-outline"
-                   >
-                     Generar Nuevos Soundbites
-                   </button>
-                </div>
-              </div>
-            </div>
-          </section>
+          <div v-if="panelLoading" class="global-loading-overlay" aria-live="polite" aria-busy="true">
+            <div class="overlay-spinner"></div>
+            <p>Cargando métricas...</p>
+          </div>
           
-          <!-- Se elimina el bloque del Asesor IA 24/7 del dashboard.
-               Ahora se ofrece como una vista dedicada accesible desde las acciones rápidas. -->
+          
         </div>
       </div>
     </main>
@@ -339,7 +267,6 @@ function logout() {
 <style lang="scss" scoped>
 .dashboard-container {
   min-height: 100vh;
-  background: $BAKANO-LIGHT;
 }
 
 .container {
@@ -444,6 +371,35 @@ function logout() {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+}
+
+.metrics-toggle {
+  display: inline-flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.toggle-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.875rem;
+  border-radius: 999px;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: $BAKANO-DARK;
+  cursor: pointer;
+}
+
+.toggle-btn.active {
+  background: $BAKANO-PINK;
+  border-color: $BAKANO-PINK;
+  color: white;
+}
+
+.toggle-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
 }
 
 // Welcome Section
@@ -810,4 +766,31 @@ function logout() {
 }
 
 // Limpieza: se removieron estilos de la sección del Asesor IA ya que ahora es una vista independiente.
+.global-loading-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(2px);
+  z-index: 50;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+}
+
+.overlay-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #e2e8f0;
+  border-top: 4px solid $BAKANO-PINK;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+.global-loading-overlay p {
+  margin: 0;
+  color: #475569;
+  font-weight: 600;
+}
 </style>

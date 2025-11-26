@@ -5,7 +5,8 @@ import type {
   IIntegrationRecord,
   IFacebookPageInfo,
 } from '@/types/integration.types'
-import type { CreatePostPayload, PublishTextPostResponse, PublishPhotoPostResponse, PublishVideoPostResponse, CreateVideoPostPayload, ScheduledPostsResponse, ScheduledPostsQuery } from '@/types/facebook.types'
+import type { CreatePostPayload, PublishTextPostResponse, PublishPhotoPostResponse, PublishVideoPostResponse, CreateVideoPostPayload, ScheduledPostsResponse, ScheduledPostsQuery, FacebookPageMetricsResponse } from '@/types/facebook.types'
+import type { FacebookAdStatisticsResponse, FacebookTopAdsResponse } from '@/types/facebook.types'
 
 class FacebookService extends APIBase {
   private readonly endpoint = 'integrations'
@@ -182,6 +183,119 @@ class FacebookService extends APIBase {
       const message = error?.message || 'Error al obtener los posts programados de Facebook'
       throw new Error(message)
     }
+  }
+
+  /**
+   * Métricas de la página de Facebook para un negocio.
+   * Backend: GET /integrations/facebook/metrics/:businessId
+   * Filtros opcionales: period, since, until, date_preset, view, months, tz, offsetMinutes
+   */
+  async getPageMetrics(
+    businessId: string,
+    query?: Partial<{
+      period: string
+      since: string
+      until: string
+      date_preset: string
+      view: string
+      months: string | number
+      tz: string
+      offsetMinutes: string | number
+    }>,
+  ): Promise<FacebookPageMetricsResponse> {
+    try {
+      const params = new URLSearchParams()
+      if (query?.period) params.append('period', String(query.period))
+      if (query?.since) params.append('since', String(query.since))
+      if (query?.until) params.append('until', String(query.until))
+      if (query?.date_preset) params.append('date_preset', String(query.date_preset))
+      if (query?.view) params.append('view', String(query.view))
+      if (typeof query?.months !== 'undefined') params.append('months', String(query.months))
+      if (query?.tz) params.append('tz', String(query.tz))
+      if (typeof query?.offsetMinutes !== 'undefined') params.append('offsetMinutes', String(query.offsetMinutes))
+
+      const endpoint = `${this.endpoint}/facebook/metrics/${businessId}${params.toString() ? `?${params.toString()}` : ''}`
+      const response = await this.get<FacebookPageMetricsResponse>(endpoint)
+      return response.data
+    } catch (error: any) {
+      const message = error?.message || 'Error al obtener métricas de la página de Facebook'
+      throw new Error(message)
+    }
+  }
+
+  /**
+   * Lista cuentas publicitarias del usuario para el negocio.
+   * Backend: GET /integrations/facebook-marketing/adaccounts/:businessId
+   */
+  async listAdAccounts(businessId: string): Promise<{ message: string; accounts: Array<{ id: string; account_id: string; name?: string; currency?: string; business?: { id: string; name: string } }> }> {
+    const endpoint = `${this.endpoint}/facebook-marketing/adaccounts/${businessId}`
+    const response = await this.get<{ message: string; accounts: Array<{ id: string; account_id: string; name?: string; currency?: string; business?: { id: string; name: string } }> }>(endpoint)
+    return response.data
+  }
+
+  /**
+   * Guarda la cuenta publicitaria seleccionada para el negocio.
+   * Backend: POST /integrations/facebook-marketing/adaccounts/:businessId/select
+   */
+  async saveAdAccount(businessId: string, adAccountId: string): Promise<{ message: string; adAccountId: string }> {
+    const endpoint = `${this.endpoint}/facebook-marketing/adaccounts/${businessId}/select`
+    const response = await this.post<{ message: string; adAccountId: string }>(endpoint, { adAccountId })
+    return response.data
+  }
+
+  /**
+   * Estadísticas de anuncios de Meta Ads.
+   * Backend: GET /integrations/facebook-marketing/adstats/:businessId
+   * Filtros opcionales: since, until, preset
+   */
+  async getAdStatistics(
+    businessId: string,
+    query?: Partial<{ since: string; until: string; preset: string }>,
+  ): Promise<FacebookAdStatisticsResponse> {
+    const params = new URLSearchParams()
+    if (query?.since) params.append('since', query.since)
+    if (query?.until) params.append('until', query.until)
+    if (query?.preset) params.append('preset', query.preset)
+    const endpoint = `${this.endpoint}/facebook-marketing/insights/${businessId}${params.toString() ? `?${params.toString()}` : ''}`
+    const response = await this.get<FacebookAdStatisticsResponse>(endpoint)
+    return response.data
+  }
+
+  /**
+   * Ads con links y métricas.
+   * Backend: GET /integrations/facebook-marketing/ads/:businessId
+   */
+  async getAdsWithLinksAndMetrics(
+    businessId: string,
+  ): Promise<{ message: string; ads: any[] }> {
+    const endpoint = `${this.endpoint}/facebook-marketing/ads/${businessId}`
+    const response = await this.get<{ message: string; ads: any[] }>(endpoint)
+    return response.data
+  }
+
+  /**
+   * Top Ad.
+   * Backend: GET /integrations/facebook-marketing/ads/top/:businessId
+   */
+  async getTopAd(
+    businessId: string,
+  ): Promise<{ message: string; ad: any }> {
+    const endpoint = `${this.endpoint}/facebook-marketing/ads/top/${businessId}`
+    const response = await this.get<{ message: string; ad: any }>(endpoint)
+    return response.data
+  }
+
+  /**
+   * Top Ads (lista).
+   * Backend: GET /integrations/facebook-marketing/ads/top/:businessId?limit=N
+   */
+  async getTopAds(
+    businessId: string,
+    limit: number = 3,
+  ): Promise<FacebookTopAdsResponse> {
+    const endpoint = `${this.endpoint}/facebook-marketing/ads/top/${businessId}${limit ? `?limit=${limit}` : ''}`
+    const response = await this.get<FacebookTopAdsResponse>(endpoint)
+    return response.data
   }
 }
 

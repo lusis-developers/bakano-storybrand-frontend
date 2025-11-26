@@ -115,6 +115,12 @@ const router = createRouter({
       meta: { requiresAuth: true, requiresVerified: true },
     },
     {
+      path: '/ads',
+      name: 'ads',
+      component: () => import('../views/AdsView/index.vue'),
+      meta: { requiresAuth: true, requiresVerified: true },
+    },
+    {
       path: '/create-password/:token',
       name: 'create-password',
       component: () => import('../views/CreatePasswordView.vue'),
@@ -137,6 +143,12 @@ const router = createRouter({
       name: 'instagram-viral',
       component: () => import('../views/InstagramViralInspirationView.vue'),
       meta: { requiresAuth: true, requiresVerified: true },
+    },
+    {
+      path: '/:pathMatch(.*)*',
+      name: 'not-found',
+      component: () => import('../views/NotFoundView.vue'),
+      meta: { public: true },
     },
   ],
 })

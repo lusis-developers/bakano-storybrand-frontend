@@ -11,6 +11,8 @@ export interface RegisterRequest {
   confirmPassword?: string
   birthDate?: string
   role?: 'admin' | 'client'
+  cedula?: string
+  address?: string
 }
 
 export interface LoginRequest {

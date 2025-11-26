@@ -12,6 +12,8 @@ const formData = reactive({
   firstName: '',
   lastName: '',
   email: '',
+  cedula: '',
+  address: '',
   password: '',
   confirmPassword: ''
 })
@@ -25,6 +27,8 @@ const errors = reactive({
   firstName: '',
   lastName: '',
   email: '',
+  cedula: '',
+  address: '',
   password: '',
   confirmPassword: ''
 })
@@ -74,6 +78,18 @@ const validateForm = (): boolean => {
     isValid = false
   }
 
+  // Validar cédula (opcional, si se ingresa validar formato básico)
+  if (formData.cedula && !/^\d{10}$/.test(formData.cedula)) {
+    errors.cedula = 'La cédula debe tener 10 dígitos'
+    isValid = false
+  }
+
+  // Validar dirección (opcional, si se ingresa mínimo 5 caracteres)
+  if (formData.address && formData.address.trim().length < 5) {
+    errors.address = 'La dirección debe tener al menos 5 caracteres'
+    isValid = false
+  }
+
   // Validar confirmación de contraseña
   if (!formData.confirmPassword) {
     errors.confirmPassword = 'Confirma tu contraseña'
@@ -96,6 +112,8 @@ const handleSubmit = async () => {
       firstName: formData.firstName.trim(),
       lastName: formData.lastName.trim(),
       email: formData.email.trim(),
+      cedula: formData.cedula.trim() || undefined,
+      address: formData.address.trim() || undefined,
       password: formData.password,
       confirmPassword: formData.confirmPassword
     })
@@ -154,20 +172,51 @@ const handleSubmit = async () => {
             <span v-if="errors.lastName" class="form-error">{{ errors.lastName }}</span>
           </div>
 
-          <!-- Campo Email -->
-          <div class="form-group">
-            <label for="email" class="form-label">Correo electrónico</label>
-            <input
-              id="email"
-              v-model="formData.email"
-              type="email"
-              class="form-input"
-              :class="{ 'form-input--error': errors.email }"
-              placeholder="tu@email.com"
-              autocomplete="email"
-            />
-            <span v-if="errors.email" class="form-error">{{ errors.email }}</span>
-          </div>
+        <!-- Campo Email -->
+        <div class="form-group">
+          <label for="email" class="form-label">Correo electrónico</label>
+          <input
+            id="email"
+            v-model="formData.email"
+            type="email"
+            class="form-input"
+            :class="{ 'form-input--error': errors.email }"
+            placeholder="tu@email.com"
+            autocomplete="email"
+          />
+          <span v-if="errors.email" class="form-error">{{ errors.email }}</span>
+        </div>
+
+        <!-- Campo Cédula (opcional) -->
+        <div class="form-group">
+          <label for="cedula" class="form-label">Cédula</label>
+          <input
+            id="cedula"
+            v-model="formData.cedula"
+            type="text"
+            inputmode="numeric"
+            class="form-input"
+            :class="{ 'form-input--error': errors.cedula }"
+            placeholder="Ingresa tu cédula (10 dígitos)"
+            autocomplete="off"
+          />
+          <span v-if="errors.cedula" class="form-error">{{ errors.cedula }}</span>
+        </div>
+
+        <!-- Campo Dirección (opcional) -->
+        <div class="form-group">
+          <label for="address" class="form-label">Dirección</label>
+          <input
+            id="address"
+            v-model="formData.address"
+            type="text"
+            class="form-input"
+            :class="{ 'form-input--error': errors.address }"
+            placeholder="Ingresa tu dirección"
+            autocomplete="street-address"
+          />
+          <span v-if="errors.address" class="form-error">{{ errors.address }}</span>
+        </div>
 
           <!-- Campo Contraseña -->
           <div class="form-group">

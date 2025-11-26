@@ -98,3 +98,99 @@ export interface ScheduledAttachment {
 export interface ScheduledAttachments {
   data: ScheduledAttachment[]
 }
+
+// Métricas de página (insights)
+export interface FacebookInsightPoint {
+  date: string
+  time: string
+  value: number
+}
+
+export interface FacebookMetric {
+  total: number
+  averagePerDay: number
+  series: FacebookInsightPoint[]
+}
+
+export interface FacebookInsightsBlock {
+  period: string
+  date_preset?: string
+  range?: { since?: string; until?: string }
+  timezone: string
+  metrics: Record<string, FacebookMetric>
+}
+
+export interface FacebookPageMetricsData {
+  page: { id: string; name?: string }
+  followers: any
+  insights: FacebookInsightsBlock
+}
+
+export interface FacebookPageMetricsFilters {
+  plan: 'free' | 'starter' | 'pro' | 'enterprise'
+  maxMonthsByPlan: number
+  maxDaysByPlan: number
+  view: 'week' | 'month' | 'custom' | string
+  monthsApplied?: number
+  adjusted?: boolean
+  metricsRequested?: string[]
+}
+
+export interface FacebookPageMetricsResponse {
+  message: string
+  data: FacebookPageMetricsData
+  filters: FacebookPageMetricsFilters
+}
+
+// ===== Meta Ads (Estadísticas de anuncios) =====
+export interface FacebookAdActionMetric {
+  action_type: string
+  value: string | number
+}
+
+export interface FacebookAdStatisticsItem {
+  impressions: string | number
+  reach: string | number
+  spend: string | number
+  clicks: string | number
+  cpm: string | number
+  ctr: string | number
+  actions: FacebookAdActionMetric[]
+  cost_per_action_type: FacebookAdActionMetric[]
+  date_start: string
+  date_stop: string
+}
+
+export interface FacebookAdStatisticsResponse {
+  message: string
+  statistics: FacebookAdStatisticsItem[]
+}
+
+// ===== Meta Ads (Top Ads con links y preview) =====
+export interface FacebookAdLinks {
+  permalinkUrl: string
+}
+
+export interface FacebookAdPreview {
+  thumbnailUrl: string
+}
+
+export interface FacebookAdMetrics extends FacebookAdStatisticsItem {
+  ad_id: string
+  ad_name: string
+}
+
+export interface FacebookAdItem {
+  id: string
+  name: string
+  links: FacebookAdLinks
+  preview: FacebookAdPreview
+  metrics: FacebookAdMetrics
+  adsetId: string
+  campaignId: string
+}
+
+export interface FacebookTopAdsResponse {
+  message: string
+  ads: FacebookAdItem[]
+}
