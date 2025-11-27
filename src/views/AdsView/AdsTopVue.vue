@@ -5,6 +5,9 @@ import facebookService from '@/services/facebook.service'
 import type { FacebookAdItem } from '@/types/facebook.types'
 import BaseChart from '@/components/shared/BaseChart.vue'
 import Modal from '@/components/shared/Modal.vue'
+import TopAdsHeader from './TopAdsHeader.vue'
+import TopCampaignList from './TopCampaignList.vue'
+import AdInsightsModal from './AdInsightsModal.vue'
 
 const business = useBusinessStore()
 const loading = ref(false)
@@ -203,153 +206,15 @@ const onTipLeave = () => { hoveredTip.value = null }
 
 <template>
   <div class="campaign-top">
-    <div class="campaign-top__header">
-      <h2>Top 4 Campañas</h2>
-      <button class="refresh-btn" type="button" @click="loadTopAds" :disabled="loading">{{ loading ? 'Cargando…' : 'Actualizar' }}</button>
-    </div>
+    <TopAdsHeader :loading="loading" @refresh="loadTopAds" />
     <p class="list-subtitle">Aquí verás las mejores publicaciones destacadas</p>
 
     <p v-if="error" class="error">{{ error }}</p>
     <p v-else-if="!loading && ads.length === 0" class="empty">No hay campañas destacadas disponibles.</p>
 
-    <ul v-else class="campaign-list">
-      <li v-for="(ad, i) in ads" :key="ad.id" :class="['campaign-item', 'is-top' + (i + 1)]">
-        <div class="campaign-rank">#{{ i + 1 }}</div>
-        <div v-if="i === 0" class="best-badge"><i class="fas fa-trophy" aria-hidden="true"></i> Mejor desempeño</div>
-        <div class="campaign-thumb" v-if="ad.preview?.thumbnailUrl">
-          <img :src="ad.preview.thumbnailUrl" alt="Preview" />
-        </div>
-        <div class="campaign-info">
-          <div class="campaign-title">{{ ad.name || ad.metrics?.ad_name || 'Campaña' }}</div>
-          <div class="campaign-metrics-squares">
-            <div class="metric-square pink">
-              <div class="metric-icon"><i class="fas fa-eye" aria-hidden="true"></i></div>
-              <div class="metric-label">Impresiones</div>
-              <div class="metric-value">{{ (ad.metrics?.impressions ?? 0).toLocaleString() }}</div>
-            </div>
-            <div class="metric-square purple">
-              <div class="metric-icon"><i class="fas fa-users" aria-hidden="true"></i></div>
-              <div class="metric-label">Alcance</div>
-              <div class="metric-value">{{ (ad.metrics?.reach ?? 0).toLocaleString() }}</div>
-            </div>
-            <div class="metric-square dark">
-              <div class="metric-icon"><i class="fas fa-hand-pointer" aria-hidden="true"></i></div>
-              <div class="metric-label">Clicks</div>
-              <div class="metric-value">{{ (ad.metrics?.clicks ?? 0).toLocaleString() }}</div>
-            </div>
-            <div class="metric-square pink">
-              <div class="metric-icon"><i class="fas fa-dollar-sign" aria-hidden="true"></i></div>
-              <div class="metric-label">Gasto</div>
-              <div class="metric-value">${{ Number(ad.metrics?.spend ?? 0).toFixed(2) }}</div>
-            </div>
-            <div class="metric-square purple">
-              <div class="metric-icon"><i class="fas fa-percent" aria-hidden="true"></i></div>
-              <div class="metric-label">CTR</div>
-              <div class="metric-value">{{ Number(ad.metrics?.ctr ?? 0).toFixed(2) }}%</div>
-            </div>
-          </div>
-          <a v-if="ad.links?.permalinkUrl" class="campaign-link" :href="ad.links.permalinkUrl" target="_blank" rel="noopener noreferrer">Ver en Meta</a>
-          <button class="details-btn" type="button" @click="openModal(ad)">Ver métricas a profundidad</button>
-        </div>
-      </li>
-    </ul>
-    <Modal :visible="showModal && !!selected" :title="selected?.name || selected?.metrics?.ad_name" width="960px" @close="closeModal">
-      <div class="insights-content">
-          <div class="modal-summary">
-          <div class="summary-card"><div class="label">Impresiones <span class="tip" @mouseenter="onTipEnter(tip('impressions'), $event)" @mouseleave="onTipLeave">i</span></div><div class="value">{{ num(selMetrics?.impressions).toLocaleString() }}</div></div>
-          <div class="summary-card"><div class="label">Alcance <span class="tip" @mouseenter="onTipEnter(tip('reach'), $event)" @mouseleave="onTipLeave">i</span></div><div class="value">{{ num(selMetrics?.reach).toLocaleString() }}</div></div>
-          <div class="summary-card"><div class="label">Clicks <span class="tip" @mouseenter="onTipEnter(tip('clicks'), $event)" @mouseleave="onTipLeave">i</span></div><div class="value">{{ num(selMetrics?.clicks).toLocaleString() }}</div></div>
-          <div class="summary-card"><div class="label">Gasto (USD) <span class="tip" @mouseenter="onTipEnter(tip('spend'), $event)" @mouseleave="onTipLeave">i</span></div><div class="value">{{ num(selMetrics?.spend).toFixed(2) }}</div></div>
-          <div class="summary-card"><div class="label">CTR <span class="tip" @mouseenter="onTipEnter(tip('ctr'), $event)" @mouseleave="onTipLeave">i</span></div><div class="value">{{ num(selMetrics?.ctr).toFixed(2) }}%</div></div>
-          <div class="summary-card"><div class="label">CPC <span class="tip" @mouseenter="onTipEnter(tip('cpc'), $event)" @mouseleave="onTipLeave">i</span></div><div class="value">{{ (num(selMetrics?.spend) / Math.max(1, num(selMetrics?.clicks))).toFixed(2) }}</div></div>
-        </div>
-        <div class="modal-charts">
-          <div class="chart-card">
-            <div class="heading"><h3>Impresiones vs Alcance</h3></div>
-            <BaseChart :type="'bar'" :labels="chartImpressionsReach.labels" :datasets="chartImpressionsReach.datasets" :height="isMobile ? 180 : 240" />
-          </div>
-          <div class="chart-card">
-            <div class="heading"><h3>Gasto (USD)</h3></div>
-            <BaseChart :type="'bar'" :labels="chartSpend.labels" :datasets="chartSpend.datasets" :height="isMobile ? 180 : 240" />
-          </div>
-          <div class="chart-card">
-            <div class="heading"><h3>Clicks y CPC</h3></div>
-            <BaseChart :type="'bar'" :labels="chartClicksCpc.labels" :datasets="chartClicksCpc.datasets" :height="isMobile ? 180 : 240" />
-          </div>
-        </div>
-        <div class="modal-actions">
-          <h4>Acciones más relevantes</h4>
-          <ul class="actions-list">
-            <li v-for="a in topActions" :key="a.type"><span class="type">{{ a.type }} <span class="tip" @mouseenter="onTipEnter(tip(a.type), $event)" @mouseleave="onTipLeave">i</span></span><span class="val">{{ a.value.toLocaleString() }}</span></li>
-          </ul>
-        </div>
-        <div class="modal-actions">
-          <h4>Comparación por plataforma</h4>
-          <div class="platform-compare">
-            <div class="platform-card" v-for="p in platformBreakdown" :key="p.publisher_platform">
-              <div class="platform-header">
-                <span class="platform-name">{{ platformLabel(p.publisher_platform) }}</span>
-              </div>
-              <div class="platform-metrics">
-                <div class="metric"><span class="label">Impresiones</span><span class="value">{{ num(p.impressions).toLocaleString() }}</span></div>
-                <div class="metric"><span class="label">Alcance</span><span class="value">{{ num(p.reach).toLocaleString() }}</span></div>
-                <div class="metric"><span class="label">Clicks</span><span class="value">{{ num(p.clicks).toLocaleString() }}</span></div>
-                <div class="metric"><span class="label">CTR</span><span class="value">{{ num(p.ctr).toFixed(2) }}%</span></div>
-                <div class="metric"><span class="label">Gasto</span><span class="value">${{ num(p.spend).toFixed(2) }}</span></div>
-                <div class="metric"><span class="label">CPM</span><span class="value">${{ num(p.cpm).toFixed(2) }}</span></div>
-              </div>
-            </div>
-          </div>
-          <div class="platform-charts">
-            <div class="chart-card">
-              <div class="heading"><h3>Impresiones vs Alcance (Plataformas)</h3></div>
-              <div class="chart-values">
-                <div class="value-badge fb"><span class="label">Facebook</span><span class="val">{{ num(fbPlatform?.impressions).toLocaleString() }} · {{ num(fbPlatform?.reach).toLocaleString() }}</span></div>
-                <div class="value-badge ig"><span class="label">Instagram</span><span class="val">{{ num(igPlatform?.impressions).toLocaleString() }} · {{ num(igPlatform?.reach).toLocaleString() }}</span></div>
-              </div>
-              <BaseChart :type="'bar'" :labels="chartPlatformImpressionsReach.labels" :datasets="chartPlatformImpressionsReach.datasets" :height="isMobile ? 160 : 220" />
-            </div>
-            <div class="chart-card">
-              <div class="heading"><h3>Clicks (Plataformas)</h3></div>
-              <div class="chart-values">
-                <div class="value-badge fb"><span class="label">Facebook</span><span class="val">{{ num(fbPlatform?.clicks).toLocaleString() }}</span></div>
-                <div class="value-badge ig"><span class="label">Instagram</span><span class="val">{{ num(igPlatform?.clicks).toLocaleString() }}</span></div>
-              </div>
-              <BaseChart :type="'bar'" :labels="chartPlatformClicks.labels" :datasets="chartPlatformClicks.datasets" :height="isMobile ? 160 : 220" />
-            </div>
-            <div class="chart-card">
-              <div class="heading"><h3>Gasto (USD) (Plataformas)</h3></div>
-              <div class="chart-values">
-                <div class="value-badge fb"><span class="label">Facebook</span><span class="val">${{ num(fbPlatform?.spend).toFixed(2) }}</span></div>
-                <div class="value-badge ig"><span class="label">Instagram</span><span class="val">${{ num(igPlatform?.spend).toFixed(2) }}</span></div>
-              </div>
-              <BaseChart :type="'bar'" :labels="chartPlatformSpend.labels" :datasets="chartPlatformSpend.datasets" :height="isMobile ? 160 : 220" />
-            </div>
-            <div class="chart-card">
-              <div class="heading"><h3>CTR (%) (Plataformas)</h3></div>
-              <div class="chart-values">
-                <div class="value-badge fb"><span class="label">Facebook</span><span class="val">{{ num(fbPlatform?.ctr).toFixed(2) }}%</span></div>
-                <div class="value-badge ig"><span class="label">Instagram</span><span class="val">{{ num(igPlatform?.ctr).toFixed(2) }}%</span></div>
-              </div>
-              <BaseChart :type="'bar'" :labels="chartPlatformCtr.labels" :datasets="chartPlatformCtr.datasets" :height="isMobile ? 160 : 220" />
-            </div>
-          </div>
-        </div>
-        <div class="modal-actions">
-          <h4>Costo por acción (USD) <span class="tip" @mouseenter="onTipEnter('Costo promedio pagado por cada acción', $event)" @mouseleave="onTipLeave">i</span></h4>
-          <ul class="cpa-list">
-            <li v-for="c in costPerActions" :key="c.type"><span class="type">{{ c.type }} <span class="tip" @mouseenter="onTipEnter(tip(c.type), $event)" @mouseleave="onTipLeave">i</span></span><span class="val">{{ c.value.toFixed(2) }}</span></li>
-          </ul>
-        </div>
-      </div>
-      <template #footer>
-        <a v-if="selected?.links?.permalinkUrl" class="modal-link" :href="selected.links.permalinkUrl" target="_blank" rel="noopener noreferrer">Abrir en Meta</a>
-        <button class="btn-secondary" type="button" @click="closeModal">Cerrar</button>
-      </template>
-    </Modal>
-    <teleport to="body">
-      <div v-if="hoveredTip" class="tooltip-float" :style="{ left: hoveredTip.x + 'px', top: hoveredTip.y + 'px' }">{{ hoveredTip.text }}</div>
-    </teleport>
+    <TopCampaignList v-else :ads="ads" @open-details="openModal" />
+
+    <AdInsightsModal :visible="showModal && !!selected" :ad="selected" :is-mobile="isMobile" @close="closeModal" />
   </div>
   
 </template>
