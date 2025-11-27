@@ -207,6 +207,7 @@ const onTipLeave = () => { hoveredTip.value = null }
       <h2>Top 4 Campañas</h2>
       <button class="refresh-btn" type="button" @click="loadTopAds" :disabled="loading">{{ loading ? 'Cargando…' : 'Actualizar' }}</button>
     </div>
+    <p class="list-subtitle">Aquí verás las mejores publicaciones destacadas</p>
 
     <p v-if="error" class="error">{{ error }}</p>
     <p v-else-if="!loading && ads.length === 0" class="empty">No hay campañas destacadas disponibles.</p>
@@ -214,18 +215,38 @@ const onTipLeave = () => { hoveredTip.value = null }
     <ul v-else class="campaign-list">
       <li v-for="(ad, i) in ads" :key="ad.id" :class="['campaign-item', 'is-top' + (i + 1)]">
         <div class="campaign-rank">#{{ i + 1 }}</div>
-        <div v-if="i === 0" class="best-badge">🏆 Mejor desempeño</div>
+        <div v-if="i === 0" class="best-badge"><i class="fas fa-trophy" aria-hidden="true"></i> Mejor desempeño</div>
         <div class="campaign-thumb" v-if="ad.preview?.thumbnailUrl">
           <img :src="ad.preview.thumbnailUrl" alt="Preview" />
         </div>
         <div class="campaign-info">
           <div class="campaign-title">{{ ad.name || ad.metrics?.ad_name || 'Campaña' }}</div>
-          <div class="campaign-metrics">
-            <span>Impresiones: {{ ad.metrics?.impressions ?? '-' }}</span>
-            <span>Alcance: {{ ad.metrics?.reach ?? '-' }}</span>
-            <span>Clicks: {{ ad.metrics?.clicks ?? '-' }}</span>
-            <span>Gasto: {{ ad.metrics?.spend ?? '-' }}</span>
-            <span>CTR: {{ ad.metrics?.ctr ?? '-' }}</span>
+          <div class="campaign-metrics-squares">
+            <div class="metric-square pink">
+              <div class="metric-icon"><i class="fas fa-eye" aria-hidden="true"></i></div>
+              <div class="metric-label">Impresiones</div>
+              <div class="metric-value">{{ (ad.metrics?.impressions ?? 0).toLocaleString() }}</div>
+            </div>
+            <div class="metric-square purple">
+              <div class="metric-icon"><i class="fas fa-users" aria-hidden="true"></i></div>
+              <div class="metric-label">Alcance</div>
+              <div class="metric-value">{{ (ad.metrics?.reach ?? 0).toLocaleString() }}</div>
+            </div>
+            <div class="metric-square dark">
+              <div class="metric-icon"><i class="fas fa-hand-pointer" aria-hidden="true"></i></div>
+              <div class="metric-label">Clicks</div>
+              <div class="metric-value">{{ (ad.metrics?.clicks ?? 0).toLocaleString() }}</div>
+            </div>
+            <div class="metric-square pink">
+              <div class="metric-icon"><i class="fas fa-dollar-sign" aria-hidden="true"></i></div>
+              <div class="metric-label">Gasto</div>
+              <div class="metric-value">${{ Number(ad.metrics?.spend ?? 0).toFixed(2) }}</div>
+            </div>
+            <div class="metric-square purple">
+              <div class="metric-icon"><i class="fas fa-percent" aria-hidden="true"></i></div>
+              <div class="metric-label">CTR</div>
+              <div class="metric-value">{{ Number(ad.metrics?.ctr ?? 0).toFixed(2) }}%</div>
+            </div>
           </div>
           <a v-if="ad.links?.permalinkUrl" class="campaign-link" :href="ad.links.permalinkUrl" target="_blank" rel="noopener noreferrer">Ver en Meta</a>
           <button class="details-btn" type="button" @click="openModal(ad)">Ver métricas a profundidad</button>
@@ -368,7 +389,7 @@ const onTipLeave = () => { hoveredTip.value = null }
 .campaign-list {
   display: grid;
   grid-template-columns: 1fr;
-  gap: 0.75rem;
+  gap: 1rem;
 
   @media (min-width: 768px) {
     grid-template-columns: 1fr 1fr;
@@ -443,6 +464,9 @@ const onTipLeave = () => { hoveredTip.value = null }
   padding: 6px 10px;
   border-radius: 10px;
   box-shadow: 0 8px 20px rgba($BAKANO-DARK, 0.2);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
 }
 
 .campaign-info {
@@ -469,6 +493,76 @@ const onTipLeave = () => { hoveredTip.value = null }
   border: 1px solid lighten($BAKANO-DARK, 85%);
   border-radius: 999px;
   padding: 6px 10px;
+}
+
+.campaign-metrics-squares {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .campaign-metrics-squares {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+}
+
+.metric-square {
+  background: #fff;
+  border: 1px solid lighten($BAKANO-DARK, 85%);
+  border-radius: 12px;
+  padding: 0.75rem;
+  display: grid;
+  grid-template-rows: auto auto 1fr;
+  align-items: start;
+  justify-items: start;
+  aspect-ratio: 1;
+  box-shadow: 0 4px 12px rgba($BAKANO-DARK, 0.06);
+}
+
+.list-subtitle {
+  color: lighten($BAKANO-DARK, 35%);
+  font-size: 0.95rem;
+  margin: -0.25rem 0 0.5rem;
+}
+
+.metric-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
+  background: $BAKANO-LIGHT;
+  color: $BAKANO-DARK;
+  box-shadow: inset 0 0 0 1px lighten($BAKANO-DARK, 85%);
+}
+
+.metric-label {
+  font-size: 0.75rem;
+  color: lighten($BAKANO-DARK, 35%);
+}
+
+.metric-value {
+  font-weight: 800;
+  color: $BAKANO-DARK;
+  font-size: 1rem;
+  align-self: center;
+}
+
+.metric-square.pink .metric-icon {
+  color: $BAKANO-PINK;
+  box-shadow: inset 0 0 0 1px rgba($BAKANO-PINK, 0.6);
+}
+
+.metric-square.purple .metric-icon {
+  color: $BAKANO-PURPLE;
+  box-shadow: inset 0 0 0 1px rgba($BAKANO-PURPLE, 0.6);
+}
+
+.metric-square.dark .metric-icon {
+  color: $BAKANO-DARK;
 }
 
 .campaign-link {
