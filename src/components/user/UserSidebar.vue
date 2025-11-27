@@ -90,6 +90,10 @@ onMounted(async () => {
         <span class="user-sidebar__text">Invitaciones</span>
         <span v-if="pendingCount" class="user-sidebar__badge">{{ pendingCount }}</span>
       </RouterLink>
+      <RouterLink to="/ads" class="user-sidebar__link">
+        <span class="user-sidebar__icon"><i class="fas fa-bullhorn"></i></span>
+        <span class="user-sidebar__text">Anuncios</span>
+      </RouterLink>
       <RouterLink to="/pricing" class="user-sidebar__link">
         <span class="user-sidebar__icon"><i class="fas fa-tags"></i></span>
         <span class="user-sidebar__text">Precios</span>

@@ -19,6 +19,7 @@ const loading = ref(true)
 const error = ref<string | null>(null)
 const preparing = ref(false)
 const acceptTerms = ref(false)
+const idType = ref<'cedula' | 'ruc' | 'pasaporte'>('cedula')
 const nationalId = ref('')
 const phone = ref('')
 const address = ref<{ street: string; city: string; state?: string; zipCode?: string; country: string }>({ street: '', city: '', state: '', zipCode: '', country: '' })
@@ -66,8 +67,18 @@ const preparePayment = async () => {
 
     const phoneRegex = /^[\+]?[1-9][\d]{6,15}$/
     const hasAddress = !!(address.value.street && address.value.city && address.value.country)
-    if (!nationalId.value || nationalId.value.trim().length < 5) {
-      identityError.value = 'Ingresa una cédula válida (mínimo 5 caracteres)'
+
+    const idVal = nationalId.value.trim()
+    let idOk = false
+    if (idType.value === 'cedula') idOk = /^\d{10}$/.test(idVal)
+    else if (idType.value === 'ruc') idOk = /^\d{13}$/.test(idVal)
+    else idOk = /^[A-Za-z0-9]{6,20}$/.test(idVal)
+    if (!idVal || !idOk) {
+      identityError.value = idType.value === 'cedula'
+        ? 'Ingresa una cédula válida (10 dígitos)'
+        : idType.value === 'ruc'
+          ? 'Ingresa un RUC válido (13 dígitos)'
+          : 'Ingresa un pasaporte válido (6–20 caracteres alfanuméricos)'
       throw new Error(identityError.value)
     }
     if (!phone.value || !phoneRegex.test(phone.value)) {
@@ -80,7 +91,8 @@ const preparePayment = async () => {
     }
 
     localStorage.setItem('pending_subscription_identity', JSON.stringify({
-      nationalId: nationalId.value.trim(),
+      idType: idType.value,
+      nationalId: idVal,
       phone: phone.value.trim(),
       address: {
         street: address.value.street?.trim(),
@@ -160,12 +172,20 @@ const preparePayment = async () => {
         <footer class="plan-card__cta">
           <div class="identity">
             <div class="identity__row">
-              <label class="identity__label" for="nationalId">Cédula</label>
+              <label class="identity__label" for="idType">Tipo de documento</label>
+              <select id="idType" class="identity__input" v-model="idType">
+                <option value="cedula">Cédula</option>
+                <option value="ruc">RUC</option>
+                <option value="pasaporte">Pasaporte</option>
+              </select>
+            </div>
+            <div class="identity__row">
+              <label class="identity__label" for="nationalId">Documento</label>
               <input
                 id="nationalId"
                 class="identity__input"
                 type="text"
-                placeholder="Ingrese su cédula"
+                :placeholder="idType === 'cedula' ? 'Cédula (10 dígitos)' : idType === 'ruc' ? 'RUC (13 dígitos)' : 'Pasaporte (6–20 alfanuméricos)'"
                 v-model.trim="nationalId"
                 inputmode="numeric"
                 autocomplete="off"

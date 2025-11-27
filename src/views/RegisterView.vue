@@ -18,6 +18,7 @@ const formData = reactive({
   confirmPassword: ''
 })
 
+const idType = ref<'cedula' | 'ruc' | 'pasaporte'>('cedula')
 const showPassword = ref(false)
 const showConfirmPassword = ref(false)
 const isSubmitting = ref(false)
@@ -78,15 +79,24 @@ const validateForm = (): boolean => {
     isValid = false
   }
 
-  // Validar cédula (opcional, si se ingresa validar formato básico)
-  if (formData.cedula && !/^\d{10}$/.test(formData.cedula)) {
-    errors.cedula = 'La cédula debe tener 10 dígitos'
+  // Validar documento (requerido)
+  const idVal = formData.cedula.trim()
+  let idOk = false
+  if (idType.value === 'cedula') idOk = /^\d{10}$/.test(idVal)
+  else if (idType.value === 'ruc') idOk = /^\d{13}$/.test(idVal)
+  else idOk = /^[A-Za-z0-9]{6,20}$/.test(idVal)
+  if (!idVal || !idOk) {
+    errors.cedula = idType.value === 'cedula'
+      ? 'La cédula es requerida (10 dígitos)'
+      : idType.value === 'ruc'
+        ? 'El RUC es requerido (13 dígitos)'
+        : 'El pasaporte es requerido (6–20 alfanuméricos)'
     isValid = false
   }
 
-  // Validar dirección (opcional, si se ingresa mínimo 5 caracteres)
-  if (formData.address && formData.address.trim().length < 5) {
-    errors.address = 'La dirección debe tener al menos 5 caracteres'
+  // Validar dirección (requerida)
+  if (!formData.address.trim() || formData.address.trim().length < 5) {
+    errors.address = 'La dirección es requerida (mínimo 5 caracteres)'
     isValid = false
   }
 
@@ -187,9 +197,19 @@ const handleSubmit = async () => {
           <span v-if="errors.email" class="form-error">{{ errors.email }}</span>
         </div>
 
-        <!-- Campo Cédula (opcional) -->
+        <!-- Tipo de documento -->
         <div class="form-group">
-          <label for="cedula" class="form-label">Cédula</label>
+          <label for="idType" class="form-label">Tipo de documento</label>
+          <select id="idType" v-model="idType" class="form-input">
+            <option value="cedula">Cédula</option>
+            <option value="ruc">RUC</option>
+            <option value="pasaporte">Pasaporte</option>
+          </select>
+        </div>
+
+        <!-- Documento -->
+        <div class="form-group">
+          <label for="cedula" class="form-label">Documento</label>
           <input
             id="cedula"
             v-model="formData.cedula"
@@ -197,13 +217,13 @@ const handleSubmit = async () => {
             inputmode="numeric"
             class="form-input"
             :class="{ 'form-input--error': errors.cedula }"
-            placeholder="Ingresa tu cédula (10 dígitos)"
+            :placeholder="idType === 'cedula' ? 'Cédula (10 dígitos)' : idType === 'ruc' ? 'RUC (13 dígitos)' : 'Pasaporte (6–20 alfanuméricos)'"
             autocomplete="off"
           />
           <span v-if="errors.cedula" class="form-error">{{ errors.cedula }}</span>
         </div>
 
-        <!-- Campo Dirección (opcional) -->
+        <!-- Dirección -->
         <div class="form-group">
           <label for="address" class="form-label">Dirección</label>
           <input
