@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
 import { useBusinessStore } from '@/stores/business.store'
 import facebookService from '@/services/facebook.service'
 import type { FacebookAdItem } from '@/types/facebook.types'
@@ -31,8 +31,8 @@ const loadTopAds = async () => {
   loading.value = true
   error.value = null
   try {
-    const res = await facebookService.getTopAds(businessId.value, 5)
-    ads.value = res.ads || []
+    const res = await facebookService.getTopAds(businessId.value, 4)
+    ads.value = (res.ads || []).slice(0, 4)
   } catch (e: any) {
     error.value = e?.message || 'No se pudieron cargar los Top Ads'
   } finally {
@@ -41,6 +41,12 @@ const loadTopAds = async () => {
 }
 
 onMounted(loadTopAds)
+
+const viewportW = ref<number>(typeof window !== 'undefined' ? window.innerWidth : 1024)
+const onResize = () => { viewportW.value = typeof window !== 'undefined' ? window.innerWidth : 1024 }
+onMounted(() => { if (typeof window !== 'undefined') window.addEventListener('resize', onResize) })
+onBeforeUnmount(() => { if (typeof window !== 'undefined') window.removeEventListener('resize', onResize) })
+const isMobile = computed(() => viewportW.value <= 480)
 
 const openModal = (ad: FacebookAdItem) => {
   selected.value = ad
@@ -57,6 +63,36 @@ const num = (n: unknown): number => {
 }
 
 const selMetrics = computed(() => selected.value?.metrics)
+const platformBreakdown = computed(() => selected.value?.platformBreakdown || [])
+const platformLabel = (p?: string) => (p === 'facebook' ? 'Facebook' : p === 'instagram' ? 'Instagram' : (p || 'Plataforma'))
+const platformLabels = computed(() => platformBreakdown.value.map(p => platformLabel(p.publisher_platform)))
+const fbPlatform = computed(() => platformBreakdown.value.find(p => p.publisher_platform === 'facebook'))
+const igPlatform = computed(() => platformBreakdown.value.find(p => p.publisher_platform === 'instagram'))
+const chartPlatformImpressionsReach = computed(() => ({
+  labels: platformLabels.value,
+  datasets: [
+    { label: 'Impresiones', data: platformBreakdown.value.map(p => num(p.impressions)), borderColor: '#E6285C', backgroundColor: 'rgba(230,40,92,0.25)', borderWidth: 3 },
+    { label: 'Alcance', data: platformBreakdown.value.map(p => num(p.reach)), borderColor: '#7C3AED', backgroundColor: 'rgba(124,58,237,0.25)', borderWidth: 3 },
+  ],
+}))
+const chartPlatformClicks = computed(() => ({
+  labels: platformLabels.value,
+  datasets: [
+    { label: 'Clicks', data: platformBreakdown.value.map(p => num(p.clicks)), borderColor: '#10B981', backgroundColor: 'rgba(16,185,129,0.25)', borderWidth: 3 },
+  ],
+}))
+const chartPlatformSpend = computed(() => ({
+  labels: platformLabels.value,
+  datasets: [
+    { label: 'Gasto (USD)', data: platformBreakdown.value.map(p => num(p.spend)), borderColor: '#0EA5E9', backgroundColor: 'rgba(14,165,233,0.25)', borderWidth: 3 },
+  ],
+}))
+const chartPlatformCtr = computed(() => ({
+  labels: platformLabels.value,
+  datasets: [
+    { label: 'CTR (%)', data: platformBreakdown.value.map(p => num(p.ctr)), borderColor: '#F59E0B', backgroundColor: 'rgba(245,158,11,0.25)', borderWidth: 3 },
+  ],
+}))
 const periodLabel = computed(() => {
   const m = selMetrics.value
   if (m?.date_start && m?.date_stop) return [`${m.date_start} — ${m.date_stop}`]
@@ -168,7 +204,7 @@ const onTipLeave = () => { hoveredTip.value = null }
 <template>
   <div class="campaign-top">
     <div class="campaign-top__header">
-      <h2>Top Campañas</h2>
+      <h2>Top 4 Campañas</h2>
       <button class="refresh-btn" type="button" @click="loadTopAds" :disabled="loading">{{ loading ? 'Cargando…' : 'Actualizar' }}</button>
     </div>
 
@@ -176,7 +212,9 @@ const onTipLeave = () => { hoveredTip.value = null }
     <p v-else-if="!loading && ads.length === 0" class="empty">No hay campañas destacadas disponibles.</p>
 
     <ul v-else class="campaign-list">
-      <li v-for="ad in ads" :key="ad.id" class="campaign-item">
+      <li v-for="(ad, i) in ads" :key="ad.id" :class="['campaign-item', 'is-top' + (i + 1)]">
+        <div class="campaign-rank">#{{ i + 1 }}</div>
+        <div v-if="i === 0" class="best-badge">🏆 Mejor desempeño</div>
         <div class="campaign-thumb" v-if="ad.preview?.thumbnailUrl">
           <img :src="ad.preview.thumbnailUrl" alt="Preview" />
         </div>
@@ -207,15 +245,15 @@ const onTipLeave = () => { hoveredTip.value = null }
         <div class="modal-charts">
           <div class="chart-card">
             <div class="heading"><h3>Impresiones vs Alcance</h3></div>
-            <BaseChart :type="'bar'" :labels="chartImpressionsReach.labels" :datasets="chartImpressionsReach.datasets" :height="240" />
+            <BaseChart :type="'bar'" :labels="chartImpressionsReach.labels" :datasets="chartImpressionsReach.datasets" :height="isMobile ? 180 : 240" />
           </div>
           <div class="chart-card">
             <div class="heading"><h3>Gasto (USD)</h3></div>
-            <BaseChart :type="'bar'" :labels="chartSpend.labels" :datasets="chartSpend.datasets" :height="240" />
+            <BaseChart :type="'bar'" :labels="chartSpend.labels" :datasets="chartSpend.datasets" :height="isMobile ? 180 : 240" />
           </div>
           <div class="chart-card">
             <div class="heading"><h3>Clicks y CPC</h3></div>
-            <BaseChart :type="'bar'" :labels="chartClicksCpc.labels" :datasets="chartClicksCpc.datasets" :height="240" />
+            <BaseChart :type="'bar'" :labels="chartClicksCpc.labels" :datasets="chartClicksCpc.datasets" :height="isMobile ? 180 : 240" />
           </div>
         </div>
         <div class="modal-actions">
@@ -223,6 +261,58 @@ const onTipLeave = () => { hoveredTip.value = null }
           <ul class="actions-list">
             <li v-for="a in topActions" :key="a.type"><span class="type">{{ a.type }} <span class="tip" @mouseenter="onTipEnter(tip(a.type), $event)" @mouseleave="onTipLeave">i</span></span><span class="val">{{ a.value.toLocaleString() }}</span></li>
           </ul>
+        </div>
+        <div class="modal-actions">
+          <h4>Comparación por plataforma</h4>
+          <div class="platform-compare">
+            <div class="platform-card" v-for="p in platformBreakdown" :key="p.publisher_platform">
+              <div class="platform-header">
+                <span class="platform-name">{{ platformLabel(p.publisher_platform) }}</span>
+              </div>
+              <div class="platform-metrics">
+                <div class="metric"><span class="label">Impresiones</span><span class="value">{{ num(p.impressions).toLocaleString() }}</span></div>
+                <div class="metric"><span class="label">Alcance</span><span class="value">{{ num(p.reach).toLocaleString() }}</span></div>
+                <div class="metric"><span class="label">Clicks</span><span class="value">{{ num(p.clicks).toLocaleString() }}</span></div>
+                <div class="metric"><span class="label">CTR</span><span class="value">{{ num(p.ctr).toFixed(2) }}%</span></div>
+                <div class="metric"><span class="label">Gasto</span><span class="value">${{ num(p.spend).toFixed(2) }}</span></div>
+                <div class="metric"><span class="label">CPM</span><span class="value">${{ num(p.cpm).toFixed(2) }}</span></div>
+              </div>
+            </div>
+          </div>
+          <div class="platform-charts">
+            <div class="chart-card">
+              <div class="heading"><h3>Impresiones vs Alcance (Plataformas)</h3></div>
+              <div class="chart-values">
+                <div class="value-badge fb"><span class="label">Facebook</span><span class="val">{{ num(fbPlatform?.impressions).toLocaleString() }} · {{ num(fbPlatform?.reach).toLocaleString() }}</span></div>
+                <div class="value-badge ig"><span class="label">Instagram</span><span class="val">{{ num(igPlatform?.impressions).toLocaleString() }} · {{ num(igPlatform?.reach).toLocaleString() }}</span></div>
+              </div>
+              <BaseChart :type="'bar'" :labels="chartPlatformImpressionsReach.labels" :datasets="chartPlatformImpressionsReach.datasets" :height="isMobile ? 160 : 220" />
+            </div>
+            <div class="chart-card">
+              <div class="heading"><h3>Clicks (Plataformas)</h3></div>
+              <div class="chart-values">
+                <div class="value-badge fb"><span class="label">Facebook</span><span class="val">{{ num(fbPlatform?.clicks).toLocaleString() }}</span></div>
+                <div class="value-badge ig"><span class="label">Instagram</span><span class="val">{{ num(igPlatform?.clicks).toLocaleString() }}</span></div>
+              </div>
+              <BaseChart :type="'bar'" :labels="chartPlatformClicks.labels" :datasets="chartPlatformClicks.datasets" :height="isMobile ? 160 : 220" />
+            </div>
+            <div class="chart-card">
+              <div class="heading"><h3>Gasto (USD) (Plataformas)</h3></div>
+              <div class="chart-values">
+                <div class="value-badge fb"><span class="label">Facebook</span><span class="val">${{ num(fbPlatform?.spend).toFixed(2) }}</span></div>
+                <div class="value-badge ig"><span class="label">Instagram</span><span class="val">${{ num(igPlatform?.spend).toFixed(2) }}</span></div>
+              </div>
+              <BaseChart :type="'bar'" :labels="chartPlatformSpend.labels" :datasets="chartPlatformSpend.datasets" :height="isMobile ? 160 : 220" />
+            </div>
+            <div class="chart-card">
+              <div class="heading"><h3>CTR (%) (Plataformas)</h3></div>
+              <div class="chart-values">
+                <div class="value-badge fb"><span class="label">Facebook</span><span class="val">{{ num(fbPlatform?.ctr).toFixed(2) }}%</span></div>
+                <div class="value-badge ig"><span class="label">Instagram</span><span class="val">{{ num(igPlatform?.ctr).toFixed(2) }}%</span></div>
+              </div>
+              <BaseChart :type="'bar'" :labels="chartPlatformCtr.labels" :datasets="chartPlatformCtr.datasets" :height="isMobile ? 160 : 220" />
+            </div>
+          </div>
         </div>
         <div class="modal-actions">
           <h4>Costo por acción (USD) <span class="tip" @mouseenter="onTipEnter('Costo promedio pagado por cada acción', $event)" @mouseleave="onTipLeave">i</span></h4>
@@ -292,6 +382,8 @@ const onTipLeave = () => { hoveredTip.value = null }
   border: 1px solid rgba($BAKANO-DARK, 0.06);
   border-radius: 10px;
   padding: 0.75rem;
+  position: relative;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
 }
 
 .campaign-thumb {
@@ -308,6 +400,51 @@ const onTipLeave = () => { hoveredTip.value = null }
   }
 }
 
+.campaign-item:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 22px rgba($BAKANO-DARK, 0.08);
+}
+
+.campaign-rank {
+  position: absolute;
+  top: -8px;
+  left: -8px;
+  background: linear-gradient(135deg, $BAKANO-PINK 0%, darken($BAKANO-PINK, 8%) 100%);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.875rem;
+  padding: 6px 10px;
+  border-radius: 10px;
+  box-shadow: 0 6px 16px rgba($BAKANO-DARK, 0.15);
+}
+
+.campaign-item.is-top1 {
+  border-color: rgba($BAKANO-PINK, 0.35);
+  box-shadow: 0 10px 24px rgba($BAKANO-PINK, 0.15);
+}
+
+.campaign-item.is-top2 {
+  border-color: rgba($BAKANO-DARK, 0.12);
+}
+
+.campaign-item.is-top3,
+.campaign-item.is-top4 {
+  border-color: rgba($BAKANO-DARK, 0.08);
+}
+
+.best-badge {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: linear-gradient(135deg, $BAKANO-PURPLE 0%, $BAKANO-PINK 100%);
+  color: #fff;
+  font-weight: 800;
+  font-size: 0.8125rem;
+  padding: 6px 10px;
+  border-radius: 10px;
+  box-shadow: 0 8px 20px rgba($BAKANO-DARK, 0.2);
+}
+
 .campaign-info {
   flex: 1;
 }
@@ -321,10 +458,17 @@ const onTipLeave = () => { hoveredTip.value = null }
 .campaign-metrics {
   display: flex;
   flex-wrap: wrap;
-  gap: 0.5rem 1rem;
+  gap: 0.5rem;
   color: rgba($BAKANO-DARK, 0.8);
   font-size: 0.875rem;
   margin-bottom: 0.5rem;
+}
+
+.campaign-metrics span {
+  background: rgba($BAKANO-DARK, 0.04);
+  border: 1px solid lighten($BAKANO-DARK, 85%);
+  border-radius: 999px;
+  padding: 6px 10px;
 }
 
 .campaign-link {
@@ -389,6 +533,8 @@ const onTipLeave = () => { hoveredTip.value = null }
   border-radius: 10px;
   padding: 0.75rem;
   width: 100%;
+  max-height: 260px;
+  overflow: hidden;
 }
 
 .heading h3 {
@@ -397,10 +543,120 @@ const onTipLeave = () => { hoveredTip.value = null }
   color: $BAKANO-DARK;
 }
 
+.chart-values {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+  margin: 0.25rem 0 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .chart-values {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.value-badge {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0.5rem 0.75rem;
+  border-radius: 8px;
+  border: 1px solid lighten($BAKANO-DARK, 85%);
+  background: rgba($BAKANO-DARK, 0.03);
+}
+
+.value-badge .label {
+  font-weight: 700;
+  color: $BAKANO-DARK;
+}
+
+.value-badge .val {
+  font-weight: 800;
+  color: $BAKANO-DARK;
+}
+
+.value-badge.fb {
+  border-color: rgba($BAKANO-PINK, 0.35);
+  box-shadow: 0 3px 10px rgba($BAKANO-PINK, 0.08);
+}
+
+.value-badge.ig {
+  border-color: rgba($BAKANO-PURPLE, 0.35);
+  box-shadow: 0 3px 10px rgba($BAKANO-PURPLE, 0.08);
+}
+
 .modal-actions h4 {
   margin: 0 0 0.5rem;
   font-weight: 800;
   color: $BAKANO-DARK;
+}
+
+.platform-compare {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .platform-compare {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.platform-card {
+  background: #fff;
+  border: 1px solid lighten($BAKANO-DARK, 85%);
+  border-radius: 8px;
+  padding: 0.75rem;
+}
+
+.platform-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.platform-name {
+  font-weight: 800;
+  color: $BAKANO-DARK;
+}
+
+.platform-metrics {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem 0.75rem;
+}
+
+.platform-metrics .metric {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.platform-metrics .label {
+  color: lighten($BAKANO-DARK, 35%);
+  font-size: 0.8125rem;
+}
+
+.platform-metrics .value {
+  font-weight: 700;
+  color: $BAKANO-DARK;
+}
+
+.platform-charts {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  max-height: 480px;
+  overflow-y: auto;
+}
+
+@media (min-width: 768px) {
+  .platform-charts {
+    grid-template-columns: 1fr 1fr;
+  }
 }
 
 .actions-list {
