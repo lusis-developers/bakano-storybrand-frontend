@@ -12,16 +12,13 @@ import AdsTopVue from './AdsTopVue.vue'
         </div>
       </div>
     </header>
-    <section class="ads-section">
-      <AdsTopVue />
-    </section>
+    <AdsTopVue />
   </div>
 </template>
 
 
 <style lang="scss" scoped>
 .ads-view {
-  min-height: 100vh;
   padding: 1rem;
   max-width: 1440px;
   margin: 0 auto;
