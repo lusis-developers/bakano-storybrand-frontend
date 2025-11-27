@@ -180,6 +180,10 @@ export interface FacebookAdMetrics extends FacebookAdStatisticsItem {
   ad_name: string
 }
 
+export interface FacebookPlatformMetrics extends FacebookAdStatisticsItem {
+  publisher_platform?: 'facebook' | 'instagram' | string
+}
+
 export interface FacebookAdItem {
   id: string
   name: string
@@ -188,6 +192,7 @@ export interface FacebookAdItem {
   metrics: FacebookAdMetrics
   adsetId: string
   campaignId: string
+  platformBreakdown?: FacebookPlatformMetrics[]
 }
 
 export interface FacebookTopAdsResponse {
