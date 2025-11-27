@@ -1,101 +1,25 @@
 <script setup lang="ts">
-import { ref, onMounted, onBeforeUnmount, computed } from 'vue'
-import { useBusinessStore } from '@/stores/business.store'
-import facebookService from '@/services/facebook.service'
+import { computed, ref } from 'vue'
 import type { FacebookAdItem } from '@/types/facebook.types'
 import BaseChart from '@/components/shared/BaseChart.vue'
 import Modal from '@/components/shared/Modal.vue'
-import TopAdsHeader from './TopAdsHeader.vue'
-import TopCampaignList from './TopCampaignList.vue'
-import AdInsightsModal from './AdInsightsModal.vue'
 
-const business = useBusinessStore()
-const loading = ref(false)
-const error = ref<string | null>(null)
-const ads = ref<FacebookAdItem[]>([])
-const showModal = ref(false)
-const selected = ref<FacebookAdItem | null>(null)
+const props = defineProps<{ visible: boolean; ad: FacebookAdItem | null; isMobile: boolean }>()
+const emit = defineEmits<{ (e: 'close'): void }>()
 
-const businessId = computed(() => String((business.currentBusiness as any)?.id || (business.currentBusiness as any)?._id || ''))
-
-const loadTopAds = async () => {
-  if (!businessId.value) {
-    try {
-      const ensured = await (business as any).ensureCurrentBusiness?.()
-      if (!ensured) {
-        error.value = 'Selecciona o carga un negocio para ver Top Ads'
-        return
-      }
-    } catch (e) {
-      error.value = 'Selecciona o carga un negocio para ver Top Ads'
-      return
-    }
-  }
-  loading.value = true
-  error.value = null
-  try {
-    const res = await facebookService.getTopAds(businessId.value, 4)
-    ads.value = (res.ads || []).slice(0, 4)
-  } catch (e: any) {
-    error.value = e?.message || 'No se pudieron cargar los Top Ads'
-  } finally {
-    loading.value = false
-  }
-}
-
-onMounted(loadTopAds)
-
-const viewportW = ref<number>(typeof window !== 'undefined' ? window.innerWidth : 1024)
-const onResize = () => { viewportW.value = typeof window !== 'undefined' ? window.innerWidth : 1024 }
-onMounted(() => { if (typeof window !== 'undefined') window.addEventListener('resize', onResize) })
-onBeforeUnmount(() => { if (typeof window !== 'undefined') window.removeEventListener('resize', onResize) })
-const isMobile = computed(() => viewportW.value <= 480)
-
-const openModal = (ad: FacebookAdItem) => {
-  selected.value = ad
-  showModal.value = true
-}
-const closeModal = () => {
-  showModal.value = false
-  selected.value = null
-}
+const selMetrics = computed(() => props.ad?.metrics)
+const platformBreakdown = computed(() => props.ad?.platformBreakdown || [])
 
 const num = (n: unknown): number => {
   const v = typeof n === 'string' ? parseFloat(n) : typeof n === 'number' ? n : 0
   return isFinite(v) ? v : 0
 }
 
-const selMetrics = computed(() => selected.value?.metrics)
-const platformBreakdown = computed(() => selected.value?.platformBreakdown || [])
 const platformLabel = (p?: string) => (p === 'facebook' ? 'Facebook' : p === 'instagram' ? 'Instagram' : (p || 'Plataforma'))
 const platformLabels = computed(() => platformBreakdown.value.map(p => platformLabel(p.publisher_platform)))
 const fbPlatform = computed(() => platformBreakdown.value.find(p => p.publisher_platform === 'facebook'))
 const igPlatform = computed(() => platformBreakdown.value.find(p => p.publisher_platform === 'instagram'))
-const chartPlatformImpressionsReach = computed(() => ({
-  labels: platformLabels.value,
-  datasets: [
-    { label: 'Impresiones', data: platformBreakdown.value.map(p => num(p.impressions)), borderColor: '#E6285C', backgroundColor: 'rgba(230,40,92,0.25)', borderWidth: 3 },
-    { label: 'Alcance', data: platformBreakdown.value.map(p => num(p.reach)), borderColor: '#7C3AED', backgroundColor: 'rgba(124,58,237,0.25)', borderWidth: 3 },
-  ],
-}))
-const chartPlatformClicks = computed(() => ({
-  labels: platformLabels.value,
-  datasets: [
-    { label: 'Clicks', data: platformBreakdown.value.map(p => num(p.clicks)), borderColor: '#10B981', backgroundColor: 'rgba(16,185,129,0.25)', borderWidth: 3 },
-  ],
-}))
-const chartPlatformSpend = computed(() => ({
-  labels: platformLabels.value,
-  datasets: [
-    { label: 'Gasto (USD)', data: platformBreakdown.value.map(p => num(p.spend)), borderColor: '#0EA5E9', backgroundColor: 'rgba(14,165,233,0.25)', borderWidth: 3 },
-  ],
-}))
-const chartPlatformCtr = computed(() => ({
-  labels: platformLabels.value,
-  datasets: [
-    { label: 'CTR (%)', data: platformBreakdown.value.map(p => num(p.ctr)), borderColor: '#F59E0B', backgroundColor: 'rgba(245,158,11,0.25)', borderWidth: 3 },
-  ],
-}))
+
 const periodLabel = computed(() => {
   const m = selMetrics.value
   if (m?.date_start && m?.date_stop) return [`${m.date_start} — ${m.date_stop}`]
@@ -129,6 +53,32 @@ const chartClicksCpc = computed(() => {
     ],
   }
 })
+
+const chartPlatformImpressionsReach = computed(() => ({
+  labels: platformLabels.value,
+  datasets: [
+    { label: 'Impresiones', data: platformBreakdown.value.map(p => num(p.impressions)), borderColor: '#E6285C', backgroundColor: 'rgba(230,40,92,0.25)', borderWidth: 3 },
+    { label: 'Alcance', data: platformBreakdown.value.map(p => num(p.reach)), borderColor: '#7C3AED', backgroundColor: 'rgba(124,58,237,0.25)', borderWidth: 3 },
+  ],
+}))
+const chartPlatformClicks = computed(() => ({
+  labels: platformLabels.value,
+  datasets: [
+    { label: 'Clicks', data: platformBreakdown.value.map(p => num(p.clicks)), borderColor: '#10B981', backgroundColor: 'rgba(16,185,129,0.25)', borderWidth: 3 },
+  ],
+}))
+const chartPlatformSpend = computed(() => ({
+  labels: platformLabels.value,
+  datasets: [
+    { label: 'Gasto (USD)', data: platformBreakdown.value.map(p => num(p.spend)), borderColor: '#0EA5E9', backgroundColor: 'rgba(14,165,233,0.25)', borderWidth: 3 },
+  ],
+}))
+const chartPlatformCtr = computed(() => ({
+  labels: platformLabels.value,
+  datasets: [
+    { label: 'CTR (%)', data: platformBreakdown.value.map(p => num(p.ctr)), borderColor: '#F59E0B', backgroundColor: 'rgba(245,158,11,0.25)', borderWidth: 3 },
+  ],
+}))
 
 const topActions = computed(() => {
   const actions = selMetrics.value?.actions || []
@@ -205,248 +155,106 @@ const onTipLeave = () => { hoveredTip.value = null }
 </script>
 
 <template>
-  <div class="campaign-top">
-    <TopAdsHeader :loading="loading" @refresh="loadTopAds" />
-    <p class="list-subtitle">Aquí verás las mejores publicaciones destacadas</p>
-
-    <p v-if="error" class="error">{{ error }}</p>
-    <p v-else-if="!loading && ads.length === 0" class="empty">No hay campañas destacadas disponibles.</p>
-
-    <TopCampaignList v-else :ads="ads" @open-details="openModal" />
-
-    <AdInsightsModal :visible="showModal && !!selected" :ad="selected" :is-mobile="isMobile" @close="closeModal" />
-  </div>
-  
+  <Modal :visible="props.visible && !!props.ad" :title="props.ad?.name || props.ad?.metrics?.ad_name" width="960px" @close="emit('close')">
+    <div class="insights-content">
+      <div class="modal-summary">
+        <div class="summary-card"><div class="label">Impresiones <span class="tip" @mouseenter="onTipEnter(tip('impressions'), $event)" @mouseleave="onTipLeave">i</span></div><div class="value">{{ num(selMetrics?.impressions).toLocaleString() }}</div></div>
+        <div class="summary-card"><div class="label">Alcance <span class="tip" @mouseenter="onTipEnter(tip('reach'), $event)" @mouseleave="onTipLeave">i</span></div><div class="value">{{ num(selMetrics?.reach).toLocaleString() }}</div></div>
+        <div class="summary-card"><div class="label">Clicks <span class="tip" @mouseenter="onTipEnter(tip('clicks'), $event)" @mouseleave="onTipLeave">i</span></div><div class="value">{{ num(selMetrics?.clicks).toLocaleString() }}</div></div>
+        <div class="summary-card"><div class="label">Gasto (USD) <span class="tip" @mouseenter="onTipEnter(tip('spend'), $event)" @mouseleave="onTipLeave">i</span></div><div class="value">{{ num(selMetrics?.spend).toFixed(2) }}</div></div>
+        <div class="summary-card"><div class="label">CTR <span class="tip" @mouseenter="onTipEnter(tip('ctr'), $event)" @mouseleave="onTipLeave">i</span></div><div class="value">{{ num(selMetrics?.ctr).toFixed(2) }}%</div></div>
+        <div class="summary-card"><div class="label">CPC <span class="tip" @mouseenter="onTipEnter(tip('cpc'), $event)" @mouseleave="onTipLeave">i</span></div><div class="value">{{ (num(selMetrics?.spend) / Math.max(1, num(selMetrics?.clicks))).toFixed(2) }}</div></div>
+      </div>
+      <div class="modal-charts">
+        <div class="chart-card">
+          <div class="heading"><h3>Impresiones vs Alcance</h3></div>
+          <BaseChart :type="'bar'" :labels="chartImpressionsReach.labels" :datasets="chartImpressionsReach.datasets" :height="props.isMobile ? 180 : 240" />
+        </div>
+        <div class="chart-card">
+          <div class="heading"><h3>Gasto (USD)</h3></div>
+          <BaseChart :type="'bar'" :labels="chartSpend.labels" :datasets="chartSpend.datasets" :height="props.isMobile ? 180 : 240" />
+        </div>
+        <div class="chart-card">
+          <div class="heading"><h3>Clicks y CPC</h3></div>
+          <BaseChart :type="'bar'" :labels="chartClicksCpc.labels" :datasets="chartClicksCpc.datasets" :height="props.isMobile ? 180 : 240" />
+        </div>
+      </div>
+      <div class="modal-actions">
+        <h4>Acciones más relevantes</h4>
+        <ul class="actions-list">
+          <li v-for="a in topActions" :key="a.type"><span class="type">{{ a.type }} <span class="tip" @mouseenter="onTipEnter(tip(a.type), $event)" @mouseleave="onTipLeave">i</span></span><span class="val">{{ a.value.toLocaleString() }}</span></li>
+        </ul>
+      </div>
+      <div class="modal-actions">
+        <h4>Comparación por plataforma</h4>
+        <div class="platform-compare">
+          <div class="platform-card" v-for="p in platformBreakdown" :key="p.publisher_platform">
+            <div class="platform-header">
+              <span class="platform-name">{{ platformLabel(p.publisher_platform) }}</span>
+            </div>
+            <div class="platform-metrics">
+              <div class="metric"><span class="label">Impresiones</span><span class="value">{{ num(p.impressions).toLocaleString() }}</span></div>
+              <div class="metric"><span class="label">Alcance</span><span class="value">{{ num(p.reach).toLocaleString() }}</span></div>
+              <div class="metric"><span class="label">Clicks</span><span class="value">{{ num(p.clicks).toLocaleString() }}</span></div>
+              <div class="metric"><span class="label">CTR</span><span class="value">{{ num(p.ctr).toFixed(2) }}%</span></div>
+              <div class="metric"><span class="label">Gasto</span><span class="value">${{ num(p.spend).toFixed(2) }}</span></div>
+              <div class="metric"><span class="label">CPM</span><span class="value">${{ num(p.cpm).toFixed(2) }}</span></div>
+            </div>
+          </div>
+        </div>
+        <div class="platform-charts">
+          <div class="chart-card">
+            <div class="heading"><h3>Impresiones vs Alcance (Plataformas)</h3></div>
+            <div class="chart-values">
+              <div class="value-badge fb"><span class="label">Facebook</span><span class="val">{{ num(fbPlatform?.impressions).toLocaleString() }} · {{ num(fbPlatform?.reach).toLocaleString() }}</span></div>
+              <div class="value-badge ig"><span class="label">Instagram</span><span class="val">{{ num(igPlatform?.impressions).toLocaleString() }} · {{ num(igPlatform?.reach).toLocaleString() }}</span></div>
+            </div>
+            <BaseChart :type="'bar'" :labels="chartPlatformImpressionsReach.labels" :datasets="chartPlatformImpressionsReach.datasets" :height="props.isMobile ? 160 : 220" />
+          </div>
+          <div class="chart-card">
+            <div class="heading"><h3>Clicks (Plataformas)</h3></div>
+            <div class="chart-values">
+              <div class="value-badge fb"><span class="label">Facebook</span><span class="val">{{ num(fbPlatform?.clicks).toLocaleString() }}</span></div>
+              <div class="value-badge ig"><span class="label">Instagram</span><span class="val">{{ num(igPlatform?.clicks).toLocaleString() }}</span></div>
+            </div>
+            <BaseChart :type="'bar'" :labels="chartPlatformClicks.labels" :datasets="chartPlatformClicks.datasets" :height="props.isMobile ? 160 : 220" />
+          </div>
+          <div class="chart-card">
+            <div class="heading"><h3>Gasto (USD) (Plataformas)</h3></div>
+            <div class="chart-values">
+              <div class="value-badge fb"><span class="label">Facebook</span><span class="val">${{ num(fbPlatform?.spend).toFixed(2) }}</span></div>
+              <div class="value-badge ig"><span class="label">Instagram</span><span class="val">${{ num(igPlatform?.spend).toFixed(2) }}</span></div>
+            </div>
+            <BaseChart :type="'bar'" :labels="chartPlatformSpend.labels" :datasets="chartPlatformSpend.datasets" :height="props.isMobile ? 160 : 220" />
+          </div>
+          <div class="chart-card">
+            <div class="heading"><h3>CTR (%) (Plataformas)</h3></div>
+            <div class="chart-values">
+              <div class="value-badge fb"><span class="label">Facebook</span><span class="val">{{ num(fbPlatform?.ctr).toFixed(2) }}%</span></div>
+              <div class="value-badge ig"><span class="label">Instagram</span><span class="val">{{ num(igPlatform?.ctr).toFixed(2) }}%</span></div>
+            </div>
+            <BaseChart :type="'bar'" :labels="chartPlatformCtr.labels" :datasets="chartPlatformCtr.datasets" :height="props.isMobile ? 160 : 220" />
+          </div>
+        </div>
+      </div>
+      <div class="modal-actions">
+        <h4>Costo por acción (USD) <span class="tip" @mouseenter="onTipEnter('Costo promedio pagado por cada acción', $event)" @mouseleave="onTipLeave">i</span></h4>
+        <ul class="cpa-list">
+          <li v-for="c in costPerActions" :key="c.type"><span class="type">{{ c.type }} <span class="tip" @mouseenter="onTipEnter(tip(c.type), $event)" @mouseleave="onTipLeave">i</span></span><span class="val">{{ c.value.toFixed(2) }}</span></li>
+        </ul>
+      </div>
+    </div>
+    <template #footer>
+      <a v-if="props.ad?.links?.permalinkUrl" class="modal-link" :href="props.ad.links.permalinkUrl" target="_blank" rel="noopener noreferrer">Abrir en Meta</a>
+      <button class="btn-secondary" type="button" @click="emit('close')">Cerrar</button>
+    </template>
+  </Modal>
+  <teleport to="body">
+    <div v-if="hoveredTip" class="tooltip-float" :style="{ left: hoveredTip.x + 'px', top: hoveredTip.y + 'px' }">{{ hoveredTip.text }}</div>
+  </teleport>
 </template>
 
 <style lang="scss" scoped>
-.campaign-top {
-  margin-bottom: 12px;
-}
-
-.campaign-top__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-.refresh-btn {
-  padding: 0.4rem 0.8rem;
-  border: 1px solid rgba($BAKANO-DARK, 0.15);
-  border-radius: 8px;
-  background: $white;
-  color: $BAKANO-DARK;
-  font-weight: 600;
-  cursor: pointer;
-}
-
-.error {
-  color: #dc2626;
-  font-size: 0.95rem;
-}
-
-.empty {
-  color: rgba($BAKANO-DARK, 0.6);
-}
-
-.campaign-list {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-
-  @media (min-width: 768px) {
-    grid-template-columns: 1fr 1fr;
-  }
-}
-
-.campaign-item {
-  display: flex;
-  gap: 0.75rem;
-  background: $white;
-  border: 1px solid rgba($BAKANO-DARK, 0.06);
-  border-radius: 10px;
-  padding: 0.75rem;
-  position: relative;
-  transition: box-shadow 0.2s ease, transform 0.2s ease;
-}
-
-.campaign-thumb {
-  width: 80px;
-  height: 80px;
-  border-radius: 8px;
-  overflow: hidden;
-  flex-shrink: 0;
-
-  img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
-  }
-}
-
-.campaign-item:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 22px rgba($BAKANO-DARK, 0.08);
-}
-
-.campaign-rank {
-  position: absolute;
-  top: -8px;
-  left: -8px;
-  background: linear-gradient(135deg, $BAKANO-PINK 0%, darken($BAKANO-PINK, 8%) 100%);
-  color: #fff;
-  font-weight: 800;
-  font-size: 0.875rem;
-  padding: 6px 10px;
-  border-radius: 10px;
-  box-shadow: 0 6px 16px rgba($BAKANO-DARK, 0.15);
-}
-
-.campaign-item.is-top1 {
-  border-color: rgba($BAKANO-PINK, 0.35);
-  box-shadow: 0 10px 24px rgba($BAKANO-PINK, 0.15);
-}
-
-.campaign-item.is-top2 {
-  border-color: rgba($BAKANO-DARK, 0.12);
-}
-
-.campaign-item.is-top3,
-.campaign-item.is-top4 {
-  border-color: rgba($BAKANO-DARK, 0.08);
-}
-
-.best-badge {
-  position: absolute;
-  top: -10px;
-  right: -10px;
-  background: linear-gradient(135deg, $BAKANO-PURPLE 0%, $BAKANO-PINK 100%);
-  color: #fff;
-  font-weight: 800;
-  font-size: 0.8125rem;
-  padding: 6px 10px;
-  border-radius: 10px;
-  box-shadow: 0 8px 20px rgba($BAKANO-DARK, 0.2);
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-}
-
-.campaign-info {
-  flex: 1;
-}
-
-.campaign-title {
-  font-weight: 700;
-  color: $BAKANO-DARK;
-  margin-bottom: 0.25rem;
-}
-
-.campaign-metrics {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  color: rgba($BAKANO-DARK, 0.8);
-  font-size: 0.875rem;
-  margin-bottom: 0.5rem;
-}
-
-.campaign-metrics span {
-  background: rgba($BAKANO-DARK, 0.04);
-  border: 1px solid lighten($BAKANO-DARK, 85%);
-  border-radius: 999px;
-  padding: 6px 10px;
-}
-
-.campaign-metrics-squares {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
-  margin-bottom: 0.75rem;
-}
-
-@media (min-width: 768px) {
-  .campaign-metrics-squares {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-}
-
-.metric-square {
-  background: #fff;
-  border: 1px solid lighten($BAKANO-DARK, 85%);
-  border-radius: 12px;
-  padding: 0.75rem;
-  display: grid;
-  grid-template-rows: auto auto 1fr;
-  align-items: start;
-  justify-items: start;
-  aspect-ratio: 1;
-  box-shadow: 0 4px 12px rgba($BAKANO-DARK, 0.06);
-}
-
-.list-subtitle {
-  color: lighten($BAKANO-DARK, 35%);
-  font-size: 0.95rem;
-  margin: -0.25rem 0 0.5rem;
-}
-
-.metric-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 28px;
-  height: 28px;
-  border-radius: 8px;
-  background: $BAKANO-LIGHT;
-  color: $BAKANO-DARK;
-  box-shadow: inset 0 0 0 1px lighten($BAKANO-DARK, 85%);
-}
-
-.metric-label {
-  font-size: 0.75rem;
-  color: lighten($BAKANO-DARK, 35%);
-}
-
-.metric-value {
-  font-weight: 800;
-  color: $BAKANO-DARK;
-  font-size: 1rem;
-  align-self: center;
-}
-
-.metric-square.pink .metric-icon {
-  color: $BAKANO-PINK;
-  box-shadow: inset 0 0 0 1px rgba($BAKANO-PINK, 0.6);
-}
-
-.metric-square.purple .metric-icon {
-  color: $BAKANO-PURPLE;
-  box-shadow: inset 0 0 0 1px rgba($BAKANO-PURPLE, 0.6);
-}
-
-.metric-square.dark .metric-icon {
-  color: $BAKANO-DARK;
-}
-
-.campaign-link {
-  color: $BAKANO-PINK;
-  font-weight: 600;
-  text-decoration: none;
-}
-
-.details-btn {
-  margin-top: 0.5rem;
-  padding: 0.6rem 1rem;
-  border-radius: 8px;
-  border: none;
-  background: linear-gradient(135deg, $BAKANO-PINK 0%, darken($BAKANO-PINK, 8%) 100%);
-  color: #fff;
-  font-weight: 700;
-  cursor: pointer;
-}
-
 .insights-content {
   max-height: 70vh;
   overflow: auto;
@@ -478,7 +286,6 @@ const onTipLeave = () => { hoveredTip.value = null }
   color: $BAKANO-DARK;
   font-size: 1.125rem;
 }
-
 
 .modal-charts {
   display: flex;
@@ -743,9 +550,7 @@ const onTipLeave = () => { hoveredTip.value = null }
 .tip:hover::before {
   opacity: 1;
 }
-</style>
 
-<style lang="scss">
 .tooltip-float {
   position: fixed;
   transform: translate(-50%, -100%);

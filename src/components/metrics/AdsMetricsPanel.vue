@@ -146,11 +146,11 @@ const barOptions = { plugins: { legend: { position: 'bottom' } }, scales: { y: {
 </script>
 
 <template>
-  <section class="ads-metrics">
-    <header class="ads-header">
+  <section class="campaign-metrics">
+    <header class="campaign-header">
       <div class="title-row">
-        <h2>Métricas de Anuncios</h2>
-        <p class="subtitle">Resumen de rendimiento en Meta Ads</p>
+        <h2>Métricas de Campañas</h2>
+        <p class="subtitle">Resumen de rendimiento en Meta</p>
       </div>
       <div class="filters">
         <label class="filter">
@@ -202,7 +202,7 @@ const barOptions = { plugins: { legend: { position: 'bottom' } }, scales: { y: {
       <div class="chart-card">
         <div class="heading">
           <h3>Impresiones vs Alcance</h3>
-          <span class="chart-help" title="Comparación diaria entre impresiones (veces que se mostró) y alcance (personas únicas)." aria-label="Ayuda"></span>
+          <span class="chart-help" :data-tip="'Comparación diaria entre impresiones (veces que se mostró) y alcance (personas únicas).'" aria-label="Ayuda">i</span>
         </div>
         <div class="chart-summary">
           <span class="summary-item">Impresiones: {{ totalImpressions.toLocaleString() }}</span>
@@ -214,7 +214,7 @@ const barOptions = { plugins: { legend: { position: 'bottom' } }, scales: { y: {
       <div class="chart-card">
         <div class="heading">
           <h3>Gasto (USD)</h3>
-          <span class="chart-help" title="Monto gastado en anuncios por día (USD)." aria-label="Ayuda"></span>
+          <span class="chart-help" :data-tip="'Monto gastado en anuncios por día (USD).'" aria-label="Ayuda">i</span>
         </div>
         <div class="chart-summary">
           <span class="summary-item">Total: {{ totalSpend.toFixed(2) }} {{ currency }}</span>
@@ -225,7 +225,7 @@ const barOptions = { plugins: { legend: { position: 'bottom' } }, scales: { y: {
       <div class="chart-card">
         <div class="heading">
           <h3>Clicks y CPC</h3>
-          <span class="chart-help" title="Clicks totales y costo promedio por click (USD)." aria-label="Ayuda"></span>
+          <span class="chart-help" :data-tip="'Clicks totales y costo promedio por click (USD).'" aria-label="Ayuda">i</span>
         </div>
         <div class="chart-summary">
           <span class="summary-item">Clicks: {{ totalClicks.toLocaleString() }}</span>
@@ -239,14 +239,14 @@ const barOptions = { plugins: { legend: { position: 'bottom' } }, scales: { y: {
 </template>
 
 <style lang="scss" scoped>
-.ads-metrics {
+.campaign-metrics {
   display: flex;
   flex-direction: column;
   gap: 12px;
   width: 100%;
 }
 
-.ads-header {
+.campaign-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -277,6 +277,82 @@ const barOptions = { plugins: { legend: { position: 'bottom' } }, scales: { y: {
   display: inline-flex;
   align-items: center;
   gap: 8px;
+}
+
+.filter span {
+  font-weight: 700;
+  font-size: 0.875rem;
+  color: lighten($BAKANO-DARK, 20%);
+}
+
+.filter select {
+  padding: 0.5rem 0.75rem;
+  border: 2px solid rgba($BAKANO-PURPLE, 0.2);
+  border-radius: 8px;
+  background: #fff;
+  color: $BAKANO-DARK;
+  font-size: 0.875rem;
+  transition: all 0.2s ease;
+  min-width: 180px;
+}
+
+.filter select:focus {
+  outline: none;
+  border-color: $BAKANO-PINK;
+  box-shadow: 0 0 0 3px rgba($BAKANO-PINK, 0.1);
+}
+
+.filter select:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1rem;
+  border-radius: 8px;
+  font-size: 0.875rem;
+  font-weight: 700;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, $BAKANO-PINK 0%, darken($BAKANO-PINK, 8%) 100%);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba($BAKANO-PINK, 0.25);
+}
+
+.btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, darken($BAKANO-PINK, 6%) 0%, darken($BAKANO-PINK, 14%) 100%);
+}
+
+.btn-primary:disabled {
+  opacity: 0.75;
+  cursor: not-allowed;
+}
+
+.btn-primary:focus {
+  outline: 2px solid $BAKANO-PINK;
+  outline-offset: 2px;
+}
+
+.spinner {
+  width: 0.9rem;
+  height: 0.9rem;
+  border: 2px solid transparent;
+  border-top: 2px solid currentColor;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .kpi-grid {
@@ -364,17 +440,51 @@ const barOptions = { plugins: { legend: { position: 'bottom' } }, scales: { y: {
   position: relative;
   flex: 0 0 auto;
   cursor: help;
-}
-
-.chart-help::after {
-  content: 'i';
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-size: 12px;
   font-weight: 800;
   color: $BAKANO-DARK;
+  z-index: 2000;
+}
+
+.chart-help::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: $BAKANO-DARK;
+  color: #fff;
+  padding: 8px 10px;
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.3;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.2);
+  opacity: 0;
+  pointer-events: none;
+  white-space: normal;
+  min-width: 180px;
+  max-width: 280px;
+  z-index: 3000;
+}
+
+.chart-help::before {
+  content: '';
+  position: absolute;
+  bottom: calc(100% + 4px);
+  left: 50%;
+  transform: translateX(-50%);
+  border: 6px solid transparent;
+  border-top-color: $BAKANO-DARK;
+  opacity: 0;
+  z-index: 3000;
+}
+
+.chart-help:hover::after,
+.chart-help:hover::before {
+  opacity: 1;
 }
 
 .chart-desc {
@@ -398,7 +508,7 @@ const barOptions = { plugins: { legend: { position: 'bottom' } }, scales: { y: {
 }
 
 @media (max-width: 768px) {
-  .ads-header {
+  .campaign-header {
     flex-direction: column;
     align-items: flex-start;
     gap: 8px;
