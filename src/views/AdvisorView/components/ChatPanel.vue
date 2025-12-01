@@ -82,7 +82,7 @@ async function sendMessage() {
   await chat.generateAssistantReply()
 }
 
-// Minimal Markdown renderer for assistant replies (bold, italics, lists, paragraphs)
+// Minimal Markdown renderer for assistant replies (bold, italics, lists, paragraphs, links)
 function renderMarkdown(md: string): string {
   const escapeHtml = (s: string) =>
     s
@@ -94,9 +94,10 @@ function renderMarkdown(md: string): string {
 
   const formatInline = (s: string) => {
     let t = escapeHtml(s)
-    // Bold **text**
+    t = t.replace(/`+\s*(https?:\/\/[^\s`]+)\s*`+/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')
+    t = t.replace(/(https?:\/\/[^\s<]+)(?![^<]*>)/g, '<a href="$1" target="_blank" rel="noopener noreferrer">$1</a>')
+    t = t.replace(/`([^`]+)`/g, '<code>$1</code>')
     t = t.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-    // Italic *text*
     t = t.replace(/(^|\s)\*(.+?)\*(\s|$)/g, '$1<em>$2</em>$3')
     return t
   }
@@ -116,6 +117,11 @@ function renderMarkdown(md: string): string {
     if (/^\s*$/.test(line)) {
       // Blank line: close lists, paragraph break handled implicitly
       closeLists()
+      continue
+    }
+    if (/^[-]{3,}$/.test(line)) {
+      closeLists()
+      html += '<hr />'
       continue
     }
     const olMatch = line.match(/^\s*(\d+)\.\s+(.*)$/)
@@ -209,6 +215,7 @@ function renderMarkdown(md: string): string {
   margin-bottom: 0.5rem;
   font-weight: 600;
 }
+
 .chat-title__icon {
   color: lighten($BAKANO-DARK, 20%);
 }
@@ -242,6 +249,7 @@ function renderMarkdown(md: string): string {
   white-space: pre-wrap;
   animation: bubbleIn 160ms ease-out;
 }
+
 .chat-bubble.user {
   align-self: flex-end;
   background: lighten($BAKANO-PINK, 48%);
@@ -250,6 +258,7 @@ function renderMarkdown(md: string): string {
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
   border-top-right-radius: 4px;
 }
+
 .chat-bubble.assistant {
   align-self: flex-start;
   background: white;
@@ -272,18 +281,38 @@ function renderMarkdown(md: string): string {
   p {
     margin: 0.25rem 0;
   }
-  ul, ol {
+
+  ul,
+  ol {
     margin: 0.375rem 0 0.375rem 1rem;
   }
+
   li {
     margin: 0.25rem 0;
   }
+
   strong {
     font-weight: 700;
     color: darken($BAKANO-DARK, 5%);
   }
+
   em {
     font-style: italic;
+  }
+
+  a {
+    color: $BAKANO-PINK;
+    text-decoration: underline;
+    word-break: break-all;
+  }
+
+  code {
+    background: lighten($BAKANO-DARK, 94%);
+    border: 1px solid lighten($BAKANO-DARK, 85%);
+    border-radius: 6px;
+    padding: 0 4px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
+    font-size: 0.8125rem;
   }
 }
 
@@ -292,9 +321,11 @@ function renderMarkdown(md: string): string {
   font-size: 0.75rem;
   color: lighten($BAKANO-DARK, 40%);
 }
+
 .chat-bubble.user .bubble-meta {
   text-align: right;
 }
+
 .chat-bubble.assistant .bubble-meta {
   text-align: left;
 }
@@ -306,6 +337,7 @@ function renderMarkdown(md: string): string {
   align-items: center;
   padding-top: 0.25rem;
 }
+
 .chat-input input::placeholder {
   color: lighten($BAKANO-DARK, 45%);
 }
@@ -314,6 +346,7 @@ function renderMarkdown(md: string): string {
   display: flex;
   gap: 0.5rem;
   margin-top: 0.75rem;
+
   input {
     flex: 1;
     border: 1px solid lighten($BAKANO-DARK, 75%);
@@ -321,11 +354,13 @@ function renderMarkdown(md: string): string {
     padding: 0.625rem 0.875rem;
     background: lighten($BAKANO-DARK, 98%);
     transition: border-color 0.15s ease;
+
     &:focus {
       outline: none;
       border-color: lighten($BAKANO-PINK, 20%);
       box-shadow: 0 0 0 2px lighten($BAKANO-PINK, 40%);
     }
+
     &:disabled {
       opacity: 0.8;
       background: lighten($BAKANO-DARK, 98.5%);
@@ -344,14 +379,17 @@ function renderMarkdown(md: string): string {
   align-items: center;
   gap: 0.5rem;
 }
+
 .btn-primary {
   background: $BAKANO-PINK;
   color: white;
   transition: background 0.2s ease-in-out;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
   &:hover {
     background: darken($BAKANO-PINK, 5%);
   }
+
   &:disabled {
     opacity: 0.7;
     cursor: not-allowed;
@@ -376,21 +414,49 @@ function renderMarkdown(md: string): string {
   display: inline-block;
   animation: typing 1.2s ease-in-out infinite;
 }
-.typing-dot:nth-child(2) { animation-delay: 0.2s; }
-.typing-dot:nth-child(3) { animation-delay: 0.4s; }
+
+.typing-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.typing-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
 
 @keyframes typing {
-  0%, 80%, 100% { transform: translateY(0); opacity: 0.4; }
-  40% { transform: translateY(-3px); opacity: 1; }
+
+  0%,
+  80%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.4;
+  }
+
+  40% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
 }
 
 @keyframes spin {
-  from { transform: rotate(0deg); }
-  to { transform: rotate(360deg); }
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 @keyframes bubbleIn {
-  from { transform: translateY(4px); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(4px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 </style>
