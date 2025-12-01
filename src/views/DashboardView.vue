@@ -184,45 +184,49 @@ function logout() {
             </div>
           </section>
 
-          <div class="metrics-toggle">
-            <button
-              class="toggle-btn"
-              :class="{ active: metricsPlatform === 'facebook' }"
-              @click="metricsPlatform = 'facebook'"
-              :disabled="panelLoading"
-              aria-label="Ver métricas de Facebook"
-            >
-              <i class="fab fa-facebook"></i>
-              <span>Facebook</span>
-            </button>
-            <button
-              class="toggle-btn"
-              :class="{ active: metricsPlatform === 'instagram' }"
-              @click="metricsPlatform = 'instagram'"
-              :disabled="panelLoading"
-              aria-label="Ver métricas de Instagram"
-            >
-              <i class="fab fa-instagram"></i>
-              <span>Instagram</span>
-            </button>
-            <button
-              class="toggle-btn"
-              :class="{ active: metricsPlatform === 'ads' }"
-              @click="metricsPlatform = 'ads'"
-              :disabled="panelLoading"
-              aria-label="Ver métricas de Anuncios"
-            >
-              <i class="fas fa-bullhorn"></i>
-              <span>Anuncios</span>
-            </button>
-          </div>
+          <div class="metrics-area">
+            <div class="metrics-toggle">
+              <button
+                class="toggle-btn"
+                :class="{ active: metricsPlatform === 'facebook' }"
+                @click="metricsPlatform = 'facebook'"
+                :disabled="panelLoading"
+                aria-label="Ver métricas de Facebook"
+              >
+                <i class="fab fa-facebook"></i>
+                <span>Facebook</span>
+              </button>
+              <button
+                class="toggle-btn"
+                :class="{ active: metricsPlatform === 'instagram' }"
+                @click="metricsPlatform = 'instagram'"
+                :disabled="panelLoading"
+                aria-label="Ver métricas de Instagram"
+              >
+                <i class="fab fa-instagram"></i>
+                <span>Instagram</span>
+              </button>
+              <button
+                class="toggle-btn"
+                :class="{ active: metricsPlatform === 'ads' }"
+                @click="metricsPlatform = 'ads'"
+                :disabled="panelLoading"
+                aria-label="Ver métricas de Anuncios"
+              >
+                <i class="fas fa-bullhorn"></i>
+                <span>Anuncios</span>
+              </button>
+            </div>
 
-          <SocialMetricsPanel v-if="metricsPlatform !== 'ads'" :platform="metricsPlatform" @loading-start="panelLoading = true" @loading-end="panelLoading = false" />
-          <AdsMetricsPanel v-else @loading-start="panelLoading = true" @loading-end="panelLoading = false" />
+            <SocialMetricsPanel v-if="metricsPlatform !== 'ads'" :platform="metricsPlatform" @loading-start="panelLoading = true" @loading-end="panelLoading = false" />
+            <AdsMetricsPanel v-else @loading-start="panelLoading = true" @loading-end="panelLoading = false" />
 
-          <div v-if="panelLoading" class="global-loading-overlay" aria-live="polite" aria-busy="true">
-            <div class="overlay-spinner"></div>
-            <p>Cargando métricas...</p>
+            <div v-if="panelLoading" class="panel-loading-overlay" aria-live="polite" aria-busy="true">
+              <div class="loading-card">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                <span>Cargando métricas...</span>
+              </div>
+            </div>
           </div>
           
           
@@ -339,6 +343,11 @@ function logout() {
   display: flex;
   flex-direction: column;
   gap: 2rem;
+}
+
+.metrics-area {
+  position: relative;
+  min-height: 320px;
 }
 
 .metrics-toggle {
@@ -764,31 +773,27 @@ function logout() {
 }
 
 // Limpieza: se removieron estilos de la sección del Asesor IA ya que ahora es una vista independiente.
-.global-loading-overlay {
-  position: fixed;
+.panel-loading-overlay {
+  position: absolute;
   inset: 0;
-  background: rgba(255, 255, 255, 0.75);
-  backdrop-filter: blur(2px);
-  z-index: 50;
   display: flex;
-  flex-direction: column;
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
-  gap: 0.75rem;
+  background: rgba(255, 255, 255, 0.35);
+  backdrop-filter: blur(8px);
+  border-radius: 12px;
+  padding-top: clamp(64px, 12vw, 96px);
 }
 
-.overlay-spinner {
-  width: 48px;
-  height: 48px;
-  border: 4px solid #e2e8f0;
-  border-top: 4px solid $BAKANO-PINK;
-  border-radius: 50%;
-  animation: spin 1s linear infinite;
-}
-
-.global-loading-overlay p {
-  margin: 0;
-  color: #475569;
-  font-weight: 600;
+.loading-card {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid rgba($BAKANO-DARK, 0.12);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.9);
+  color: $BAKANO-DARK;
+  font-weight: 700;
 }
 </style>
