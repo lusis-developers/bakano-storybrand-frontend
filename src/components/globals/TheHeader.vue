@@ -3,9 +3,11 @@ import { ref, onMounted, watch, computed } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import SelectedBusinessIndicator from '@/components/globals/SelectedBusinessIndicator.vue'
 import { useBusinessStore } from '@/stores/business.store'
+import { useContentStore } from '@/stores/content.store'
 
 const authStore = useAuthStore()
 const businessStore = useBusinessStore()
+const contentStore = useContentStore()
 const isMenuOpen = ref(false)
 const isUserMenuOpen = ref(false)
 
@@ -33,6 +35,10 @@ const handleLogout = () => {
 onMounted(() => {
   if (authStore.isAuthenticated) {
     businessStore.fetchPendingInvitations()
+    const bId = businessStore.currentBusiness?.id
+    if (bId) {
+      contentStore.fetchContentByBusiness(bId).catch(() => { })
+    }
   }
 })
 
@@ -41,6 +47,13 @@ watch(() => authStore.isAuthenticated, (v) => {
 })
 
 const pendingCount = computed(() => businessStore.pendingInvitationsCount)
+const soundbitesPath = computed(() => {
+  const bId = businessStore.currentBusiness?.id || (businessStore.currentBusiness as any)?._id
+  const cid = contentStore.currentContent?._id
+  if (cid) return `/content/results/${cid}`
+  if (bId) return `/content/wizard/${bId}`
+  return '/business'
+})
 </script>
 
 <template>
@@ -72,6 +85,9 @@ const pendingCount = computed(() => businessStore.pendingInvitationsCount)
           </RouterLink>
           <RouterLink to="/social/manager" class="nav__link" @click="closeMenu">
             Social Manager
+          </RouterLink>
+          <RouterLink to="/ads" class="nav__link" @click="closeMenu">
+            Anuncios
           </RouterLink>
           <RouterLink to="/advisor" class="nav__link" @click="closeMenu">
             Asesor IA
@@ -157,8 +173,14 @@ const pendingCount = computed(() => businessStore.pendingInvitationsCount)
           <RouterLink to="/business" class="nav__mobile-link" @click="closeMenu">
             Negocios
           </RouterLink>
+          <RouterLink :to="soundbitesPath" class="nav__mobile-link" @click="closeMenu">
+            Soundbites
+          </RouterLink>
           <RouterLink to="/social/manager" class="nav__mobile-link" @click="closeMenu">
             Social Manager
+          </RouterLink>
+          <RouterLink to="/ads" class="nav__mobile-link" @click="closeMenu">
+            Anuncios
           </RouterLink>
           <RouterLink to="/advisor" class="nav__mobile-link" @click="closeMenu">
             Asesor IA
