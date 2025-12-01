@@ -79,7 +79,8 @@ watch(platform, async () => {
 // Utilidades
 const metricsEntries = computed(() => {
   const m = response.value?.data?.insights?.metrics || {}
-  return Object.entries(m) as Array<[string, FacebookMetric]>
+  const entries = Object.entries(m) as Array<[string, FacebookMetric]>
+  return entries.filter(([key]) => key !== 'follower_count' && key !== 'page_total_actions')
 })
 
 const appliedPreset = computed(() => (response.value?.data?.insights?.date_preset as string | undefined))

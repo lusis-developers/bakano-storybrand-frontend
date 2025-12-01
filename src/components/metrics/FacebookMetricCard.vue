@@ -1,69 +1,132 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import type { FacebookMetric } from '@/types/facebook.types'
+import Chart from 'chart.js/auto'
 
 const props = defineProps<{ title: string; metric: FacebookMetric }>()
 
-const width = 720
-const height = 180
-const padding = { left: 12, right: 12, top: 16, bottom: 28 }
+const canvasRef = ref<HTMLCanvasElement>()
+let chart: Chart | undefined
+
 const pink = '#E6285C'
+const purple = '#85529c'
 
 const series = computed(() => (Array.isArray(props.metric.series) ? props.metric.series : []))
 const hasSeries = computed(() => series.value.length > 0)
 
-const maxY = computed(() => {
-  const fromSeries = series.value.reduce((max, p) => (p.value > max ? p.value : max), 0)
-  const total = typeof props.metric.total === 'number' ? props.metric.total : 0
-  return Math.max(fromSeries, total, 1)
-})
-
-const points = computed(() => {
-  const m = series.value
-  const w = width - padding.left - padding.right
-  const h = height - padding.top - padding.bottom
-  const n = Math.max(1, m.length)
-  return m.map((p, i) => {
-    const x = padding.left + (n === 1 ? w / 2 : (i * w) / (n - 1))
-    const y = padding.top + (h - (p.value / maxY.value) * h)
-    return { x, y, value: p.value, date: p.date, time: p.time }
+function buildLineConfig() {
+  const labels = series.value.map((p: any) => {
+    const raw = String(p.date || '')
+    const d = new Date(raw)
+    if (Number.isNaN(d.getTime())) return raw.slice(0, 10)
+    return new Intl.DateTimeFormat(undefined, { day: '2-digit', month: 'short' }).format(d)
   })
-})
+  const data = series.value.map((p: any) => Number(p.value || 0))
+  return {
+    type: 'line' as const,
+    data: {
+      labels,
+      datasets: [
+        {
+          label: props.title,
+          data,
+          borderColor: pink,
+          backgroundColor: 'rgba(230,40,92,0.20)',
+          tension: 0.3,
+          pointRadius: 2,
+          fill: true,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 300 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          enabled: true,
+          callbacks: {
+            label: (ctx: any) => `${ctx.dataset.label}: ${Number(ctx.parsed.y || 0).toLocaleString()}`,
+          },
+        },
+      },
+      scales: {
+        x: {
+          grid: { display: false },
+          ticks: {
+            callback: (val: any, idx: number, ticks: any[]) => String(labels[idx])
+          }
+        },
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+      },
+    },
+  }
+}
 
-const pathD = computed(() => {
-  const pts = points.value
-  if (!pts.length) return ''
-  return pts.map((p, idx) => `${idx === 0 ? 'M' : 'L'} ${p.x},${p.y}`).join(' ')
-})
-
-const areaD = computed(() => {
-  const pts = points.value
-  if (!pts.length) return ''
-  const baseY = height - padding.bottom
-  return `${pathD.value} L ${pts[pts.length - 1].x},${baseY} L ${pts[0].x},${baseY} Z`
-})
-
-const firstLabel = computed(() => series.value[0]?.date || '')
-const lastLabel = computed(() => series.value[series.value.length - 1]?.date || '')
-
-const chartW = computed(() => width - padding.left - padding.right)
-const chartH = computed(() => height - padding.top - padding.bottom)
-const fbMax = computed(() => Math.max(Number(props.metric.total || 0), Number(props.metric.averagePerDay || 0), 1))
-const fallbackBars = computed(() => {
-  const w = chartW.value
-  const h = chartH.value
+function buildBarFallbackConfig() {
   const total = Number(props.metric.total || 0)
   const avg = Number(props.metric.averagePerDay || 0)
-  const totalH = (total / fbMax.value) * h
-  const avgH = (avg / fbMax.value) * h
-  const x1 = padding.left + w * 0.33
-  const x2 = padding.left + w * 0.66
-  const baseY = padding.top + h
-  return [
-    { label: 'Total', value: total, x: x1, y: baseY - totalH, height: totalH },
-    { label: 'Prom/día', value: avg, x: x2, y: baseY - avgH, height: avgH },
-  ]
+  return {
+    type: 'bar' as const,
+    data: {
+      labels: ['Total', 'Prom/día'],
+      datasets: [
+        {
+          label: props.title,
+          data: [total, avg],
+          backgroundColor: [pink, purple].map((c) => c),
+          borderColor: [pink, purple].map((c) => c),
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 300 },
+      plugins: {
+        legend: { display: false },
+        tooltip: {
+          callbacks: {
+            label: (ctx: any) => `${ctx.dataset.label}: ${Number(ctx.parsed.y || 0).toLocaleString()}`,
+          },
+        },
+      },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+      },
+    },
+  }
+}
+
+function mountChart() {
+  const el = canvasRef.value
+  if (!el) return
+  const cfg = hasSeries.value ? buildLineConfig() : buildBarFallbackConfig()
+  chart = new Chart(el.getContext('2d') as CanvasRenderingContext2D, cfg)
+}
+
+function destroyChart() {
+  if (chart) {
+    chart.destroy()
+    chart = undefined
+  }
+}
+
+onMounted(() => {
+  mountChart()
 })
+
+onUnmounted(() => {
+  destroyChart()
+})
+
+watch(() => props.metric, () => {
+  destroyChart()
+  mountChart()
+}, { deep: true })
 </script>
 
 <template>
@@ -76,32 +139,7 @@ const fallbackBars = computed(() => {
       </div>
     </div>
     <div class="chart-wrap">
-      <svg :width="width" :height="height" role="img" aria-label="Gráfico de {{ title }}">
-        <defs>
-          <linearGradient id="grad" x1="0" y1="0" x2="0" y2="1">
-            <stop offset="0%" :stop-color="pink" stop-opacity="0.35" />
-            <stop offset="100%" :stop-color="pink" stop-opacity="0" />
-          </linearGradient>
-        </defs>
-        <template v-if="hasSeries">
-          <path :d="areaD" fill="url(#grad)" />
-          <path :d="pathD" :stroke="pink" stroke-width="3" fill="none" stroke-linecap="round" stroke-linejoin="round" />
-
-          <g v-for="p in points" :key="p.date + p.time">
-            <circle :cx="p.x" :cy="p.y" r="3" :fill="pink" />
-          </g>
-
-          <text :x="padding.left" :y="height - 4" class="axis-label">{{ firstLabel }}</text>
-          <text :x="width - padding.right - 40" :y="height - 4" class="axis-label" text-anchor="end">{{ lastLabel }}</text>
-        </template>
-        <template v-else>
-          <g v-for="b in fallbackBars" :key="b.label">
-            <rect :x="b.x - 18" :y="b.y" :width="36" :height="b.height" :fill="pink" rx="8" />
-            <text :x="b.x" :y="height - 18" class="axis-label" text-anchor="middle">{{ b.label }}</text>
-            <text :x="b.x" :y="height - 6" class="axis-label" text-anchor="middle">{{ b.value }}</text>
-          </g>
-        </template>
-      </svg>
+      <canvas ref="canvasRef" aria-label="Gráfico de {{ title }}"></canvas>
     </div>
   </div>
 </template>
@@ -146,11 +184,7 @@ const fallbackBars = computed(() => {
 }
 
 .chart-wrap {
-  overflow-x: auto;
-}
-
-.axis-label {
-  font-size: 12px;
-  fill: lighten($BAKANO-DARK, 35%);
+  position: relative;
+  height: 200px;
 }
 </style>
