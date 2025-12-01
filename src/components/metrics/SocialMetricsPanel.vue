@@ -1,12 +1,12 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useBusinessStore } from '@/stores/business.store'
 import facebookService from '@/services/facebook.service'
 import instagramService from '@/services/instagram.service'
 import { useToast } from '@/composables/useToast'
 import type { FacebookMetric } from '@/types/facebook.types'
-import FacebookMetricCard from '@/components/metrics/FacebookMetricCard.vue'
 import InstagramPostsPanel from '@/components/metrics/InstagramPostsPanel.vue'
+import Chart from 'chart.js/auto'
 
 const businessStore = useBusinessStore()
 const { triggerToast } = useToast()
@@ -126,6 +126,126 @@ function labelOf(key: string): string {
 function maxOfSeries(metric: FacebookMetric): number {
   return metric.series.reduce((max, p) => (p.value > max ? p.value : max), 0)
 }
+
+const followersCount = computed<number | undefined>(() => {
+  const fbFollowers = response.value?.data?.followers?.followers_count
+  const igFollowers = response.value?.data?.instagram?.followersCount
+  const m = response.value?.data?.insights?.metrics?.follower_count
+  const lastFromSeries = Array.isArray(m?.series) && m.series.length > 0 ? Number(m.series[m.series.length - 1]?.value || 0) : undefined
+  const n = typeof fbFollowers === 'number' ? fbFollowers : typeof igFollowers === 'number' ? igFollowers : typeof lastFromSeries === 'number' ? lastFromSeries : undefined
+  return typeof n === 'number' ? n : undefined
+})
+
+const canvasRefs = ref<Record<string, HTMLCanvasElement | undefined>>({})
+const charts = ref<Record<string, Chart | undefined>>({})
+
+function setCanvasRef(key: string) {
+  return (refEl: Element | any | null, _refs?: Record<string, any>) => {
+    if (refEl && typeof (refEl as any).getContext === 'function') {
+      canvasRefs.value[key] = refEl as HTMLCanvasElement
+    }
+  }
+}
+
+function buildLineConfig(title: string, metric: FacebookMetric) {
+  const labels = (metric.series || []).map((p: any) => {
+    const raw = String(p.date || '')
+    const d = new Date(raw)
+    if (Number.isNaN(d.getTime())) return raw.slice(0, 10)
+    return new Intl.DateTimeFormat(undefined, { day: '2-digit', month: 'short' }).format(d)
+  })
+  const data = (metric.series || []).map((p: any) => Number(p.value || 0))
+  const color = '#E6285C'
+  return {
+    type: 'line' as const,
+    data: {
+      labels,
+      datasets: [
+        {
+          label: title,
+          data,
+          borderColor: color,
+          backgroundColor: 'rgba(230,40,92,0.20)',
+          tension: 0.3,
+          pointRadius: 0,
+          fill: true,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 300 },
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+      },
+    },
+  }
+}
+
+function buildBarConfig(title: string, metric: FacebookMetric) {
+  const total = Number(metric.total || 0)
+  const avg = Number(metric.averagePerDay || 0)
+  const pink = '#E6285C'
+  const purple = '#85529c'
+  return {
+    type: 'bar' as const,
+    data: {
+      labels: ['Total', 'Prom/día'],
+      datasets: [
+        {
+          label: title,
+          data: [total, avg],
+          backgroundColor: [pink, purple],
+          borderColor: [pink, purple],
+          borderWidth: 1,
+        },
+      ],
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      animation: { duration: 300 },
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { grid: { display: false } },
+        y: { beginAtZero: true, grid: { color: 'rgba(0,0,0,0.05)' } },
+      },
+    },
+  }
+}
+
+function mountChartFor(key: string, title: string, metric: FacebookMetric) {
+  const el = canvasRefs.value[key]
+  if (!el) return
+  if (charts.value[key]) {
+    charts.value[key]?.destroy()
+    charts.value[key] = undefined
+  }
+  const hasSeries = Array.isArray(metric.series) && metric.series.length > 0
+  const cfg = hasSeries ? buildLineConfig(title, metric) : buildBarConfig(title, metric)
+  charts.value[key] = new Chart((el.getContext('2d') as CanvasRenderingContext2D), cfg as any)
+}
+
+function destroyAllCharts() {
+  Object.keys(charts.value).forEach((k) => {
+    charts.value[k]?.destroy()
+    charts.value[k] = undefined
+  })
+}
+
+watch(metricsEntries, async (entries) => {
+  await nextTick()
+  for (const [key, metric] of entries) {
+    mountChartFor(key, labelOf(key), metric)
+  }
+}, { deep: true })
+
+onUnmounted(() => {
+  destroyAllCharts()
+})
 </script>
 
 <template>
@@ -147,6 +267,16 @@ function maxOfSeries(metric: FacebookMetric): number {
         <span class="muted">ID: {{ response?.data?.instagram?.id }}</span>
       </div>
     </header>
+
+    <div class="stats" v-if="typeof followersCount === 'number'">
+      <div class="stat-card">
+        <i :class="isInstagram ? 'fab fa-instagram' : 'fab fa-facebook'"></i>
+        <div class="stat-content">
+          <div class="stat-number">{{ followersCount.toLocaleString() }}</div>
+          <div class="stat-label">Seguidores</div>
+        </div>
+      </div>
+    </div>
 
     <div class="filters">
       <div class="filters__row">
@@ -196,7 +326,18 @@ function maxOfSeries(metric: FacebookMetric): number {
 
     <div v-if="error" class="error">{{ error }}</div>
     <div v-else class="metrics-grid">
-      <FacebookMetricCard v-for="[key, metric] in metricsEntries" :key="key" :title="labelOf(key)" :metric="metric" />
+      <div class="metric-card" v-for="[key, metric] in metricsEntries" :key="key">
+        <div class="metric-header">
+          <h3>{{ labelOf(key) }}</h3>
+          <div class="values">
+            <span class="total">{{ metric.total }}</span>
+            <span class="avg">prom/día: {{ metric.averagePerDay }}</span>
+          </div>
+        </div>
+        <div class="chart-wrap">
+          <canvas :ref="setCanvasRef(key)"></canvas>
+        </div>
+      </div>
     </div>
 
     <InstagramPostsPanel v-if="isInstagram" />
@@ -383,5 +524,85 @@ function maxOfSeries(metric: FacebookMetric): number {
   display: flex;
   justify-content: flex-end;
   align-items: center;
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: 1fr;
+}
+
+.stat-card {
+  background: #fff;
+  border: 1px solid lighten($BAKANO-DARK, 85%);
+  border-radius: 14px;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.stat-card i {
+  font-size: 22px;
+  color: $BAKANO-PINK;
+}
+
+.stat-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.stat-number {
+  font-size: clamp(18px, 4vw, 26px);
+  font-weight: 800;
+  color: $BAKANO-DARK;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 12px;
+  color: lighten($BAKANO-DARK, 35%);
+}
+
+.metric-card {
+  background: #fff;
+  border: 1px solid lighten($BAKANO-DARK, 85%);
+  border-radius: 16px;
+  padding: 16px;
+}
+
+.metric-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.metric-header h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 800;
+  color: $BAKANO-DARK;
+}
+
+.values {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+}
+
+.total {
+  font-size: 22px;
+  font-weight: 800;
+  color: $BAKANO-DARK;
+}
+
+.avg {
+  font-size: 13px;
+  color: lighten($BAKANO-DARK, 35%);
+}
+
+.chart-wrap {
+  position: relative;
+  height: 200px;
 }
 </style>
