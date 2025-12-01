@@ -172,46 +172,14 @@ function logout() {
           <section class="welcome-section">
             <div class="welcome-card">
               <h2>¡Bienvenido, {{ authStore.userFirstName }}!</h2>
-              <p>Tu configuración inicial ha sido completada exitosamente. Ahora puedes comenzar a crear soundbites increíbles para tu marca.</p>
+              <p>Tu espacio ya está listo. Explora métricas, crea guiones y gestiona tus redes desde un solo lugar.</p>
               
-              <div class="quick-actions">
-                <button 
-                  @click="handleCreateContent" 
-                  class="action-btn primary"
-                >
-                  <div class="action-icon">
-                    <i :class="hasExistingContent ? 'fas fa-eye' : 'fas fa-edit'"></i>
-                  </div>
-                  <div class="action-content">
-                    <h3>{{ hasExistingContent ? 'Ver Soundbites' : 'Crear Soundbites' }}</h3>
-                    <p>{{ hasExistingContent ? 'Revisa tus soundbites generados' : 'Genera soundbites para tu marca' }}</p>
-                  </div>
-                </button>
-                
-                <button @click="router.push('/business')" class="action-btn">
-                  <div class="action-icon"><i class="fas fa-building"></i></div>
-                  <div class="action-content">
-                    <h3>Gestionar Negocios</h3>
-                    <p>Administra tus negocios</p>
-                  </div>
-                </button>
-                
-                <button class="action-btn" @click="router.push('/social/manager')" title="Gestionar Redes Sociales">
-                  <div class="action-icon"><i class="fas fa-share-nodes"></i></div>
-                  <div class="action-content">
-                    <h3>Gestionar Redes Sociales</h3>
-                    <p>Programa y publica en Facebook e Instagram</p>
-                  </div>
-                </button>
-                
-                <!-- Nueva acción rápida: Asesor IA 24/7 -->
-                <RouterLink class="action-btn" to="/advisor" title="Asesor IA 24/7">
-                  <div class="action-icon"><i class="fas fa-comments"></i></div>
-                  <div class="action-content">
-                    <h3>Asesor IA 24/7</h3>
-                    <p>Chatea y consulta métricas</p>
-                  </div>
-                </RouterLink>
+              <div class="navigation-hint">
+                <i class="fa-solid fa-compass"></i>
+                <p>
+                  <span class="hint-mobile">Para navegar usa el menú del header.</span>
+                  <span class="hint-desktop">Para navegar usa el menú lateral.</span>
+                </p>
               </div>
             </div>
           </section>
@@ -417,23 +385,53 @@ function logout() {
     }
 
     h2 {
-      font-size: 2rem;
+      font-size: clamp(1.4rem, 4vw, 2rem);
       font-weight: 700;
       margin-bottom: 0.5rem;
-
-      @media (max-width: 768px) {
-        font-size: 1.5rem;
-      }
     }
 
     p {
-      font-size: 1.125rem;
+      font-size: clamp(0.95rem, 2.5vw, 1.125rem);
       color: #64748b;
       margin-bottom: 2rem;
+    }
 
-      @media (max-width: 768px) {
-        font-size: 1rem;
-        margin-bottom: 1.5rem;
+    .navigation-hint {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.5rem;
+      padding: 0.75rem 1rem;
+      border: 1px solid rgba($BAKANO-DARK, 0.12);
+      border-radius: 12px;
+      background: #fff;
+      color: $BAKANO-DARK;
+
+      i {
+        font-size: clamp(1rem, 3vw, 1.25rem);
+      }
+
+      p {
+        margin: 0;
+        font-size: clamp(0.85rem, 2.2vw, 1rem);
+        font-weight: 700;
+      }
+
+      .hint-mobile {
+        display: inline;
+      }
+
+      .hint-desktop {
+        display: none;
+      }
+
+      @media (min-width: 768px) {
+        .hint-mobile {
+          display: none;
+        }
+
+        .hint-desktop {
+          display: inline;
+        }
       }
     }
   }
