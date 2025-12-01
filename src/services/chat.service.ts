@@ -14,25 +14,31 @@ import type {
 
 class ChatService extends APIBase {
   private readonly endpoint = 'chats'
+  private buildQuery(params: Record<string, string | number | undefined>): string {
+    const qs = new URLSearchParams()
+    for (const [k, v] of Object.entries(params)) {
+      if (typeof v !== 'undefined' && v !== null && String(v).length > 0) qs.append(k, String(v))
+    }
+    const s = qs.toString()
+    return s ? `?${s}` : ''
+  }
 
   /**
    * Lista conversaciones del usuario autenticado.
    * Backend: GET /api/chats
    */
   async listChats(query?: ChatListQuery): Promise<ChatListResponse> {
-    const params = new URLSearchParams()
-    if (query?.businessId) params.append('businessId', query.businessId)
-    if (query?.status) params.append('status', query.status)
-    if (query?.source) params.append('source', query.source)
-    if (query?.purpose) params.append('purpose', query.purpose)
-    if (query?.q) params.append('q', query.q)
-    if (typeof query?.page !== 'undefined') params.append('page', String(query.page))
-    if (typeof query?.limit !== 'undefined') params.append('limit', String(query.limit))
-    if (query?.sort) params.append('sort', query.sort)
-
-    const qs = params.toString()
-    const url = qs ? `${this.endpoint}?${qs}` : this.endpoint
-
+    const qs = this.buildQuery({
+      businessId: query?.businessId,
+      status: query?.status,
+      source: query?.source,
+      purpose: query?.purpose,
+      q: query?.q,
+      page: typeof query?.page !== 'undefined' ? String(query.page) : undefined,
+      limit: typeof query?.limit !== 'undefined' ? String(query.limit) : undefined,
+      sort: query?.sort,
+    })
+    const url = `${this.endpoint}${qs}`
     const response: AxiosResponse<ChatListResponse> = await this.get<ChatListResponse>(url)
     return response.data
   }
@@ -43,7 +49,7 @@ class ChatService extends APIBase {
    */
   async getChatById(chatId: string, params?: { limit?: number }): Promise<GetChatByIdResponse> {
     if (!chatId) throw new Error('chatId es requerido')
-    const qs = params?.limit ? `?limit=${params.limit}` : ''
+    const qs = this.buildQuery({ limit: typeof params?.limit !== 'undefined' ? String(params.limit) : undefined })
     const response: AxiosResponse<GetChatByIdResponse> = await this.get<GetChatByIdResponse>(
       `${this.endpoint}/${chatId}${qs}`,
     )
