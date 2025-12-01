@@ -43,9 +43,9 @@ const submit = () => {
   const base = saved.value.length
     ? saved.value
     : input.value
-        .split(/[,\s]+/)
-        .map((p) => p.trim())
-        .filter((p) => p.length > 0)
+      .split(/[,\s]+/)
+      .map((p) => p.trim())
+      .filter((p) => p.length > 0)
 
   const sanitized = base.map(sanitizeToken).filter((p) => p.length > 0)
 
@@ -103,8 +103,8 @@ const submit = () => {
 
       <div class="controls">
         <div class="segmented">
-          <button :class="['seg-btn', { active: resultsType==='posts' }]" @click="resultsType='posts'">Posts</button>
-          <button :class="['seg-btn', { active: resultsType==='stories' }]" @click="resultsType='stories'">Stories</button>
+          <button :class="['seg-btn', { active: resultsType === 'posts' }]" @click="resultsType = 'posts'">Posts</button>
+          <button :class="['seg-btn', { active: resultsType === 'stories' }]" @click="resultsType = 'stories'">Stories</button>
         </div>
         <select class="select" v-model.number="resultsLimit" aria-label="Límite">
           <option :value="5">5</option>
@@ -124,41 +124,162 @@ const submit = () => {
   </template>
 
 <style lang="scss" scoped>
-.search-form { display: grid; gap: 1rem; padding: 1rem; background: #fff; border: 1px solid #e2e8f0; border-radius: 16px; }
+.search-form {
+  display: grid;
+  gap: 1rem;
+  padding: 1rem;
+  background: $white;
+  border: 1px solid rgba($BAKANO-DARK, 0.12);
+  border-radius: 16px;
+}
+
 .header {
   display: flex;
   gap: 0.75rem;
   align-items: center;
 }
-.header i { color: $BAKANO-PURPLE; font-size: 1.25rem; }
-.title h3 { margin: 0; font-size: 1rem; color: #1e293b; font-weight: 600; }
-.title p { margin: 0; font-size: 0.875rem; color: #64748b; }
-.fields { display: grid; gap: 0.75rem; }
-.input-row { display: flex; gap: 0.5rem; }
+
+.header i {
+  color: $BAKANO-PURPLE;
+  font-size: 1.25rem;
+}
+
+.title h3 {
+  margin: 0;
+  font-size: 1rem;
+  color: $BAKANO-DARK;
+  font-weight: 700;
+}
+
+.title p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: lighten($BAKANO-DARK, 35%);
+}
+
+.fields {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.input-row {
+  display: flex;
+  gap: 0.5rem;
+}
+
 .input {
   width: 100%;
   padding: 0.75rem 1rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  border: 1px solid rgba($BAKANO-DARK, 0.15);
+  border-radius: 10px;
+  background: lighten($BAKANO-DARK, 98%);
+  color: $BAKANO-DARK;
 }
-.controls { display: flex; gap: 0.5rem; flex-wrap: wrap; align-items: center; }
+
+.input::placeholder {
+  color: lighten($BAKANO-DARK, 45%);
+}
+
+.controls {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: center;
+}
+
 .select {
   padding: 0.5rem 0.75rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 8px;
+  border: 1px solid rgba($BAKANO-DARK, 0.15);
+  border-radius: 10px;
+  background: $white;
+  color: $BAKANO-DARK;
 }
-.btn { display: inline-flex; align-items: center; gap: 0.5rem; background: $BAKANO-PINK; color: #fff; border: none; padding: 0.5rem 0.75rem; border-radius: 8px; }
-.btn:disabled { opacity: 0.6; cursor: not-allowed; }
-.btn.ghost { background: #f1f5f9; color: #1e293b; }
-.btn.link { background: transparent; color: #1e293b; border: 1px dashed #e2e8f0; }
-.toggle { display: inline-flex; align-items: center; gap: 0.5rem; color: #1e293b; }
-.chips { display: flex; gap: 0.5rem; flex-wrap: wrap; }
-.chip { display: inline-flex; align-items: center; gap: 0.25rem; background: #f8fafc; color: #334155; padding: 0.25rem 0.5rem; border-radius: 999px; font-size: 0.75rem; border: 1px solid #e2e8f0; }
-.chip-remove { border: none; background: transparent; color: #64748b; display: inline-flex; align-items: center; }
-.segmented { display: inline-flex; border: 1px solid #e2e8f0; border-radius: 10px; overflow: hidden; }
-.seg-btn { padding: 0.5rem 0.75rem; border: none; background: #fff; color: #1e293b; }
-.seg-btn.active { background: $BAKANO-LIGHT; color: $BAKANO-DARK; }
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: $BAKANO-PINK;
+  color: $white;
+  border: none;
+  padding: 0.5rem 0.9rem;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.btn.ghost {
+  background: rgba($BAKANO-PURPLE, 0.1);
+  color: $BAKANO-DARK;
+}
+
+.btn.link {
+  background: transparent;
+  color: $BAKANO-DARK;
+  border: 1px dashed rgba($BAKANO-DARK, 0.15);
+}
+
+.toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: $BAKANO-DARK;
+}
+
+.chips {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  background: lighten($BAKANO-DARK, 97%);
+  color: rgba($BAKANO-DARK, 0.8);
+  padding: 0.25rem 0.6rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  border: 1px solid rgba($BAKANO-PURPLE, 0.15);
+}
+
+.chip-remove {
+  border: none;
+  background: transparent;
+  color: lighten($BAKANO-DARK, 35%);
+  display: inline-flex;
+  align-items: center;
+}
+
+.segmented {
+  display: inline-flex;
+  border: 1px solid rgba($BAKANO-DARK, 0.15);
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.seg-btn {
+  padding: 0.5rem 0.75rem;
+  border: none;
+  background: $white;
+  color: $BAKANO-DARK;
+  font-weight: 600;
+}
+
+.seg-btn.active {
+  background: rgba($BAKANO-PURPLE, 0.08);
+  color: $BAKANO-PURPLE;
+}
+
 @media (min-width: 768px) {
-  .fields { grid-template-columns: 1fr auto; align-items: center; }
+  .fields {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
 }
 </style>
