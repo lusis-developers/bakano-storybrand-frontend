@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { ref } from 'vue'
 const props = defineProps<{
   facebookConnectedIntegration: any | null
   adAccounts: Array<{ id: string; account_id: string; name?: string; currency?: string; business?: { id: string; name: string } }>
@@ -10,6 +11,13 @@ const props = defineProps<{
   onLoadAdAccounts: () => void
   onSelectAdAccount: (acc: { id: string; account_id: string; name?: string }) => void
 }>()
+
+const isRelinkingAdAccount = ref(false)
+
+function handleSelectAdAccount(acc: { id: string; account_id: string; name?: string }) {
+  isRelinkingAdAccount.value = false
+  props.onSelectAdAccount(acc)
+}
 </script>
 
 <template>
@@ -23,7 +31,7 @@ const props = defineProps<{
       <p v-else-if="successMessage" class="success"><i class="fa-solid fa-circle-check"></i> {{ successMessage }}</p>
     </div>
 
-    <div v-if="selectedAdAccountId && !isSavingAdAccount" class="connected-summary">
+    <div v-if="selectedAdAccountId && !isRelinkingAdAccount" class="connected-summary">
       <div class="summary-box">
         <div class="left">
           <i class="fa-solid fa-rectangle-ad placeholder"></i>
@@ -35,6 +43,23 @@ const props = defineProps<{
               </span>
             </p>
           </div>
+        </div>
+        <div class="actions">
+          <button
+            type="button"
+            class="btn btn-secondary"
+            :disabled="isLoadingAdAccounts || isSavingAdAccount"
+            @click="isRelinkingAdAccount = true; onLoadAdAccounts()"
+          >
+            <template v-if="isLoadingAdAccounts">
+              <i class="fa-solid fa-spinner fa-spin"></i>
+              <span>Buscando cuentas…</span>
+            </template>
+            <template v-else>
+              <i class="fa-solid fa-rotate"></i>
+              <span>Revincular cuenta publicitaria</span>
+            </template>
+          </button>
         </div>
       </div>
     </div>
@@ -63,7 +88,7 @@ const props = defineProps<{
             </div>
           </div>
           <div class="actions">
-            <button type="button" class="btn btn-primary btn-connect" :disabled="isSavingAdAccount" @click="onSelectAdAccount(acc)">
+            <button type="button" class="btn btn-primary btn-connect" :disabled="isSavingAdAccount" @click="handleSelectAdAccount(acc)">
               <template v-if="isSavingAdAccount">
                 <i class="fa-solid fa-spinner fa-spin"></i>
                 <span>Guardando...</span>
