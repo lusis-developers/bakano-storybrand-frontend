@@ -109,6 +109,9 @@ function formatDate(value?: string): string {
   border: 1px solid lighten($BAKANO-DARK, 78%);
   border-radius: 16px;
   padding: 0.75rem 0.75rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .sidebar-header {
@@ -121,7 +124,7 @@ function formatDate(value?: string): string {
   .actions { display: inline-flex; align-items: center; gap: 0.5rem; }
 }
 
-.sidebar-content { max-height: 520px; overflow: auto; border-top: 1px solid lighten($BAKANO-DARK, 85%); padding-top: 0.5rem; }
+.sidebar-content { flex: 1; overflow: auto; border-top: 1px solid lighten($BAKANO-DARK, 85%); padding-top: 0.5rem; }
 
 .chat-list { list-style: none; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 0.375rem; }
 .chat-item {
@@ -165,7 +168,6 @@ function formatDate(value?: string): string {
 .btn:disabled { opacity: 0.7; cursor: not-allowed; }
 
 @media (max-width: 640px) {
-  .sidebar-content { max-height: 360px; }
+  .chat-sidebar { height: auto; }
 }
 </style>
-

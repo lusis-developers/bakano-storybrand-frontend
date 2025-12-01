@@ -6,7 +6,7 @@ import { chatStore } from '@/stores/chat.store'
 import { useBusinessStore } from '@/stores/business.store'
 import AdvisorHeader from './components/AdvisorHeader.vue'
 import ChatPanel from './components/ChatPanel.vue'
-import MetricsPanel from './components/MetricsPanel.vue'
+// MetricsPanel eliminado
 import ChatSidebar from './components/ChatSidebar.vue'
 
 const router = useRouter()
@@ -53,9 +53,6 @@ onMounted(() => {
         <section class="grid-main">
           <ChatPanel :can-start-chat="canStartChat" @start-chat="startNewConversation" />
         </section>
-        <aside class="grid-aside">
-          <MetricsPanel />
-        </aside>
       </div>
     </main>
   </div>
@@ -64,55 +61,58 @@ onMounted(() => {
 <style lang="scss" scoped>
 .advisor-view {
   min-height: 100vh;
-  background: $BAKANO-LIGHT;
-  padding: 1rem;
+  padding: 0.75rem 1rem;
+  display: flex;
+  flex-direction: column;
 }
 
 .advisor-main {
-  max-width: 1440px;
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
+  flex: 1;
+  display: flex;
 }
 
 .grid {
   display: grid;
   grid-template-columns: 1fr;
   gap: 0.75rem;
+  width: 100%;
+  height: 100%;
 }
 
 .grid-sidebar {
-.grid-main { order: 2; }
+  order: 1;
 }
 
 .grid-main {
   order: 2;
   display: flex;
+  min-height: 0;
 }
 
-.grid-aside {
-  .grid-main { order: 2; }
+.grid-main>* {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 @media (min-width: 900px) {
   .grid {
-    grid-template-columns: 300px 2fr 1fr;
+    grid-template-columns: 300px 1fr;
     align-items: start;
   }
 
   .grid-sidebar {
     order: 1;
     position: sticky;
-    top: 1rem;
+    top: 0;
+    align-self: start;
   }
 
   .grid-main {
     order: 2;
     display: flex;
-  }
-
-  .grid-aside {
-    order: 3;
-    position: sticky;
-    top: 1rem;
+    min-height: 0;
   }
 }
 </style>

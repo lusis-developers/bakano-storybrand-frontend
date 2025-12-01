@@ -43,10 +43,10 @@ function newChat() {
 .advisor-header {
   display: flex;
   flex-direction: column;
-  max-width: 1440px;
-  margin: 0 auto;
+  width: 100%;
+  margin: 0;
   gap: 0.75rem;
-  margin-bottom: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .header-top {
@@ -57,8 +57,9 @@ function newChat() {
 
 .header-bottom {
   display: flex;
-  flex-direction: column;
-  align-items: flex-end;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
   gap: 0.5rem;
 }
 
@@ -70,7 +71,7 @@ function newChat() {
 
 .title-block {
   h1 {
-    font-size: 1.75rem;
+    font-size: 1.5rem;
     font-weight: 700;
     color: $BAKANO-DARK;
     margin: 0;
@@ -128,7 +129,7 @@ function newChat() {
 }
 
 .btn-sm {
-  padding: 0.5rem 1rem;
-  font-size: 0.75rem;
+  padding: 0.5rem 0.875rem;
+  font-size: 0.8125rem;
 }
 </style>

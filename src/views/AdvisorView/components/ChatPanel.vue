@@ -151,9 +151,7 @@ function renderMarkdown(md: string): string {
 <template>
   <section class="chat-panel">
     <h2 class="chat-title">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" class="chat-title__icon">
-        <path d="M21 15a4 4 0 0 1-4 4H8l-5 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4v8z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-      </svg>
+      <i class="fas fa-comments chat-title__icon" aria-hidden="true"></i>
       Conversación
     </h2>
     <div class="chat-stream" ref="streamEl">
@@ -204,13 +202,18 @@ function renderMarkdown(md: string): string {
   border-radius: 16px;
   padding: 0.75rem 1rem;
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.04);
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  height: 100%;
+  width: 100%;
+  min-width: 0;
 }
 
 .chat-title {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  font-size: 0.95rem;
+  font-size: 1rem;
   color: $BAKANO-DARK;
   margin-bottom: 0.5rem;
   font-weight: 600;
@@ -225,13 +228,13 @@ function renderMarkdown(md: string): string {
   flex-direction: column;
   gap: 0.5rem;
   padding: 0.75rem;
-  max-height: 480px;
   overflow: auto;
   background: lighten($BAKANO-DARK, 97%);
   border: 1px solid lighten($BAKANO-DARK, 83%);
   border-radius: 12px;
   overscroll-behavior: contain;
   scroll-behavior: smooth;
+  min-height: 0;
 }
 
 .empty {
