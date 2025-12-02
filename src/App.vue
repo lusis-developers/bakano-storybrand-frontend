@@ -1,5 +1,6 @@
 <script setup lang="ts">
-import { computed } from 'vue'
+import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth.store'
 import Header from './components/globals/TheHeader.vue'
 import Footer from './components/globals/TheFooter.vue'
@@ -10,18 +11,24 @@ import UserSidebar from '@/components/user/UserSidebar.vue'
 
 const authStore = useAuthStore()
 const isAuthenticated = computed(() => authStore.isAuthenticated)
+const isMobileSidebarOpen = ref(false)
+const router = useRouter()
+router.afterEach(() => { isMobileSidebarOpen.value = false })
 </script>
 
 <template>
   <Header />
   <main class="main-content" :class="{ 'main-content--admin': isAuthenticated }">
     <div v-if="isAuthenticated" class="admin-layout">
-      <UserSidebar />
+      <UserSidebar :mobileOpen="isMobileSidebarOpen" @close-mobile="isMobileSidebarOpen = false" />
       <section class="admin-layout__content">
         <RouterView />
       </section>
     </div>
     <RouterView v-else />
+    <button v-if="isAuthenticated" class="mobile-sidebar-toggle" @click="isMobileSidebarOpen = true">
+      <i class="fas fa-bars"></i>
+    </button>
   </main>
   <ConfirmationDialog />
   <ToastNotification />
@@ -41,29 +48,53 @@ const isAuthenticated = computed(() => authStore.isAuthenticated)
 }
 
 .admin-layout {
-  display: grid;
-  grid-template-columns: 240px 1fr;
-  gap: 0;
-  align-items: start;
+  display: flex;
+  flex-direction: row;
+  align-items: flex-start;
 }
 
 .admin-layout__content {
   padding: 16px;
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 @media (max-width: 920px) {
   .admin-layout {
-    grid-template-columns: 200px 1fr;
+    flex-direction: row;
   }
 }
 
 @media (max-width: 768px) {
   .admin-layout {
-    grid-template-columns: 1fr;
+    flex-direction: column;
   }
 
   .admin-layout__content {
     padding: 12px;
+  }
+}
+
+.mobile-sidebar-toggle {
+  position: fixed;
+  bottom: 16px;
+  left: 12px;
+  z-index: 950;
+  width: 44px;
+  height: 44px;
+  border-radius: 12px;
+  border: 1px solid lighten($BAKANO-PURPLE, 40%);
+  background: #fff;
+  color: $BAKANO-PURPLE;
+  display: none;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 6px 16px rgba($BAKANO-DARK, 0.12);
+}
+
+@media (max-width: 768px) {
+  .mobile-sidebar-toggle {
+    display: inline-flex;
   }
 }
 </style>
