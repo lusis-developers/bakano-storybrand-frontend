@@ -55,15 +55,22 @@ const handleCopy = (text: string) => {
 @use 'sass:color';
 
 .content-section {
-  margin-bottom: 3rem;
+  width: 100%;
+  max-width: 100%;
+  margin-bottom: 1.5rem;
+
+  @media (min-width: 768px) {
+    margin-bottom: 3rem;
+  }
 }
 
 .section-header {
+  width: 100%;
   text-align: center;
-  margin-bottom: 2rem;
+  margin-bottom: 1.25rem;
 
   h2 {
-    font-size: 1.75rem;
+    font-size: 1.25rem;
     font-weight: 700;
     color: $BAKANO-DARK;
     margin-bottom: 0.5rem;
@@ -72,7 +79,7 @@ const handleCopy = (text: string) => {
     justify-content: center;
     gap: 0.5rem;
 
-    @media (max-width: 768px) {
+    @media (min-width: 768px) {
       font-size: 1.5rem;
     }
 
@@ -83,26 +90,31 @@ const handleCopy = (text: string) => {
 
   p {
     color: darken($BAKANO-DARK, 20%);
-    font-size: 1.125rem;
+    font-size: 1rem;
 
-    @media (max-width: 768px) {
-      font-size: 1rem;
+    @media (min-width: 768px) {
+      font-size: 1.125rem;
     }
   }
 }
 
 .taglines-grid {
+  width: 100%;
+  max-width: 100%;
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-  gap: 1.5rem;
+  grid-template-columns: 1fr;
+  gap: 1rem;
 
-  @media (max-width: 768px) {
-    grid-template-columns: 1fr;
-    gap: 1rem;
+  @media (min-width: 768px) {
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
   }
 }
 
 .tagline-card {
+  width: 100%;
+  max-width: 100%;
+  box-sizing: border-box;
   background: $white;
   border-radius: 12px;
   padding: 1.5rem;
@@ -141,6 +153,8 @@ const handleCopy = (text: string) => {
   margin-bottom: 1rem;
   text-align: center;
   font-style: italic;
+  word-break: break-word;
+  overflow-wrap: anywhere;
 
   @media (max-width: 768px) {
     font-size: 1.125rem;
@@ -174,16 +188,22 @@ const handleCopy = (text: string) => {
 }
 
 .empty-content {
+  width: 100%;
+  max-width: 100%;
   text-align: center;
-  padding: 3rem;
+  padding: 2rem;
   background: $white;
   border-radius: 12px;
   border: 1px solid rgba($BAKANO-PURPLE, 0.1);
 
   p {
     color: darken($BAKANO-DARK, 20%);
-    font-size: 1.125rem;
+    font-size: 1rem;
     margin: 0;
+
+    @media (min-width: 768px) {
+      font-size: 1.125rem;
+    }
   }
 }
 
