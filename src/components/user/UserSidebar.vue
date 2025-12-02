@@ -2,11 +2,13 @@
 import { computed, onMounted, ref } from 'vue'
 import { useAuthStore } from '@/stores/auth.store'
 import { useBusinessStore } from '@/stores/business.store'
+import { useContentStore } from '@/stores/content.store'
 import { useToast } from '@/composables/useToast'
 
 const authStore = useAuthStore()
 const businessStore = useBusinessStore()
 const { triggerToast } = useToast()
+const contentStore = useContentStore()
 
 const pendingCount = computed(() => businessStore.pendingInvitationsCount)
 const businesses = computed(() => businessStore.businesses)
@@ -16,6 +18,13 @@ const searchTerm = ref('')
 const showBusinessMenu = ref(false)
 
 const filteredBusinesses = computed(() => businesses.value)
+const soundbitesPath = computed(() => {
+  const bId = currentBusiness.value?.id || currentBusiness.value?._id
+  const cid = contentStore.currentContent?._id
+  if (cid) return `/content/results/${cid}`
+  if (bId) return `/content/wizard/${bId}`
+  return '/business'
+})
 
 const changeBusiness = (id: string) => {
   const found = businesses.value.find((b) => b.id === id || b._id === id)
@@ -35,6 +44,9 @@ onMounted(async () => {
     await businessStore.ensureCurrentBusiness()
   }
   selectedBusinessId.value = currentBusiness.value?.id || currentBusiness.value?._id || ''
+  if (currentBusiness.value?.id) {
+    await contentStore.fetchContentByBusiness(currentBusiness.value.id)
+  }
 })
 </script>
 
@@ -77,9 +89,17 @@ onMounted(async () => {
         <span class="user-sidebar__icon"><i class="fas fa-briefcase"></i></span>
         <span class="user-sidebar__text">Negocios</span>
       </RouterLink>
+      <RouterLink :to="soundbitesPath" class="user-sidebar__link">
+        <span class="user-sidebar__icon"><i class="fas fa-music"></i></span>
+        <span class="user-sidebar__text">Soundbites</span>
+      </RouterLink>
       <RouterLink to="/social/manager" class="user-sidebar__link">
         <span class="user-sidebar__icon"><i class="fas fa-hashtag"></i></span>
         <span class="user-sidebar__text">Social Manager</span>
+      </RouterLink>
+      <RouterLink to="/ads" class="user-sidebar__link">
+        <span class="user-sidebar__icon"><i class="fas fa-bullhorn"></i></span>
+        <span class="user-sidebar__text">Anuncios</span>
       </RouterLink>
       <RouterLink to="/advisor" class="user-sidebar__link">
         <span class="user-sidebar__icon"><i class="fas fa-robot"></i></span>
@@ -89,10 +109,6 @@ onMounted(async () => {
         <span class="user-sidebar__icon"><i class="fas fa-users"></i></span>
         <span class="user-sidebar__text">Invitaciones</span>
         <span v-if="pendingCount" class="user-sidebar__badge">{{ pendingCount }}</span>
-      </RouterLink>
-      <RouterLink to="/ads" class="user-sidebar__link">
-        <span class="user-sidebar__icon"><i class="fas fa-bullhorn"></i></span>
-        <span class="user-sidebar__text">Anuncios</span>
       </RouterLink>
       <RouterLink to="/pricing" class="user-sidebar__link">
         <span class="user-sidebar__icon"><i class="fas fa-tags"></i></span>

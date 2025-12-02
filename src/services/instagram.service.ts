@@ -253,6 +253,14 @@ class InstagramService extends APIBase {
     const response = await this.get<any>(endpoint)
     return response.data
   }
+
+  async getInstagramProfilePicture(
+    businessId: string,
+  ): Promise<{ message: string; profilePictureUrl: string }> {
+    const endpoint = `${this.endpoint}/instagram/profile-picture/${businessId}`
+    const response = await this.get<{ message: string; profilePictureUrl: string }>(endpoint)
+    return response.data
+  }
 }
 
 const instagramService = new InstagramService()
