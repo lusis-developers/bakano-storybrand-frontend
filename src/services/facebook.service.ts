@@ -297,6 +297,14 @@ class FacebookService extends APIBase {
     const response = await this.get<FacebookTopAdsResponse>(endpoint)
     return response.data
   }
+
+  async getPagePosts(
+    businessId: string,
+  ): Promise<{ message: string; posts: Array<{ id: string; created_time: string; message?: string; full_picture?: string; permalink_url: string; insights?: Record<string, any> }> }> {
+    const endpoint = `${this.endpoint}/facebook/posts/${businessId}`
+    const response = await this.get<{ message: string; posts: Array<{ id: string; created_time: string; message?: string; full_picture?: string; permalink_url: string; insights?: Record<string, any> }> }>(endpoint)
+    return response.data
+  }
 }
 
 const facebookService = new FacebookService()
