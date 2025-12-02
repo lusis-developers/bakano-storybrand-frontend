@@ -10,6 +10,14 @@ const businessStore = useBusinessStore()
 const { triggerToast } = useToast()
 const contentStore = useContentStore()
 
+const props = defineProps({
+  mobileOpen: { type: Boolean, default: false }
+})
+
+const emit = defineEmits<{
+  closeMobile: []
+}>()
+
 const pendingCount = computed(() => businessStore.pendingInvitationsCount)
 const businesses = computed(() => businessStore.businesses)
 const currentBusiness = computed(() => businessStore.currentBusiness)
@@ -51,7 +59,7 @@ onMounted(async () => {
 </script>
 
 <template>
-  <aside class="user-sidebar">
+  <aside class="user-sidebar" :class="{ 'is-open': props.mobileOpen }">
     <div class="user-sidebar__brand">
       <RouterLink :to="authStore.isAuthenticated ? '/dashboard' : '/'" class="user-sidebar__logo">
         <img src="@/assets/logos/bakano-dark-small.png" alt="Bakano" />
@@ -120,6 +128,7 @@ onMounted(async () => {
       </RouterLink>
     </nav>
   </aside>
+  <div v-if="props.mobileOpen" class="user-sidebar__overlay" @click="emit('closeMobile')"></div>
 </template>
 
 <style scoped lang="scss">
@@ -132,6 +141,7 @@ onMounted(async () => {
   background: #fff;
   border-right: 1px solid lighten($BAKANO-DARK, 85%);
   padding: 16px 12px;
+  z-index: 1000;
 }
 
 .user-sidebar__brand {
@@ -307,7 +317,30 @@ onMounted(async () => {
 
 @media (max-width: 768px) {
   .user-sidebar {
-    display: none;
+    position: fixed;
+    top: 56px;
+    left: 0;
+    height: calc(100vh - 56px);
+    width: 85%;
+    max-width: 320px;
+    transform: translateX(-100%);
+    transition: transform 0.25s ease;
+    box-shadow: 0 8px 24px rgba($BAKANO-DARK, 0.15);
   }
+
+  .user-sidebar.is-open {
+    transform: translateX(0);
+  }
+}
+
+.user-sidebar__overlay {
+  position: fixed;
+  top: 56px;
+  left: 0;
+  width: 100%;
+  height: calc(100vh - 56px);
+  background: rgba($BAKANO-DARK, 0.4);
+  backdrop-filter: blur(1px);
+  z-index: 900;
 }
 </style>
