@@ -7,9 +7,12 @@ import { useToast } from '@/composables/useToast'
 import type { FacebookMetric } from '@/types/facebook.types'
 import InstagramPostsPanel from '@/components/metrics/InstagramPostsPanel.vue'
 import Chart from 'chart.js/auto'
+import FacebookPostsPanel from '@/components/metrics/FacebookPostsPanel.vue'
+import useIntegrationStore from '@/stores/integration.store'
 
 const businessStore = useBusinessStore()
 const { triggerToast } = useToast()
+const integrations = useIntegrationStore()
 
 const loading = ref(false)
 const error = ref<string | null>(null)
@@ -28,6 +31,7 @@ const since = ref<string>('')
 const until = ref<string>('')
 const tz = ref<string>(Intl.DateTimeFormat().resolvedOptions().timeZone)
 const offsetMinutes = ref<number | undefined>(undefined)
+const profilePictureUrl = ref<string | null>(null)
 
 const businessId = computed(() => {
   const cur = businessStore.currentBusiness
@@ -37,6 +41,7 @@ const businessId = computed(() => {
 })
 
 const emit = defineEmits(['loading-start', 'loading-end'])
+
 
 async function loadMetrics() {
   if (!businessId.value) return
@@ -65,16 +70,33 @@ async function loadMetrics() {
   }
 }
 
+async function loadProfilePicture() {
+  if (!businessId.value || !isInstagram.value) return
+  try {
+    const res = await instagramService.getInstagramProfilePicture(businessId.value)
+    profilePictureUrl.value = res?.profilePictureUrl || null
+  } catch {
+    profilePictureUrl.value = profilePictureUrl.value || null
+  }
+}
+
 onMounted(async () => {
   if (businessStore.businesses.length === 0) {
     await businessStore.fetchBusinesses()
   }
   await loadMetrics()
+  await loadProfilePicture()
 })
 
 watch(platform, async () => {
   await loadMetrics()
+  await loadProfilePicture()
 })
+
+watch(businessId, async () => {
+  await loadProfilePicture()
+})
+
 
 // Utilidades
 const metricsEntries = computed(() => {
@@ -135,6 +157,10 @@ const followersCount = computed<number | undefined>(() => {
   const n = typeof fbFollowers === 'number' ? fbFollowers : typeof igFollowers === 'number' ? igFollowers : typeof lastFromSeries === 'number' ? lastFromSeries : undefined
   return typeof n === 'number' ? n : undefined
 })
+
+const igMeta = computed(() => ((integrations.instagramIntegration?.metadata || {}) as any))
+const instagramAvatar = computed(() => igMeta.value?.instagramProfilePictureUrl || profilePictureUrl.value || igMeta.value?.profilePictureUrl || igMeta.value?.picture?.url || '')
+const igDisplayName = computed(() => igMeta.value?.pageName || response.value?.data?.instagram?.username || 'Cuenta')
 
 const canvasRefs = ref<Record<string, HTMLCanvasElement | undefined>>({})
 const charts = ref<Record<string, Chart | undefined>>({})
@@ -263,7 +289,8 @@ onUnmounted(() => {
       </div>
       <div class="page-id" v-else-if="isInstagram && response?.data?.instagram">
         <i class="fab fa-instagram"></i>
-        <span>{{ response?.data?.instagram?.username || 'Cuenta' }}</span>
+        <img v-if="instagramAvatar" :src="instagramAvatar" alt="" class="page-avatar" />
+        <span>{{ igDisplayName }}</span>
         <span class="muted">ID: {{ response?.data?.instagram?.id }}</span>
       </div>
     </header>
@@ -341,6 +368,8 @@ onUnmounted(() => {
     </div>
 
     <InstagramPostsPanel v-if="isInstagram" />
+
+    <FacebookPostsPanel v-else :business-id="businessId" />
   </section>
 </template>
 
@@ -382,6 +411,13 @@ onUnmounted(() => {
   align-items: center;
   gap: 8px;
   color: $BAKANO-DARK;
+}
+
+.page-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 999px;
+  object-fit: cover;
 }
 
 .page-id .muted {
@@ -606,3 +642,4 @@ onUnmounted(() => {
   height: 200px;
 }
 </style>
+ 
