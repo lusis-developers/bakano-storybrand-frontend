@@ -95,15 +95,17 @@ const handleNavigateToScripts = () => {
 @use 'sass:color';
 
 .scripts-hero {
+  width: 100%;
+  max-width: 100%;
   background: linear-gradient(135deg, $BAKANO-PURPLE 0%, darken($BAKANO-PURPLE, 15%) 100%);
   color: $white;
-  padding: 4rem 2rem;
-  margin: 4rem 0;
+  padding: 2rem 1rem;
+  margin: 2rem 0;
   border-radius: 20px;
   position: relative;
   overflow: hidden;
 
-  @media (max-width: 768px) {
+  @media (min-width: 768px) {
     padding: 3rem 1.5rem;
     margin: 3rem 0;
   }
@@ -123,7 +125,8 @@ const handleNavigateToScripts = () => {
 .scripts-hero-content {
   position: relative;
   z-index: 1;
-  max-width: 1200px;
+  width: 100%;
+  max-width: 1000px;
   margin: 0 auto;
   text-align: center;
 }
@@ -169,14 +172,16 @@ const handleNavigateToScripts = () => {
 }
 
 .feature-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 2rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
   max-width: 1000px;
   margin: 0 auto;
 
-  @media (max-width: 768px) {
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  @media (min-width: 768px) {
+    flex-direction: row;
+    flex-wrap: wrap;
     gap: 1.5rem;
   }
 }
@@ -186,16 +191,19 @@ const handleNavigateToScripts = () => {
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 16px;
-  padding: 2rem 1.5rem;
+  padding: 1.5rem 1rem;
   transition: all 0.3s ease;
+  width: 100%;
+  box-sizing: border-box;
+
+  @media (min-width: 768px) {
+    flex: 1 1 240px;
+    padding: 2rem 1.5rem;
+  }
 
   &:hover {
     transform: translateY(-5px);
     background: rgba(255, 255, 255, 0.15);
-  }
-
-  @media (max-width: 768px) {
-    padding: 1.5rem 1rem;
   }
 }
 
@@ -238,8 +246,8 @@ const handleNavigateToScripts = () => {
 }
 
 .btn-large {
-  padding: 1rem 2.5rem;
-  font-size: 1.125rem;
+  padding: 0.875rem 2rem;
+  font-size: 1rem;
   font-weight: 700;
   border-radius: 12px;
   transition: all 0.3s ease;
@@ -265,9 +273,9 @@ const handleNavigateToScripts = () => {
     box-shadow: none;
   }
 
-  @media (max-width: 768px) {
-    padding: 0.875rem 2rem;
-    font-size: 1rem;
+  @media (min-width: 768px) {
+    padding: 1rem 2.5rem;
+    font-size: 1.125rem;
   }
 }
 
