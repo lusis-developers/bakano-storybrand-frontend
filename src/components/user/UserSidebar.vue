@@ -97,6 +97,10 @@ onMounted(async () => {
         <span class="user-sidebar__icon"><i class="fas fa-hashtag"></i></span>
         <span class="user-sidebar__text">Social Manager</span>
       </RouterLink>
+      <RouterLink to="/inspiration/instagram-viral" class="user-sidebar__link">
+        <span class="user-sidebar__icon"><i class="fab fa-instagram"></i></span>
+        <span class="user-sidebar__text">Inspiración Viral</span>
+      </RouterLink>
       <RouterLink to="/ads" class="user-sidebar__link">
         <span class="user-sidebar__icon"><i class="fas fa-bullhorn"></i></span>
         <span class="user-sidebar__text">Anuncios</span>
