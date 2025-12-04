@@ -14,12 +14,15 @@ const emit = defineEmits<{ (e: 'open-details', ad: FacebookAdItem): void }>()
 
 <style lang="scss" scoped>
 .campaign-list {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0;
 
   @media (min-width: 768px) {
-    grid-template-columns: 1fr 1fr;
+    flex-direction: row;
+    flex-wrap: wrap;
+    gap: 0.75rem;
   }
 }
 </style>
