@@ -16,11 +16,11 @@ const emit = defineEmits<{ (e: 'refresh'): void }>()
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
 .refresh-btn {
-  padding: 0.4rem 0.8rem;
+  padding: 0.4rem 0.75rem;
   border: 1px solid rgba($BAKANO-DARK, 0.15);
   border-radius: 8px;
   background: $white;
