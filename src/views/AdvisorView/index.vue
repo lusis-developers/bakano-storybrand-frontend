@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useToast } from '@/composables/useToast'
 import { chatStore } from '@/stores/chat.store'
 import { useBusinessStore } from '@/stores/business.store'
@@ -10,6 +10,7 @@ import ChatPanel from './components/ChatPanel.vue'
 import ChatSidebar from './components/ChatSidebar.vue'
 
 const router = useRouter()
+const route = useRoute()
 const toast = useToast()
 const chat = chatStore()
 const business = useBusinessStore()
@@ -32,11 +33,24 @@ async function startNewConversation() {
   }
 }
 
-onMounted(() => {
-  // Si no hay negocio cargado, intentamos obtenerlo desde el store (opcional)
-  // En caso de que la app ya maneje la carga del negocio en otra vista, esto no hace nada.
-  if (!business.currentBusiness) {
-    // No forzamos carga aquí; la vista de negocio/flujo de onboarding se encarga.
+onMounted(async () => {
+  // Si viene una semilla desde otra vista (e.g., Ads), crear conversación y enviar el mensaje inicial
+  const seed = String(route.query.seed || '')
+  const source = String(route.query.source || '')
+  if (seed && canStartChat.value) {
+    try {
+      const src = source === 'facebook' || source === 'instagram' ? (source as 'facebook' | 'instagram') : 'internal'
+      const created = await chat.createChat({ businessId: business.currentBusiness!.id, source: src, purpose: 'analytics' })
+      if (created) {
+        await chat.fetchChatById(created.id)
+        await chat.addUserMessage(seed)
+        await chat.generateAssistantReply()
+        toast.triggerToast('Conversación creada con contexto de métricas', 'success')
+      }
+    } catch (err: any) {
+      console.error('Seed chat error:', err)
+      toast.triggerToast('No se pudo iniciar la conversación automáticamente', 'error')
+    }
   }
 })
 </script>
