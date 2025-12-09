@@ -182,7 +182,7 @@ const onTipLeave = () => { hoveredTip.value = null }
       <div class="modal-actions">
         <h4>Acciones más relevantes</h4>
         <ul class="actions-list">
-          <li v-for="a in topActions" :key="a.type"><span class="type">{{ a.type }} <span class="tip" @mouseenter="onTipEnter(tip(a.type), $event)" @mouseleave="onTipLeave">i</span></span><span class="val">{{ a.value.toLocaleString() }}</span></li>
+          <li v-for="a in topActions" :key="a.type"><span class="type">{{ humanize(a.type) }} <span class="tip" @mouseenter="onTipEnter(tip(a.type), $event)" @mouseleave="onTipLeave">i</span></span><span class="val">{{ a.value.toLocaleString() }}</span></li>
         </ul>
       </div>
       <div class="modal-actions">
@@ -240,7 +240,7 @@ const onTipLeave = () => { hoveredTip.value = null }
       <div class="modal-actions">
         <h4>Costo por acción (USD) <span class="tip" @mouseenter="onTipEnter('Costo promedio pagado por cada acción', $event)" @mouseleave="onTipLeave">i</span></h4>
         <ul class="cpa-list">
-          <li v-for="c in costPerActions" :key="c.type"><span class="type">{{ c.type }} <span class="tip" @mouseenter="onTipEnter(tip(c.type), $event)" @mouseleave="onTipLeave">i</span></span><span class="val">{{ c.value.toFixed(2) }}</span></li>
+          <li v-for="c in costPerActions" :key="c.type"><span class="type">{{ humanize(c.type) }} <span class="tip" @mouseenter="onTipEnter(tip(c.type), $event)" @mouseleave="onTipLeave">i</span></span><span class="val">{{ c.value.toFixed(2) }}</span></li>
         </ul>
       </div>
     </div>
@@ -256,17 +256,21 @@ const onTipLeave = () => { hoveredTip.value = null }
 
 <style lang="scss" scoped>
 .insights-content {
-  max-height: 70vh;
+  max-height: 75vh;
   overflow: auto;
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 0.75rem;
 }
 
 .modal-summary {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.modal-summary .summary-card {
+  flex: 1 1 160px;
 }
 
 .summary-card {
@@ -274,6 +278,7 @@ const onTipLeave = () => { hoveredTip.value = null }
   border: 1px solid lighten($BAKANO-DARK, 85%);
   border-radius: 10px;
   padding: 0.75rem;
+  min-width: 0;
 }
 
 .summary-card .label {
@@ -290,7 +295,7 @@ const onTipLeave = () => { hoveredTip.value = null }
 .modal-charts {
   display: flex;
   flex-direction: column;
-  gap: 0.75rem;
+  gap: 0.5rem;
 }
 
 .chart-card {
@@ -301,6 +306,11 @@ const onTipLeave = () => { hoveredTip.value = null }
   width: 100%;
   max-height: 260px;
   overflow: hidden;
+  padding: 0;
+
+  @media (min-width: 764px) {
+    padding: 8px;
+  }
 }
 
 .heading h3 {
@@ -310,15 +320,16 @@ const onTipLeave = () => { hoveredTip.value = null }
 }
 
 .chart-values {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
   margin: 0.25rem 0 0.5rem;
 }
 
 @media (min-width: 768px) {
   .chart-values {
-    grid-template-columns: 1fr 1fr;
+    flex-direction: row;
+    flex-wrap: wrap;
   }
 }
 
@@ -330,16 +341,23 @@ const onTipLeave = () => { hoveredTip.value = null }
   border-radius: 8px;
   border: 1px solid lighten($BAKANO-DARK, 85%);
   background: rgba($BAKANO-DARK, 0.03);
+  min-width: 0;
 }
 
 .value-badge .label {
   font-weight: 700;
   color: $BAKANO-DARK;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
 }
 
 .value-badge .val {
   font-weight: 800;
   color: $BAKANO-DARK;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .value-badge.fb {
@@ -359,14 +377,14 @@ const onTipLeave = () => { hoveredTip.value = null }
 }
 
 .platform-compare {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
 }
 
 @media (min-width: 768px) {
   .platform-compare {
-    grid-template-columns: 1fr 1fr;
+    flex-direction: row;
   }
 }
 
@@ -375,6 +393,7 @@ const onTipLeave = () => { hoveredTip.value = null }
   border: 1px solid lighten($BAKANO-DARK, 85%);
   border-radius: 8px;
   padding: 0.75rem;
+  min-width: 0;
 }
 
 .platform-header {
@@ -387,12 +406,19 @@ const onTipLeave = () => { hoveredTip.value = null }
 .platform-name {
   font-weight: 800;
   color: $BAKANO-DARK;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 
 .platform-metrics {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem 0.75rem;
+}
+
+.platform-metrics .metric {
+  flex: 1 1 calc(50% - 0.375rem);
+  min-width: 0;
 }
 
 .platform-metrics .metric {
@@ -404,24 +430,31 @@ const onTipLeave = () => { hoveredTip.value = null }
 .platform-metrics .label {
   color: lighten($BAKANO-DARK, 35%);
   font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
 }
 
 .platform-metrics .value {
   font-weight: 700;
   color: $BAKANO-DARK;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .platform-charts {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
   max-height: 480px;
   overflow-y: auto;
 }
 
 @media (min-width: 768px) {
   .platform-charts {
-    grid-template-columns: 1fr 1fr;
+    flex-direction: row;
+    flex-wrap: wrap;
   }
 }
 
@@ -429,9 +462,17 @@ const onTipLeave = () => { hoveredTip.value = null }
   list-style: none;
   padding: 0;
   margin: 0;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.actions-list li {
+  flex: 1 1 calc(50% - 0.25rem);
+}
+
+.actions-list li {
+  min-width: 0;
 }
 
 .actions-list li {
@@ -442,16 +483,23 @@ const onTipLeave = () => { hoveredTip.value = null }
   border: 1px solid lighten($BAKANO-DARK, 85%);
   border-radius: 8px;
   padding: 0.5rem 0.75rem;
+  min-width: 0;
 }
 
 .actions-list .type {
   color: lighten($BAKANO-DARK, 35%);
   font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
 }
 
 .actions-list .val {
   font-weight: 700;
   color: $BAKANO-DARK;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .modal-link {
@@ -475,9 +523,17 @@ const onTipLeave = () => { hoveredTip.value = null }
   list-style: none;
   padding: 0;
   margin: 0;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.cpa-list li {
+  flex: 1 1 calc(50% - 0.25rem);
+}
+
+.cpa-list li {
+  min-width: 0;
 }
 
 .cpa-list li {
@@ -488,16 +544,23 @@ const onTipLeave = () => { hoveredTip.value = null }
   border: 1px solid lighten($BAKANO-DARK, 85%);
   border-radius: 8px;
   padding: 0.5rem 0.75rem;
+  min-width: 0;
 }
 
 .cpa-list .type {
   color: lighten($BAKANO-DARK, 35%);
   font-size: 0.8125rem;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  min-width: 0;
 }
 
 .cpa-list .val {
   font-weight: 700;
   color: $BAKANO-DARK;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .tip {

@@ -251,15 +251,7 @@ const onTipLeave = () => { hoveredTip.value = null }
   color: rgba($BAKANO-DARK, 0.6);
 }
 
-.campaign-list {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: 1rem;
-
-  @media (min-width: 768px) {
-    grid-template-columns: 1fr 1fr;
-  }
-}
+/* listado ahora controlado por TopCampaignList con flex */
 
 .campaign-item {
   display: flex;
@@ -270,6 +262,11 @@ const onTipLeave = () => { hoveredTip.value = null }
   padding: 0.75rem;
   position: relative;
   transition: box-shadow 0.2s ease, transform 0.2s ease;
+  padding: 8px;
+
+  @media (min-width: 764px) {
+    padding: 24px;
+  }
 }
 
 .campaign-thumb {
@@ -361,16 +358,10 @@ const onTipLeave = () => { hoveredTip.value = null }
 }
 
 .campaign-metrics-squares {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 0.75rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
   margin-bottom: 0.75rem;
-}
-
-@media (min-width: 768px) {
-  .campaign-metrics-squares {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
 }
 
 .metric-square {
@@ -378,10 +369,9 @@ const onTipLeave = () => { hoveredTip.value = null }
   border: 1px solid lighten($BAKANO-DARK, 85%);
   border-radius: 12px;
   padding: 0.75rem;
-  display: grid;
-  grid-template-rows: auto auto 1fr;
-  align-items: start;
-  justify-items: start;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
   aspect-ratio: 1;
   box-shadow: 0 4px 12px rgba($BAKANO-DARK, 0.06);
 }
@@ -456,9 +446,14 @@ const onTipLeave = () => { hoveredTip.value = null }
 }
 
 .modal-summary {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
+
+  @media (min-width: 768px) {
+    flex-direction: row;
+    flex-wrap: wrap;
+  }
 }
 
 .summary-card {
@@ -503,15 +498,14 @@ const onTipLeave = () => { hoveredTip.value = null }
 }
 
 .chart-values {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
   margin: 0.25rem 0 0.5rem;
-}
 
-@media (min-width: 768px) {
-  .chart-values {
-    grid-template-columns: 1fr 1fr;
+  @media (min-width: 768px) {
+    flex-direction: row;
+    flex-wrap: wrap;
   }
 }
 
@@ -552,14 +546,12 @@ const onTipLeave = () => { hoveredTip.value = null }
 }
 
 .platform-compare {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 0.5rem;
-}
 
-@media (min-width: 768px) {
-  .platform-compare {
-    grid-template-columns: 1fr 1fr;
+  @media (min-width: 768px) {
+    flex-direction: row;
   }
 }
 
@@ -583,9 +575,13 @@ const onTipLeave = () => { hoveredTip.value = null }
 }
 
 .platform-metrics {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem 0.75rem;
+}
+
+.platform-metrics .metric {
+  flex: 1 1 calc(50% - 0.375rem);
 }
 
 .platform-metrics .metric {
@@ -605,16 +601,15 @@ const onTipLeave = () => { hoveredTip.value = null }
 }
 
 .platform-charts {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
   max-height: 480px;
   overflow-y: auto;
-}
 
-@media (min-width: 768px) {
-  .platform-charts {
-    grid-template-columns: 1fr 1fr;
+  @media (min-width: 768px) {
+    flex-direction: row;
+    flex-wrap: wrap;
   }
 }
 
@@ -622,9 +617,13 @@ const onTipLeave = () => { hoveredTip.value = null }
   list-style: none;
   padding: 0;
   margin: 0;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.actions-list li {
+  flex: 1 1 calc(50% - 0.25rem);
 }
 
 .actions-list li {
@@ -668,9 +667,13 @@ const onTipLeave = () => { hoveredTip.value = null }
   list-style: none;
   padding: 0;
   margin: 0;
-  display: grid;
-  grid-template-columns: 1fr 1fr;
+  display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
+}
+
+.cpa-list li {
+  flex: 1 1 calc(50% - 0.25rem);
 }
 
 .cpa-list li {

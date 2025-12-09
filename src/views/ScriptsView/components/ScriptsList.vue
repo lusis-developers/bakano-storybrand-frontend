@@ -75,8 +75,19 @@ const formatDate = (dateString: string) => {
 const formatScriptContent = (content: string) => {
   try {
     const parsed = JSON.parse(content)
+    const firstPost = (Array.isArray((parsed as any).posts) && (parsed as any).posts[0])
+      || (parsed as any).post1
+      || (parsed as any).post_1
+      || (parsed as any).first
+    const preview = typeof (parsed as any).text === 'string'
+      ? (parsed as any).text
+      : typeof (parsed as any).content === 'string'
+        ? (parsed as any).content
+        : firstPost && typeof firstPost === 'object'
+          ? (firstPost.content || firstPost.title || '')
+          : ''
     return {
-      content: parsed.text || parsed.content || content,
+      content: preview || content,
       isStructured: true,
       ...parsed
     }
@@ -126,16 +137,28 @@ const formatMarkdownLine = (line: string) => {
 const getScriptPreview = (content: string) => {
   const formatted = formatScriptContent(content)
 
-  if (formatted.isStructured && 'text' in formatted) {
-    return formatted.text.substring(0, 150) + '...'
+  if (formatted.isStructured) {
+    const base = (formatted as any).text
+      || (formatted as any).content
+      || ((formatted as any).post1 && ((formatted as any).post1.content || (formatted as any).post1.title))
+      || (Array.isArray((formatted as any).posts) && (formatted as any).posts[0] && (((formatted as any).posts[0].content) || ((formatted as any).posts[0].title)))
+      || ''
+    if (typeof base === 'string' && base.trim().length > 0) {
+      const clean = base
+        .replace(/\*\*/g, '')
+        .replace(/\[.*?\]/g, '')
+        .replace(/^##\s+/gm, '')
+        .replace(/^#\s+/gm, '')
+        .trim()
+      return clean.substring(0, 150) + '...'
+    }
   }
 
-  if (formatted.isMarkdown) {
+  if ((formatted as any).isMarkdown) {
     const sections = parseMarkdownContent(content)
     if (sections.length > 0) {
       const firstSection = sections[0]
       const lines = firstSection.content.split('\n').filter(l => l.trim())
-
       for (const line of lines) {
         const lineType = formatMarkdownLine(line)
         if (lineType.type === 'text' || lineType.type === 'subtitle') {
@@ -145,14 +168,13 @@ const getScriptPreview = (content: string) => {
           }
         }
       }
-
       if (firstSection.title) {
         return firstSection.title.substring(0, 150) + '...'
       }
     }
   }
 
-  return (formatted.content || content).substring(0, 150) + '...'
+  return ((formatted as any).content || content).substring(0, 150) + '...'
 }
 
 // Event handlers
@@ -538,6 +560,9 @@ const handleGenerateScript = () => {
           line-height: 1.3;
           font-family: $font-principal;
           transition: color 0.3s ease;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+          min-width: 0;
         }
 
         .script-preview {
@@ -550,6 +575,9 @@ const handleGenerateScript = () => {
           -webkit-box-orient: vertical;
           overflow: hidden;
           font-family: $font-secondary;
+          overflow-wrap: anywhere;
+          word-break: break-word;
+          min-width: 0;
         }
 
         .script-details {

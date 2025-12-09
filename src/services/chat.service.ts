@@ -62,9 +62,15 @@ class ChatService extends APIBase {
    */
   async createChat(payload: CreateChatRequest): Promise<CreateChatResponse> {
     if (!payload?.businessId) throw new Error('businessId es requerido para crear el chat')
+    // Sanitizar valores potencialmente inválidos para evitar errores del backend
+    const safe: CreateChatRequest = { ...payload }
+    const allowedSources = ['internal', 'facebook', 'instagram'] as const
+    const allowedPurposes = ['analytics', 'content', 'support', 'general'] as const
+    if (safe.source && !allowedSources.includes(safe.source)) delete safe.source
+    if (safe.purpose && !allowedPurposes.includes(safe.purpose)) delete safe.purpose
     const response: AxiosResponse<CreateChatResponse> = await this.post<CreateChatResponse>(
       this.endpoint,
-      payload,
+      safe,
     )
     return response.data
   }

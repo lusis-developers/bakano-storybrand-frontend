@@ -59,23 +59,37 @@ const formatDate = (dateString: string): string => {
 const formatScriptContent = (content: string) => {
   try {
     const parsed = JSON.parse(content)
-    if (parsed.visual && parsed.caption && parsed.text) {
+    const postsArray = Array.isArray((parsed as any).posts) ? (parsed as any).posts : null
+    const postKeys = ['post1', 'post2', 'post3', 'post4', 'post_1', 'post_2', 'post_3']
+    const postObjects = postsArray || postKeys.map(k => (parsed as any)[k]).filter(Boolean)
+    if (postObjects && postObjects.length > 0) {
+      const items = postObjects.map((p: any) => ({
+        title: typeof p?.title === 'string' ? p.title : '',
+        content: typeof p?.content === 'string' ? p.content : '',
+        duration: typeof p?.duration === 'string' ? p.duration : ''
+      }))
       return {
         isStructured: true,
         isMarkdown: false,
-        visual: parsed.visual,
-        caption: parsed.caption,
-        text: parsed.text,
+        isMultipost: true,
+        items,
         content
       }
     }
-  } catch (e) {
-    // No es JSON válido
-  }
+    if ((parsed as any).visual && (parsed as any).caption && (parsed as any).text) {
+      return {
+        isStructured: true,
+        isMarkdown: false,
+        isMultipost: false,
+        visual: (parsed as any).visual,
+        caption: (parsed as any).caption,
+        text: (parsed as any).text,
+        content
+      }
+    }
+  } catch (e) { }
 
-  // Verificar si es contenido markdown
   const isMarkdown = content.includes('##') || content.includes('**') || content.includes('[') || content.includes('(')
-  
   return {
     isStructured: false,
     isMarkdown,
@@ -87,7 +101,7 @@ const parseMarkdownContent = (content: string) => {
   const sections = []
   const lines = content.split('\n')
   let currentSection = { title: '', content: '' }
-  
+
   for (const line of lines) {
     if (line.startsWith('## ')) {
       if (currentSection.title || currentSection.content) {
@@ -98,17 +112,17 @@ const parseMarkdownContent = (content: string) => {
       currentSection.content += (currentSection.content ? '\n' : '') + line
     }
   }
-  
+
   if (currentSection.title || currentSection.content) {
     sections.push(currentSection)
   }
-  
+
   return sections
 }
 
 const formatMarkdownLine = (line: string) => {
   const trimmed = line.trim()
-  
+
   if (trimmed.match(/^\d{1,2}:\d{2}/)) {
     return { type: 'timestamp', content: trimmed }
   } else if (trimmed.startsWith('**') && trimmed.endsWith('**')) {
@@ -165,34 +179,89 @@ const handleClose = () => {
         </div>
         
         <div class="script-full-content">
-          <!-- Contenido estructurado JSON -->
-          <div v-if="script && formatScriptContent(script.content).isStructured" class="formatted-script">
-            <div class="script-section">
-              <h4 class="section-title">
-                <i class="fas fa-video"></i>
-                Visual
-              </h4>
-              <p class="section-content">{{ formatScriptContent(script.content).visual }}</p>
-            </div>
-            
-            <div class="script-section">
-              <h4 class="section-title">
-                <i class="fas fa-comment"></i>
-                Caption
-              </h4>
-              <p class="section-content">{{ formatScriptContent(script.content).caption }}</p>
-            </div>
-            
-            <div class="script-section">
-              <h4 class="section-title">
-                <i class="fas fa-align-left"></i>
-                Texto Principal
-              </h4>
-              <p class="section-content">{{ formatScriptContent(script.content).text }}</p>
-            </div>
+          <div v-if="script && formatScriptContent(script.content).isStructured">
+            <template v-if="formatScriptContent(script.content).isMultipost">
+              <div class="multipost-content">
+                <div 
+                  v-for="(item, idx) in formatScriptContent(script.content).items" 
+                  :key="idx"
+                  class="post-card"
+                >
+                  <h4 class="post-title">
+                    <i class="fas fa-sticky-note"></i>
+                    {{ item.title || `Post ${idx + 1}` }}
+                    <span v-if="item.duration" class="post-duration">
+                      <i class="fas fa-clock"></i>
+                      {{ item.duration }}
+                    </span>
+                  </h4>
+                  <div class="post-body">
+                    <div 
+                      v-for="(section, sidx) in parseMarkdownContent(item.content)" 
+                      :key="sidx"
+                      class="markdown-section"
+                    >
+                      <h3 class="markdown-title" v-if="section.title">
+                        <i class="fas fa-play-circle"></i>
+                        {{ section.title }}
+                      </h3>
+                      <div class="markdown-body">
+                        <div 
+                          v-for="(line, lineIndex) in section.content.split('\n').filter(l => l.trim())" 
+                          :key="lineIndex"
+                          class="markdown-line"
+                          :class="formatMarkdownLine(line).type"
+                        >
+                          <span v-if="formatMarkdownLine(line).type === 'timestamp'" class="timestamp-badge">
+                            <i class="fas fa-clock"></i>
+                            {{ formatMarkdownLine(line).content }}
+                          </span>
+                          <span v-else-if="formatMarkdownLine(line).type === 'subtitle'" class="subtitle-text">
+                            {{ formatMarkdownLine(line).content }}
+                          </span>
+                          <span v-else-if="formatMarkdownLine(line).type === 'instruction'" class="instruction-text">
+                            <i class="fas fa-camera"></i>
+                            {{ formatMarkdownLine(line).content }}
+                          </span>
+                          <span v-else-if="formatMarkdownLine(line).type === 'hashtag'" class="hashtag-text">
+                            {{ formatMarkdownLine(line).content }}
+                          </span>
+                          <span v-else class="regular-text">
+                            {{ formatMarkdownLine(line).content }}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </template>
+            <template v-else>
+              <div class="formatted-script">
+                <div class="script-section">
+                  <h4 class="section-title">
+                    <i class="fas fa-video"></i>
+                    Visual
+                  </h4>
+                  <p class="section-content">{{ formatScriptContent(script.content).visual }}</p>
+                </div>
+                <div class="script-section">
+                  <h4 class="section-title">
+                    <i class="fas fa-comment"></i>
+                    Caption
+                  </h4>
+                  <p class="section-content">{{ formatScriptContent(script.content).caption }}</p>
+                </div>
+                <div class="script-section">
+                  <h4 class="section-title">
+                    <i class="fas fa-align-left"></i>
+                    Texto Principal
+                  </h4>
+                  <p class="section-content">{{ formatScriptContent(script.content).text }}</p>
+                </div>
+              </div>
+            </template>
           </div>
-          
-          <!-- Contenido Markdown -->
           <div v-else-if="script && formatScriptContent(script.content).isMarkdown" class="markdown-content">
             <div 
               v-for="(section, index) in parseMarkdownContent(script.content)" 
@@ -355,6 +424,75 @@ const handleClose = () => {
 }
 
 .script-full-content {
+  .multipost-content {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+  }
+
+  .post-card {
+    padding: 1.25rem 1.5rem;
+    background: $white;
+    border: 1px solid $BAKANO-LIGHT;
+    border-radius: 12px;
+  }
+
+  .post-title {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    color: $BAKANO-PURPLE;
+    font-size: 1.1rem;
+    font-weight: 600;
+    margin: 0 0 1rem 0;
+
+    i {
+      color: $BAKANO-PINK;
+    }
+
+    .post-duration {
+      margin-left: auto;
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      background: $BAKANO-LIGHT;
+      color: $BAKANO-DARK;
+      padding: 0.25rem 0.6rem;
+      border-radius: 16px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+  }
+
+  .post-body {
+    .markdown-section {
+      margin-bottom: 1.25rem;
+    }
+
+    .markdown-title {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      color: $BAKANO-PURPLE;
+      font-size: 1rem;
+      font-weight: 600;
+      margin: 0 0 0.75rem 0;
+      padding-bottom: 0.4rem;
+      border-bottom: 2px solid $BAKANO-LIGHT;
+
+      i {
+        color: $BAKANO-PINK;
+      }
+    }
+
+    .markdown-body {
+      .markdown-line {
+        margin-bottom: 0.6rem;
+        line-height: 1.6;
+      }
+    }
+  }
+
   .formatted-script {
     .script-section {
       margin-bottom: 2rem;
